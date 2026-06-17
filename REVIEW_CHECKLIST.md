@@ -36,7 +36,7 @@
 - [x] Autosave implemented as AMD JavaScript.
 - [x] Activity completion can require a saved response.
 - [x] Minimum character count is considered by completion state.
-- [ ] Completion behavior tested in Moodle UI and cron/task contexts.
+- [x] Completion behavior tested in Moodle UI (save -> complete, sub-minchars/empty -> reverts). Cron/task context still untested.
 - [ ] Mobile behavior tested.
 - [ ] Accessibility tested with keyboard and screen reader tooling.
 

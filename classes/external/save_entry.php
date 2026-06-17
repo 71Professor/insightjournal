@@ -83,9 +83,12 @@ class save_entry extends external_api {
             ]);
         }
 
+        // Let core recalculate the state via custom_completion::get_state() so the
+        // minchars rule is honoured and completion reverts when the response no
+        // longer qualifies. Forcing COMPLETION_COMPLETE here would bypass minchars.
         $completion = new \completion_info($course);
         if ($completion->is_enabled($cm)) {
-            $completion->update_state($cm, COMPLETION_COMPLETE, $USER->id);
+            $completion->update_state($cm, COMPLETION_UNKNOWN, $USER->id);
         }
 
         return ['success' => true, 'id' => $id, 'timemodified' => $now, 'timestr' => userdate($now, get_string('strftimedatetimeshort', 'langconfig'))];
