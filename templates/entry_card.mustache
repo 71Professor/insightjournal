@@ -1,6 +1,7 @@
 <div class="card mb-3">
     <div class="card-header"><strong>{{activityname}}</strong></div>
     <div class="card-body">
+        {{! prompt is pre-sanitised via format_text() in PHP – triple braces intentional, never use for student response }}
         <div class="mb-2">{{{prompt}}}</div>
         {{#response}}<div class="border rounded p-3 bg-light insightjournal-response-text">{{response}}</div>{{/response}}
         {{^response}}<div class="text-muted font-italic">{{#str}}noresponse, mod_insightjournal{{/str}}</div>{{/response}}

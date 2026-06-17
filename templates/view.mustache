@@ -2,6 +2,7 @@
     <div class="card mb-3">
         <div class="card-body">
             <h3 class="h5">{{#str}}prompttext, mod_insightjournal{{/str}}</h3>
+            {{! prompt is pre-sanitised via format_text() in PHP – triple braces intentional, never use for student response }}
             <div class="insightjournal-prompt mb-3">{{{prompt}}}</div>
             {{#canwrite}}
                 <label for="insightjournal-response-{{cmid}}" class="sr-only">{{#str}}response, mod_insightjournal{{/str}}</label>

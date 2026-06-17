@@ -1,5 +1,26 @@
 <?php
-// Course-wide insight journal report.
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Course-wide insight journal report.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 insightjournal contributors
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 
 require_once('../../config.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
@@ -43,6 +64,7 @@ if ($download === 'csv') {
     foreach ($activities as $cm) {
         require_capability('mod/insightjournal:export', context_module::instance($cm->id));
     }
+    confirm_sesskey();
     insightjournal_send_csv_headers('insightjournal-course-' . $course->shortname . '.csv');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
@@ -106,7 +128,7 @@ echo $OUTPUT->heading(get_string('coursereport', 'insightjournal'));
 echo $OUTPUT->render_from_template('mod_insightjournal/coursereport', [
     'backurl' => (new moodle_url('/course/view.php', ['id' => $course->id]))->out(false),
     'downloadurl' => (new moodle_url('/mod/insightjournal/coursereport.php',
-        ['courseid' => $course->id, 'download' => 'csv']))->out(false),
+        ['courseid' => $course->id, 'download' => 'csv', 'sesskey' => sesskey()]))->out(false),
     'activities' => $activityheaders,
     'rows' => $rows,
     'hasactivities' => !empty($activityheaders),

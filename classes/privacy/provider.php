@@ -1,4 +1,27 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Privacy provider for mod_insightjournal.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 insightjournal contributors
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
+
 namespace mod_insightjournal\privacy;
 
 defined('MOODLE_INTERNAL') || die();
@@ -54,10 +77,11 @@ class provider implements
             $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $userid]);
             if ($entry) {
                 $data = (object)[
-                    'activity' => $diary->name,
-                    'response' => $entry->response,
-                    'timecreated' => \core_privacy\local\request\transform::datetime($entry->timecreated),
-                    'timemodified' => \core_privacy\local\request\transform::datetime($entry->timemodified),
+                    'activity'       => $diary->name,
+                    'response'       => $entry->response,
+                    'responseformat' => $entry->responseformat,
+                    'timecreated'    => \core_privacy\local\request\transform::datetime($entry->timecreated),
+                    'timemodified'   => \core_privacy\local\request\transform::datetime($entry->timemodified),
                 ];
                 \core_privacy\local\request\writer::with_context($context)->export_data([get_string('pluginname', 'insightjournal')], $data);
             }

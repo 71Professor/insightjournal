@@ -1,5 +1,26 @@
 <?php
-// Activity report for mod_insightjournal.
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Activity report for mod_insightjournal.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 insightjournal contributors
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 
 require_once('../../config.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
@@ -34,6 +55,7 @@ if ($search !== '') {
 
 if ($download === 'csv') {
     require_capability('mod/insightjournal:export', $context);
+    confirm_sesskey();
     insightjournal_send_csv_headers('insightjournal-' . $course->shortname . '-' . $diary->id . '.csv');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
@@ -78,7 +100,7 @@ echo $OUTPUT->heading(get_string('reportfor', 'insightjournal', format_string($d
 echo $OUTPUT->render_from_template('mod_insightjournal/report', [
     'backurl' => (new moodle_url('/mod/insightjournal/view.php', ['id' => $cm->id]))->out(false),
     'downloadurl' => (new moodle_url('/mod/insightjournal/report.php',
-        ['id' => $cm->id, 'search' => $search, 'download' => 'csv']))->out(false),
+        ['id' => $cm->id, 'search' => $search, 'download' => 'csv', 'sesskey' => sesskey()]))->out(false),
     'actionurl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out(false),
     'cmid' => $cm->id,
     'search' => $search,
