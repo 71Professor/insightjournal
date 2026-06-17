@@ -13,6 +13,24 @@ Versions map to the `$plugin->release` value in `version.php`.
 - Help buttons (contextual `_help` strings) for the activity settings
   `Insight prompt`, `Enable autosave`, and `Minimum characters for completion`,
   in English and German.
+- PHPUnit test suite (`tests/`): custom completion rule, lib callbacks, the
+  `save_entry` external function, and the privacy provider, plus a test data
+  generator. Includes regression tests for both completion fixes below.
+
+### Changed
+
+- Accessibility: the autosave status now lives in an ARIA live region
+  (`role="status"` / `aria-live="polite"`) so screen readers announce
+  save progress, and the response field is associated with the minimum-character
+  hint via `aria-describedby`. Bootstrap 4 utility classes (`sr-only`,
+  `input-group-append`) are kept intentionally because the plugin supports
+  Moodle 4.5 (Bootstrap 4); they remain valid on Moodle 5.0 via its compatibility layer.
+- Code style aligned with the Moodle `phpcs` coding standard across all PHP files.
+
+### Notes
+
+- No dedicated Moodle Mobile App addon (`db/mobile.php`) in this release; the
+  activity is usable via its responsive web view in the app.
 
 ### Fixed
 

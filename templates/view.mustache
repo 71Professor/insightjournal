@@ -60,12 +60,12 @@
             <div class="insightjournal-prompt mb-3">{{{prompt}}}</div>
             {{#canwrite}}
                 <label for="insightjournal-response-{{cmid}}" class="sr-only">{{#str}}response, mod_insightjournal{{/str}}</label>
-                <textarea id="insightjournal-response-{{cmid}}" class="form-control" rows="10" data-insightjournal-response placeholder="{{#str}}responseplaceholder, mod_insightjournal{{/str}}">{{response}}</textarea>
+                <textarea id="insightjournal-response-{{cmid}}" class="form-control" rows="10" data-insightjournal-response {{#minchars}}aria-describedby="insightjournal-minchars-{{cmid}}" {{/minchars}}placeholder="{{#str}}responseplaceholder, mod_insightjournal{{/str}}">{{response}}</textarea>
                 <div class="d-flex align-items-center gap-2 mt-2">
                     <button type="button" class="btn btn-primary" data-insightjournal-save>{{#str}}save, mod_insightjournal{{/str}}</button>
-                    <span data-insightjournal-status>{{lastsaved}}</span>
+                    <span data-insightjournal-status role="status" aria-live="polite">{{lastsaved}}</span>
                 </div>
-                {{#minchars}}<p class="small text-muted mt-2">{{#str}}mincharsnote, mod_insightjournal, {{minchars}}{{/str}}</p>{{/minchars}}
+                {{#minchars}}<p id="insightjournal-minchars-{{cmid}}" class="small text-muted mt-2">{{#str}}mincharsnote, mod_insightjournal, {{minchars}}{{/str}}</p>{{/minchars}}
             {{/canwrite}}
             {{^canwrite}}
                 <div class="alert alert-info">{{#str}}readonlyteacher, mod_insightjournal{{/str}}</div>

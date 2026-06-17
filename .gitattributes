@@ -1,0 +1,10 @@
+# Moodle requires LF line endings in source files. Enforce LF on checkout and
+# normalise on commit, regardless of the contributor's platform.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary

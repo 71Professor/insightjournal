@@ -98,13 +98,22 @@ Suggested PHPUnit coverage:
 - Privacy API export and deletion;
 - backup/restore with and without user data.
 
+## Mobile App Support
+
+This release does not ship a dedicated Moodle Mobile App addon (`db/mobile.php`).
+The activity is reachable in the app through its responsive web view; native in-app
+editing support is planned for a later version.
+
 ## Development Status
 
 Beta. Remaining review-hardening work:
 
-- run Moodle Code Checker and PHPStan in a full Moodle checkout;
-- add automated PHPUnit and Behat tests;
+- Moodle Code Checker (phpcs `moodle` standard) passes;
+- PHPStan in a full Moodle checkout still to be run;
+- automated PHPUnit tests added (run via `moodle-plugin-ci`); Behat still to be added;
 - verify Moodle 4.5 and 5.x compatibility;
 - add screenshots;
-- review mobile layout and accessibility with real Moodle themes;
+- accessibility reviewed (status live region, label associations); Bootstrap 4 classes
+  kept intentionally for Moodle 4.5 support;
+- native Moodle Mobile App addon not yet provided (see above);
 - decide whether a dedicated moderation/entry-management capability is needed in a later version.
