@@ -41,13 +41,16 @@ class mod_insightjournal_mod_form extends moodleform_mod {
             ['maxfiles' => 0, 'trusttext' => false, 'subdirs' => false]);
         $mform->setType('prompttext_editor', PARAM_RAW);
         $mform->addRule('prompttext_editor', null, 'required', null, 'client');
+        $mform->addHelpButton('prompttext_editor', 'prompttext', 'insightjournal');
 
         $mform->addElement('advcheckbox', 'autosave', get_string('autosave', 'insightjournal'));
         $mform->setDefault('autosave', 1);
+        $mform->addHelpButton('autosave', 'autosave', 'insightjournal');
 
         $mform->addElement('text', 'minchars', get_string('minchars', 'insightjournal'), ['size' => 6]);
         $mform->setType('minchars', PARAM_INT);
         $mform->setDefault('minchars', 0);
+        $mform->addHelpButton('minchars', 'minchars', 'insightjournal');
 
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
