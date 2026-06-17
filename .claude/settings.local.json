@@ -5,7 +5,8 @@
       "Bash(grep -rn '\\\\$CFG' classes/)",
       "WebFetch(domain:moodledev.io)",
       "Bash(awk '/^function /{print prev2; print prev1; print \"->\"NR\": \"$0; print \"---\"} {prev2=prev1; prev1=$0}' lib.php)",
-      "Bash(grep -rnE '.{181,}' --include=\"*.php\" .)"
+      "Bash(grep -rnE '.{181,}' --include=\"*.php\" .)",
+      "WebFetch(domain:docs.moodle.org)"
     ]
   }
 }

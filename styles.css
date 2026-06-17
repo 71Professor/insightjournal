@@ -1,3 +1,10 @@
+/**
+ * Styles for the insightjournal activity module.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 Michael Kohl
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 .path-mod-insightjournal .insightjournal-response-text {
     max-width: 650px;
     white-space: pre-wrap;
