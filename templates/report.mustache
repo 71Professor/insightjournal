@@ -1,3 +1,63 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_insightjournal/report
+
+    Activity report listing every participant's response with a search filter.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * backurl - URL back to the activity view.
+    * downloadurl - URL to download the report as CSV.
+    * actionurl - Form action URL for the search filter.
+    * cmid - Course module id.
+    * search - Current search term.
+    * hasrows - Whether there are any rows to display.
+    * rows - List of response rows.
+        * summaryurl - URL to the participant's personal summary.
+        * fullname - Participant full name.
+        * email - Participant email.
+        * response - Response text.
+        * timemodified - Localised last modified date.
+
+    Example context (json):
+    {
+        "backurl": "https://example.com/mod/insightjournal/view.php?id=5",
+        "downloadurl": "https://example.com/mod/insightjournal/report.php?id=5&download=csv",
+        "actionurl": "https://example.com/mod/insightjournal/report.php",
+        "cmid": 5,
+        "search": "",
+        "hasrows": true,
+        "rows": [
+            {
+                "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2&userid=3",
+                "fullname": "Jane Doe",
+                "email": "jane@example.com",
+                "response": "Today I learned about Mustache templates.",
+                "timemodified": "1 January 2026, 10:00 AM"
+            }
+        ]
+    }
+}}
 <div class="insightjournal-report">
     <div class="mb-3">
         <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtoactivity, mod_insightjournal{{/str}}</a>

@@ -18,18 +18,50 @@
  * Restore activity task for mod_insightjournal.
  *
  * @package    mod_insightjournal
- * @copyright  2026 insightjournal contributors
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/mod/insightjournal/backup/moodle2/restore_insightjournal_stepslib.php');
 
+/**
+ * Restore task that defines the settings and steps for restoring an insightjournal activity.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 class restore_insightjournal_activity_task extends restore_activity_task {
+    /**
+     * Defines the activity specific restore settings.
+     *
+     * @return void
+     */
     protected function define_my_settings() {}
+
+    /**
+     * Defines the activity specific restore steps.
+     *
+     * @return void
+     */
     protected function define_my_steps() {
         $this->add_step(new restore_insightjournal_activity_structure_step('insightjournal_structure', 'insightjournal.xml'));
     }
+
+    /**
+     * Defines the contents in the activity that must be processed by the link decoder.
+     *
+     * @return array Array of restore_decode_content objects.
+     */
     public static function define_decode_contents() { return []; }
+
+    /**
+     * Defines the decoding rules for links belonging to the activity.
+     *
+     * @return array Array of restore_decode_rule objects.
+     */
     public static function define_decode_rules() { return []; }
 }

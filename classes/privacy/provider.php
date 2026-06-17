@@ -18,7 +18,8 @@
  * Privacy provider for mod_insightjournal.
  *
  * @package    mod_insightjournal
- * @copyright  2026 insightjournal contributors
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
 
@@ -32,11 +33,25 @@ use core_privacy\local\request\contextlist;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\approved_userlist;
 
+/**
+ * Privacy Subsystem implementation for mod_insightjournal.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 class provider implements
     \core_privacy\local\metadata\provider,
     \core_privacy\local\request\plugin\provider,
     \core_privacy\local\request\core_userlist_provider {
 
+    /**
+     * Returns metadata describing the personal data stored by this plugin.
+     *
+     * @param collection $collection The initialised collection to add metadata to.
+     * @return collection The updated collection of metadata items.
+     */
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table('insightjournal_entries', [
             'insightjournalid' => 'privacy:metadata:insightjournal_entries:insightjournalid',
@@ -49,6 +64,12 @@ class provider implements
         return $collection;
     }
 
+    /**
+     * Returns the list of contexts that contain personal data for the given user.
+     *
+     * @param int $userid The user to search for.
+     * @return contextlist The list of contexts containing the user's data.
+     */
     public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
         $sql = "SELECT ctx.id
@@ -62,6 +83,12 @@ class provider implements
         return $contextlist;
     }
 
+    /**
+     * Exports all personal data stored for the user in the approved contexts.
+     *
+     * @param approved_contextlist $contextlist The approved contexts and user to export data for.
+     * @return void
+     */
     public static function export_user_data(approved_contextlist $contextlist): void {
         global $DB;
         $userid = $contextlist->get_user()->id;
@@ -88,6 +115,12 @@ class provider implements
         }
     }
 
+    /**
+     * Deletes all personal data for all users in the given context.
+     *
+     * @param \context $context The context to delete data within.
+     * @return void
+     */
     public static function delete_data_for_all_users_in_context(\context $context): void {
         global $DB;
         if ($context->contextlevel != CONTEXT_MODULE) {
@@ -99,6 +132,12 @@ class provider implements
         }
     }
 
+    /**
+     * Deletes all personal data for the user in the approved contexts.
+     *
+     * @param approved_contextlist $contextlist The approved contexts and user to delete data for.
+     * @return void
+     */
     public static function delete_data_for_user(approved_contextlist $contextlist): void {
         global $DB;
         $userid = $contextlist->get_user()->id;
@@ -113,6 +152,12 @@ class provider implements
         }
     }
 
+    /**
+     * Returns the list of users who have personal data in the given context.
+     *
+     * @param userlist $userlist The userlist containing the context to search within.
+     * @return void
+     */
     public static function get_users_in_context(userlist $userlist): void {
         $context = $userlist->get_context();
         if ($context->contextlevel != CONTEXT_MODULE) {
@@ -126,6 +171,12 @@ class provider implements
         $userlist->add_from_sql('userid', $sql, ['modname' => 'insightjournal', 'cmid' => $context->instanceid]);
     }
 
+    /**
+     * Deletes personal data for the approved list of users in the given context.
+     *
+     * @param approved_userlist $userlist The approved users and context to delete data for.
+     * @return void
+     */
     public static function delete_data_for_users(approved_userlist $userlist): void {
         global $DB;
         $context = $userlist->get_context();

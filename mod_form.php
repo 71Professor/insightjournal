@@ -18,7 +18,8 @@
  * Mod form for mod_insightjournal.
  *
  * @package    mod_insightjournal
- * @copyright  2026 insightjournal contributors
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
 
@@ -26,7 +27,20 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/course/moodleform_mod.php');
 
+/**
+ * Form definition for creating and editing an insightjournal activity instance.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 class mod_insightjournal_mod_form extends moodleform_mod {
+    /**
+     * Defines the elements of the activity settings form.
+     *
+     * @return void
+     */
     public function definition() {
         $mform = $this->_form;
 
@@ -56,6 +70,12 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $this->add_action_buttons();
     }
 
+    /**
+     * Prepares the editor field default values before the form is displayed.
+     *
+     * @param array $defaultvalues The default values passed to the form, modified by reference.
+     * @return void
+     */
     public function data_preprocessing(&$defaultvalues) {
         if (!empty($defaultvalues['prompttext'])) {
             $defaultvalues['prompttext_editor'] = [
@@ -65,6 +85,11 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         }
     }
 
+    /**
+     * Adds the custom completion rule elements to the form.
+     *
+     * @return array Array of element names that were added to the form.
+     */
     public function add_completion_rules() {
         $mform = $this->_form;
         $suffix = $this->get_suffix();
@@ -76,6 +101,12 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         return [$name];
     }
 
+    /**
+     * Determines whether the custom completion rule is enabled.
+     *
+     * @param array $data The form data submitted by the user.
+     * @return bool True if the entries completion rule is enabled.
+     */
     public function completion_rule_enabled($data) {
         $suffix = $this->get_suffix();
         return !empty($data['completionentries' . $suffix]);

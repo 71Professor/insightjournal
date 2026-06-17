@@ -18,18 +18,45 @@
  * Backup activity task for mod_insightjournal.
  *
  * @package    mod_insightjournal
- * @copyright  2026 insightjournal contributors
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/mod/insightjournal/backup/moodle2/backup_insightjournal_stepslib.php');
 
+/**
+ * Backup task that defines the settings and steps for backing up an insightjournal activity.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 class backup_insightjournal_activity_task extends backup_activity_task {
+    /**
+     * Defines the activity specific backup settings.
+     *
+     * @return void
+     */
     protected function define_my_settings() {}
+
+    /**
+     * Defines the activity specific backup steps.
+     *
+     * @return void
+     */
     protected function define_my_steps() {
         $this->add_step(new backup_insightjournal_activity_structure_step('insightjournal_structure', 'insightjournal.xml'));
     }
+
+    /**
+     * Encodes URLs to the activity instance into a transportable form for backup.
+     *
+     * @param string $content The content to encode links within.
+     * @return string The content with encoded links.
+     */
     public static function encode_content_links($content) {
         return $content;
     }

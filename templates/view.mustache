@@ -1,3 +1,57 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_insightjournal/view
+
+    Insight journal activity main view with the prompt and the learner response area.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * data-cmid
+    * data-insightjournal-response
+    * data-insightjournal-save
+    * data-insightjournal-status
+
+    Context variables required for this template:
+    * cmid - Course module id.
+    * prompt - Pre-formatted prompt HTML (rendered via triple braces).
+    * canwrite - Whether the current user may write a response.
+    * response - The user's current response text.
+    * lastsaved - Localised "last saved" status text.
+    * minchars - Minimum characters required, or 0 if none.
+    * summaryurl - URL to the personal summary page.
+    * canviewall - Whether the user may view the activity report.
+    * reporturl - URL to the activity report.
+
+    Example context (json):
+    {
+        "cmid": 5,
+        "prompt": "<p>What did you learn today?</p>",
+        "canwrite": true,
+        "response": "Today I learned about Mustache templates.",
+        "lastsaved": "Saved 2 minutes ago",
+        "minchars": 100,
+        "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2",
+        "canviewall": false,
+        "reporturl": "https://example.com/mod/insightjournal/report.php?id=5"
+    }
+}}
 <div class="insightjournal-view" data-cmid="{{cmid}}">
     <div class="card mb-3">
         <div class="card-body">

@@ -1,3 +1,49 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_insightjournal/summary
+
+    Personal summary page listing a participant's insight journal entries across a course.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * data-insightjournal-print
+
+    Context variables required for this template:
+    * backurl - URL back to the course.
+    * hasitems - Whether there are any entries to display.
+    * items - List of entry_card contexts (see mod_insightjournal/entry_card).
+
+    Example context (json):
+    {
+        "backurl": "https://example.com/course/view.php?id=2",
+        "hasitems": true,
+        "items": [
+            {
+                "activityname": "Week 1 reflection",
+                "prompt": "<p>What did you learn today?</p>",
+                "response": "Today I learned about Mustache templates.",
+                "timemodified": "1 January 2026, 10:00 AM"
+            }
+        ]
+    }
+}}
 <div class="insightjournal-summary">
     <div class="mb-3 d-print-none">
         <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtocourse, mod_insightjournal{{/str}}</a>

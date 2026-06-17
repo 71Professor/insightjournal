@@ -17,7 +17,8 @@
  * Autosave handling for the insight journal response field.
  *
  * @module     mod_insightjournal/autosave
- * @copyright  2026 insightjournal contributors
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
 define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {

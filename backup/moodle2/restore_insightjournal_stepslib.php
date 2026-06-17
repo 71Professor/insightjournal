@@ -18,13 +18,27 @@
  * Restore structure step for mod_insightjournal.
  *
  * @package    mod_insightjournal
- * @copyright  2026 insightjournal contributors
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Defines the complete restore structure for the insightjournal activity.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 class restore_insightjournal_activity_structure_step extends restore_activity_structure_step {
+    /**
+     * Defines the paths of the XML elements to be restored.
+     *
+     * @return array The prepared array of restore_path_element objects.
+     */
     protected function define_structure() {
         $paths = [];
         $paths[] = new restore_path_element('insightjournal', '/activity/insightjournal');
@@ -34,6 +48,12 @@ class restore_insightjournal_activity_structure_step extends restore_activity_st
         return $this->prepare_activity_structure($paths);
     }
 
+    /**
+     * Processes a restored insightjournal record and inserts it into the database.
+     *
+     * @param array $data The data for the insightjournal instance being restored.
+     * @return void
+     */
     protected function process_insightjournal($data) {
         global $DB;
         $data = (object)$data;
@@ -44,6 +64,12 @@ class restore_insightjournal_activity_structure_step extends restore_activity_st
         $this->set_mapping('insightjournal', $oldid, $data->id, true);
     }
 
+    /**
+     * Processes a restored insightjournal entry record and inserts it into the database.
+     *
+     * @param array $data The data for the insightjournal entry being restored.
+     * @return void
+     */
     protected function process_insightjournal_entry($data) {
         global $DB;
         $data = (object)$data;
@@ -55,6 +81,11 @@ class restore_insightjournal_activity_structure_step extends restore_activity_st
         }
     }
 
+    /**
+     * Adds related files to the activity once the restore has finished.
+     *
+     * @return void
+     */
     protected function after_execute() {
         $this->add_related_files('mod_insightjournal', 'intro', null);
     }

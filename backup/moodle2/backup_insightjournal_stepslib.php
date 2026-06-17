@@ -18,13 +18,27 @@
  * Backup structure step for mod_insightjournal.
  *
  * @package    mod_insightjournal
- * @copyright  2026 insightjournal contributors
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Defines the complete backup structure for the insightjournal activity.
+ *
+ * @package    mod_insightjournal
+ * @copyright  2026 Michael Kohl
+ * @author     Michael Kohl
+ * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ */
 class backup_insightjournal_activity_structure_step extends backup_activity_structure_step {
+    /**
+     * Defines the XML structure of the activity to be backed up.
+     *
+     * @return backup_nested_element The prepared activity structure.
+     */
     protected function define_structure() {
         $userinfo = $this->get_setting_value('userinfo');
 

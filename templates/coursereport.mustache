@@ -1,3 +1,65 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_insightjournal/coursereport
+
+    Course-wide report showing every participant's completion across all insight journal activities.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * backurl - URL back to the course.
+    * downloadurl - URL to download the report as CSV.
+    * hasactivities - Whether there are any activities to display.
+    * activities - Column headers, one per activity.
+        * name - Activity name.
+    * rows - One row per participant.
+        * summaryurl - URL to the participant's personal summary.
+        * fullname - Participant full name.
+        * cells - One cell per activity.
+            * completed - Whether the entry is complete.
+            * status - Localised status text.
+            * timemodified - Localised last modified date, or empty.
+        * progress - Localised overall progress text.
+
+    Example context (json):
+    {
+        "backurl": "https://example.com/course/view.php?id=2",
+        "downloadurl": "https://example.com/mod/insightjournal/coursereport.php?courseid=2&download=csv",
+        "hasactivities": true,
+        "activities": [
+            {"name": "Week 1 reflection"}
+        ],
+        "rows": [
+            {
+                "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2&userid=3",
+                "fullname": "Jane Doe",
+                "cells": [
+                    {"completed": true, "status": "Done", "timemodified": "1 January 2026, 10:00 AM"}
+                ],
+                "progress": "1 / 1"
+            }
+        ]
+    }
+}}
 <div class="insightjournal-course-report">
     <div class="mb-3">
         <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtocourse, mod_insightjournal{{/str}}</a>
