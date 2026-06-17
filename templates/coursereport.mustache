@@ -1,0 +1,35 @@
+<div class="insightjournal-course-report">
+    <div class="mb-3">
+        <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtocourse, mod_insightjournal{{/str}}</a>
+        <a href="{{downloadurl}}" class="btn btn-primary">{{#str}}downloadcsv, mod_insightjournal{{/str}}</a>
+    </div>
+
+    {{#hasactivities}}
+        <table class="generaltable">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}}participant, mod_insightjournal{{/str}}</th>
+                    {{#activities}}<th scope="col">{{name}}</th>{{/activities}}
+                    <th scope="col">{{#str}}progress, mod_insightjournal{{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                    <tr>
+                        <td><a href="{{summaryurl}}">{{fullname}}</a></td>
+                        {{#cells}}
+                            <td>
+                                <span class="{{#completed}}text-success{{/completed}}{{^completed}}text-muted{{/completed}}">{{status}}</span>
+                                {{#timemodified}}<div class="small text-muted">{{timemodified}}</div>{{/timemodified}}
+                            </td>
+                        {{/cells}}
+                        <td>{{progress}}</td>
+                    </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    {{/hasactivities}}
+    {{^hasactivities}}
+        <div class="alert alert-info">{{#str}}noreflectionsincourse, mod_insightjournal{{/str}}</div>
+    {{/hasactivities}}
+</div>

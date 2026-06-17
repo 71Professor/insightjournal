@@ -1,0 +1,44 @@
+<div class="insightjournal-report">
+    <div class="mb-3">
+        <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtoactivity, mod_insightjournal{{/str}}</a>
+        <a href="{{downloadurl}}" class="btn btn-primary">{{#str}}downloadcsv, mod_insightjournal{{/str}}</a>
+    </div>
+
+    <form method="get" action="{{actionurl}}" class="mb-3">
+        <input type="hidden" name="id" value="{{cmid}}">
+        <label for="insightjournal-search" class="sr-only">{{#str}}searchparticipants, mod_insightjournal{{/str}}</label>
+        <div class="input-group">
+            <input id="insightjournal-search" type="text" name="search" value="{{search}}" class="form-control" placeholder="{{#str}}searchparticipants, mod_insightjournal{{/str}}">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-outline-secondary">{{#str}}search{{/str}}</button>
+            </div>
+        </div>
+    </form>
+
+    {{#hasrows}}
+        <table class="generaltable">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}}participant, mod_insightjournal{{/str}}</th>
+                    <th scope="col">{{#str}}response, mod_insightjournal{{/str}}</th>
+                    <th scope="col">{{#str}}timemodified, mod_insightjournal{{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                    <tr>
+                        <td>
+                            <a href="{{summaryurl}}">{{fullname}}</a>
+                            <div class="small text-muted">{{email}}</div>
+                        </td>
+                        <td><div class="insightjournal-response-text">{{response}}</div></td>
+                        <td>{{timemodified}}</td>
+                    </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    {{/hasrows}}
+    {{^hasrows}}
+        <div class="alert alert-info">{{#str}}noentries, mod_insightjournal{{/str}}</div>
+    {{/hasrows}}
+</div>

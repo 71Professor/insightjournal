@@ -1,0 +1,15 @@
+<div class="insightjournal-summary">
+    <div class="mb-3 d-print-none">
+        <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtocourse, mod_insightjournal{{/str}}</a>
+        <button type="button" class="btn btn-primary" data-insightjournal-print>{{#str}}print, mod_insightjournal{{/str}}</button>
+    </div>
+
+    {{#hasitems}}
+        {{#items}}
+            {{> mod_insightjournal/entry_card }}
+        {{/items}}
+    {{/hasitems}}
+    {{^hasitems}}
+        <div class="alert alert-info">{{#str}}noreflectionsincourse, mod_insightjournal{{/str}}</div>
+    {{/hasitems}}
+</div>
