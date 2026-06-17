@@ -14,6 +14,14 @@ Versions map to the `$plugin->release` value in `version.php`.
   `Insight prompt`, `Enable autosave`, and `Minimum characters for completion`,
   in English and German.
 
+### Fixed
+
+- `insightjournal_get_coursemodule_info()` now exposes the `completionentries`
+  custom completion rule to core completion via
+  `customdata['customcompletionrules']`. Previously the rule was never reported,
+  so automatic completion was never evaluated and the rule description never
+  appeared for learners. Found during live testing on Moodle 5.0.2.
+
 ## [0.2.0-beta] - 2026-06-17
 
 First beta release. Targets Moodle 4.5+ (`$plugin->requires = 2024100700`),

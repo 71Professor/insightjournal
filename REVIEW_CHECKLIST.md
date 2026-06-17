@@ -4,7 +4,7 @@
 
 - [x] Frankenstyle component name is `mod_insightjournal`.
 - [x] Plugin folder is intended for `mod/insightjournal`.
-- [x] PHP lint prepared and run locally where PHP is available.
+- [x] PHP lint run on Moodle 5.0.2 / PHP 8.2 (no syntax errors).
 - [ ] Moodle Code Checker run in a full Moodle development environment.
 - [ ] PHPStan or equivalent static analysis run in a full Moodle development environment.
 - [x] Visible UI strings are routed through language files.
@@ -16,13 +16,13 @@
 - [x] `db/install.xml` defines activity and entry tables.
 - [x] Unique index exists for `(insightjournalid, userid)`.
 - [x] Upgrade step exists for the new completion field.
-- [ ] Fresh install tested on Moodle 4.1+.
+- [ ] Fresh install tested on Moodle 4.5+.
 - [ ] Upgrade from the alpha MVP tested.
-- [ ] Moodle 4.5 / 5.x installation tested.
+- [x] Moodle 5.0.2 installation tested (clean install via CLI on MariaDB).
 
 ## Roles And Security
 
-- [x] Capabilities declared for add, view, submit, view own, view all, export, and manage entries.
+- [x] Capabilities declared for add, view, submit, view own, view all, and export.
 - [x] Activity view requires login and `mod/insightjournal:view`.
 - [x] Save service validates context and requires `mod/insightjournal:submit`.
 - [x] Reports require `mod/insightjournal:viewall`.
