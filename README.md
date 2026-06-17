@@ -15,7 +15,7 @@ and can open a printable course summary of their insight journal entries.
    npx grunt amd
    ```
 
-The plugin targets Moodle 4.1+ and is currently marked `MATURITY_ALPHA`.
+The plugin targets Moodle 4.5+ and is currently marked `MATURITY_ALPHA`.
 
 ## Trainer Workflow
 
@@ -43,12 +43,11 @@ insight journal activities in the course and is suitable for browser printing.
 - `mod/insightjournal:viewown`: view own insight journal entries.
 - `mod/insightjournal:viewall`: view learner responses and reports.
 - `mod/insightjournal:export`: export report data to CSV.
-- `mod/insightjournal:manageentries`: reserved for future moderation or entry management.
 
 Default archetypes:
 
 - Student: view, submit, view own.
-- Teacher/editing teacher: view, view all, export; editing teacher can manage entries.
+- Teacher/editing teacher: view, view all, export.
 - Manager: all configured capabilities.
 
 ## Data And Privacy
@@ -80,7 +79,7 @@ when the mapped user is unavailable.
 
 Recommended local test flow:
 
-1. Install the plugin in a Moodle 4.1+ development site.
+1. Install the plugin in a Moodle 4.5+ development site.
 2. Create a course with at least one teacher and two students.
 3. Add two insight journal activities, one with autosave enabled and one disabled.
 4. As a student, save a response, reload the activity, edit it, and confirm completion updates.
@@ -108,4 +107,4 @@ Alpha. Remaining review-hardening work:
 - verify Moodle 4.5 and 5.x compatibility;
 - add screenshots;
 - review mobile layout and accessibility with real Moodle themes;
-- decide whether `manageentries` should support deletion or moderation in a later version.
+- decide whether a dedicated moderation/entry-management capability is needed in a later version.

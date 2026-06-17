@@ -36,7 +36,6 @@ require_capability('mod/insightjournal:view', $context);
 $PAGE->set_url('/mod/insightjournal/view.php', ['id' => $id]);
 $PAGE->set_title(format_string($diary->name));
 $PAGE->set_heading(format_string($course->fullname));
-$PAGE->requires->strings_for_js(['saving', 'savedat', 'saveerror'], 'insightjournal');
 $PAGE->requires->js_call_amd('mod_insightjournal/autosave', 'init', [$cm->id, (int)$diary->autosave]);
 
 $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
