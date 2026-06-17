@@ -21,6 +21,11 @@ Versions map to the `$plugin->release` value in `version.php`.
   `customdata['customcompletionrules']`. Previously the rule was never reported,
   so automatic completion was never evaluated and the rule description never
   appeared for learners. Found during live testing on Moodle 5.0.2.
+- `save_entry` now passes `COMPLETION_UNKNOWN` to `update_state()` so core
+  recalculates completion via `custom_completion::get_state()`. Previously it
+  forced `COMPLETION_COMPLETE`, which bypassed the `minchars` rule (any save,
+  even an empty or too-short response, marked the activity complete and it never
+  reverted). Found during browser UI testing on Moodle 5.0.2.
 
 ## [0.2.0-beta] - 2026-06-17
 

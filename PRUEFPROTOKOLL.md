@@ -246,3 +246,22 @@ nach `$info->customdata['customcompletionrules']['completionentries']` schreiben
 **Live-Verifikation nach Fix:** `customcompletionrules = {"completionentries":"1"}`;
 state vor Speichern = 0 (INCOMPLETE), nach Speichern einer ausreichend langen Antwort = 1 (COMPLETE);
 Hinweistext erscheint korrekt. ✅
+
+### 🔴 F2 – KRITISCH (gefixt): `save_entry` erzwang Completion, ignorierte `minchars`
+
+**Ort:** `classes/external/save_entry.php`, `update_state()`-Aufruf
+
+**Problem (im Browser-Test entdeckt)**
+Der Service rief `update_state($cm, COMPLETION_COMPLETE, ...)` mit hart kodiertem
+`COMPLETION_COMPLETE` auf. Dadurch wurde die Aktivität bei **jeder** Speicherung als
+erledigt markiert – auch bei einer Antwort unter `minchars` oder bei **leerer** Antwort –
+und der Status sprang nie zurück. Die `minchars`-Regel (und die `custom_completion`-Logik)
+war damit faktisch wirkungslos.
+
+**Fix**
+`COMPLETION_UNKNOWN` übergeben, damit der Core den Status über
+`custom_completion::get_state()` neu berechnet (respektiert `minchars`).
+
+**Live-Verifikation im Browser (Schüler-Flow, Moodle 5.0.2):**
+leer → lange Antwort ⇒ „Erledigt" (grün); lange → 2 Zeichen (< minchars 10) ⇒ zurück auf
+„Zu erledigen" (grau); leere Antwort ⇒ bleibt „Zu erledigen". Screenshots erfasst. ✅
