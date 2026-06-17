@@ -1,6 +1,6 @@
 # mod_insightjournal - Insight Journal activity for Moodle
 
-`mod_insightjournal` is an alpha Moodle activity module for course-based insight prompts.
+`mod_insightjournal` is a beta Moodle activity module for course-based insight prompts.
 Each activity contains one prompt. Learners save their own response, can return to edit it,
 and can open a printable course summary of their insight journal entries.
 
@@ -15,7 +15,7 @@ and can open a printable course summary of their insight journal entries.
    npx grunt amd
    ```
 
-The plugin targets Moodle 4.5+ and is currently marked `MATURITY_ALPHA`.
+The plugin targets Moodle 4.5+ and is currently marked `MATURITY_BETA`.
 
 ## Trainer Workflow
 
@@ -100,7 +100,7 @@ Suggested PHPUnit coverage:
 
 ## Development Status
 
-Alpha. Remaining review-hardening work:
+Beta. Remaining review-hardening work:
 
 - run Moodle Code Checker and PHPStan in a full Moodle checkout;
 - add automated PHPUnit and Behat tests;
