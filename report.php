@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once('../../config.php');
@@ -47,7 +47,7 @@ $entries = $DB->get_records_sql($sql, ['diaryid' => $diary->id]);
 
 if ($search !== '') {
     $needle = core_text::strtolower($search);
-    $entries = array_filter($entries, static function($entry) use ($needle): bool {
+    $entries = array_filter($entries, static function ($entry) use ($needle): bool {
         $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname];
         $haystack = core_text::strtolower(fullname($user) . ' ' . $entry->email);
         return core_text::strpos($haystack, $needle) !== false;
@@ -89,8 +89,10 @@ foreach ($entries as $entry) {
     $rows[] = [
         'fullname' => fullname($user),
         'email' => $entry->email,
-        'summaryurl' => (new moodle_url('/mod/insightjournal/summary.php',
-            ['courseid' => $course->id, 'userid' => $entry->userid]))->out(false),
+        'summaryurl' => (new moodle_url(
+            '/mod/insightjournal/summary.php',
+            ['courseid' => $course->id, 'userid' => $entry->userid]
+        ))->out(false),
         'response' => $entry->response,
         'timemodified' => userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')),
     ];
@@ -100,8 +102,10 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('reportfor', 'insightjournal', format_string($diary->name)));
 echo $OUTPUT->render_from_template('mod_insightjournal/report', [
     'backurl' => (new moodle_url('/mod/insightjournal/view.php', ['id' => $cm->id]))->out(false),
-    'downloadurl' => (new moodle_url('/mod/insightjournal/report.php',
-        ['id' => $cm->id, 'search' => $search, 'download' => 'csv', 'sesskey' => sesskey()]))->out(false),
+    'downloadurl' => (new moodle_url(
+        '/mod/insightjournal/report.php',
+        ['id' => $cm->id, 'search' => $search, 'download' => 'csv', 'sesskey' => sesskey()]
+    ))->out(false),
     'actionurl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out(false),
     'cmid' => $cm->id,
     'search' => $search,

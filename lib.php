@@ -20,10 +20,8 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Returns whether this module supports a given feature.
@@ -108,8 +106,13 @@ function insightjournal_delete_instance($id) {
  */
 function insightjournal_get_coursemodule_info($coursemodule) {
     global $DB;
-    if (!$diary = $DB->get_record('insightjournal', ['id' => $coursemodule->instance],
-            'id,name,intro,introformat,completionentries')) {
+    if (
+        !$diary = $DB->get_record(
+            'insightjournal',
+            ['id' => $coursemodule->instance],
+            'id,name,intro,introformat,completionentries'
+        )
+    ) {
         return null;
     }
     $info = new cached_cm_info();
@@ -159,8 +162,11 @@ function insightjournal_get_completion_active_rule_descriptions($cm) {
  * @return void
  */
 function insightjournal_reset_userdata_form_definition(&$mform) {
-    $mform->addElement('checkbox', 'reset_insightjournal_entries',
-        get_string('deleteallentries', 'insightjournal'));
+    $mform->addElement(
+        'checkbox',
+        'reset_insightjournal_entries',
+        get_string('deleteallentries', 'insightjournal')
+    );
 }
 
 /**

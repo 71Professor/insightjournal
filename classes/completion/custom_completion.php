@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 declare(strict_types=1);
@@ -33,7 +33,6 @@ use core_completion\activity_custom_completion;
  * Defines the custom completion rules for the insight journal activity.
  */
 class custom_completion extends activity_custom_completion {
-
     /**
      * Returns the completion state for the given rule.
      *
@@ -45,15 +44,22 @@ class custom_completion extends activity_custom_completion {
 
         $this->validate_rule($rule);
 
-        $diary = $DB->get_record('insightjournal', ['id' => $this->cm->instance],
-            'id,minchars,completionentries', MUST_EXIST);
+        $diary = $DB->get_record(
+            'insightjournal',
+            ['id' => $this->cm->instance],
+            'id,minchars,completionentries',
+            MUST_EXIST
+        );
 
         if (empty($diary->completionentries)) {
             return COMPLETION_INCOMPLETE;
         }
 
-        $entry = $DB->get_record('insightjournal_entries',
-            ['insightjournalid' => $diary->id, 'userid' => $this->userid], 'response');
+        $entry = $DB->get_record(
+            'insightjournal_entries',
+            ['insightjournalid' => $diary->id, 'userid' => $this->userid],
+            'response'
+        );
 
         if (!$entry || trim((string)$entry->response) === '') {
             return COMPLETION_INCOMPLETE;

@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once('../../config.php');
@@ -74,7 +74,7 @@ $viewuser = $DB->get_record('user', ['id' => $viewuserid], 'id,firstname,lastnam
 // When viewing another user, restrict to journals where viewall is explicitly granted.
 $querycms = ($viewuserid !== $USER->id) ? $viewallcms : $cms;
 $diaryids = array_keys($querycms);
-list($insql, $params) = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
+[$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
 $params['userid'] = $viewuserid;
 $records = $DB->get_records_sql(
     "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, e.response, e.timemodified

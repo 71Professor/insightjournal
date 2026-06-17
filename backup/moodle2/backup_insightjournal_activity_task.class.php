@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -32,7 +32,7 @@ require_once($CFG->dirroot . '/mod/insightjournal/backup/moodle2/backup_insightj
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_insightjournal_activity_task extends backup_activity_task {
     /**
@@ -40,7 +40,8 @@ class backup_insightjournal_activity_task extends backup_activity_task {
      *
      * @return void
      */
-    protected function define_my_settings() {}
+    protected function define_my_settings() {
+    }
 
     /**
      * Defines the activity specific backup steps.
