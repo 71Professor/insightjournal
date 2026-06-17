@@ -20,10 +20,8 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Defines the complete backup structure for the insightjournal activity.
@@ -31,7 +29,7 @@ defined('MOODLE_INTERNAL') || die();
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_insightjournal_activity_structure_step extends backup_activity_structure_step {
     /**
@@ -44,11 +42,11 @@ class backup_insightjournal_activity_structure_step extends backup_activity_stru
 
         $diary = new backup_nested_element('insightjournal', ['id'], [
             'course', 'name', 'intro', 'introformat', 'prompttext', 'promptformat',
-            'autosave', 'minchars', 'completionentries', 'timecreated', 'timemodified'
+            'autosave', 'minchars', 'completionentries', 'timecreated', 'timemodified',
         ]);
         $entries = new backup_nested_element('entries');
         $entry = new backup_nested_element('entry', ['id'], [
-            'userid', 'response', 'responseformat', 'timecreated', 'timemodified'
+            'userid', 'response', 'responseformat', 'timecreated', 'timemodified',
         ]);
 
         $diary->add_child($entries);

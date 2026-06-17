@@ -21,14 +21,14 @@
  * @author     Michael Kohl
  * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
  */
-define([], function() {
+define([], function () {
     return {
-        init: function() {
+        init: function () {
             var button = document.querySelector('[data-insightjournal-print]');
             if (!button) {
                 return;
             }
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 window.print();
             });
         }

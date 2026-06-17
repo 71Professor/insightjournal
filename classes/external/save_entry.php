@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace mod_insightjournal\external;
@@ -91,7 +91,8 @@ class save_entry extends external_api {
             $completion->update_state($cm, COMPLETION_UNKNOWN, $USER->id);
         }
 
-        return ['success' => true, 'id' => $id, 'timemodified' => $now, 'timestr' => userdate($now, get_string('strftimedatetimeshort', 'langconfig'))];
+        $timestr = userdate($now, get_string('strftimedatetimeshort', 'langconfig'));
+        return ['success' => true, 'id' => $id, 'timemodified' => $now, 'timestr' => $timestr];
     }
 
     /**
