@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -33,7 +33,7 @@ require_once($CFG->dirroot . '/course/moodleform_mod.php');
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_insightjournal_mod_form extends moodleform_mod {
     /**
@@ -51,8 +51,13 @@ class mod_insightjournal_mod_form extends moodleform_mod {
 
         $this->standard_intro_elements(get_string('intro', 'insightjournal'));
 
-        $mform->addElement('editor', 'prompttext_editor', get_string('prompttext', 'insightjournal'), null,
-            ['maxfiles' => 0, 'trusttext' => false, 'subdirs' => false]);
+        $mform->addElement(
+            'editor',
+            'prompttext_editor',
+            get_string('prompttext', 'insightjournal'),
+            null,
+            ['maxfiles' => 0, 'trusttext' => false, 'subdirs' => false]
+        );
         $mform->setType('prompttext_editor', PARAM_RAW);
         $mform->addRule('prompttext_editor', null, 'required', null, 'client');
         $mform->addHelpButton('prompttext_editor', 'prompttext', 'insightjournal');
@@ -94,8 +99,12 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $mform = $this->_form;
         $suffix = $this->get_suffix();
         $name = 'completionentries' . $suffix;
-        $mform->addElement('checkbox', $name, get_string('completionentriesgroup', 'insightjournal'),
-            get_string('completionentries', 'insightjournal'));
+        $mform->addElement(
+            'checkbox',
+            $name,
+            get_string('completionentriesgroup', 'insightjournal'),
+            get_string('completionentries', 'insightjournal')
+        );
         $mform->setDefault($name, 1);
 
         return [$name];

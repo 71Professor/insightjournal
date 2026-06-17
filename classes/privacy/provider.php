@@ -20,12 +20,10 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace mod_insightjournal\privacy;
-
-defined('MOODLE_INTERNAL') || die();
 
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\approved_contextlist;
@@ -39,13 +37,12 @@ use core_privacy\local\request\approved_userlist;
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements
     \core_privacy\local\metadata\provider,
-    \core_privacy\local\request\plugin\provider,
-    \core_privacy\local\request\core_userlist_provider {
-
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\request\plugin\provider {
     /**
      * Returns metadata describing the personal data stored by this plugin.
      *
@@ -110,7 +107,10 @@ class provider implements
                     'timecreated'    => \core_privacy\local\request\transform::datetime($entry->timecreated),
                     'timemodified'   => \core_privacy\local\request\transform::datetime($entry->timemodified),
                 ];
-                \core_privacy\local\request\writer::with_context($context)->export_data([get_string('pluginname', 'insightjournal')], $data);
+                \core_privacy\local\request\writer::with_context($context)->export_data(
+                    [get_string('pluginname', 'insightjournal')],
+                    $data
+                );
             }
         }
     }
@@ -191,7 +191,7 @@ class provider implements
         if (empty($userids)) {
             return;
         }
-        list($insql, $params) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
         $params['diaryid'] = $cm->instance;
         $DB->delete_records_select('insightjournal_entries', "insightjournalid = :diaryid AND userid $insql", $params);
     }

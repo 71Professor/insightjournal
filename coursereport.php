@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once('../../config.php');
@@ -51,11 +51,16 @@ if (empty($activities)) {
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
-$participants = get_enrolled_users($coursecontext, 'mod/insightjournal:submit', 0,
-    'u.id,u.firstname,u.lastname,u.email', 'u.lastname,u.firstname');
+$participants = get_enrolled_users(
+    $coursecontext,
+    'mod/insightjournal:submit',
+    0,
+    'u.id,u.firstname,u.lastname,u.email',
+    'u.lastname,u.firstname'
+);
 
 $entries = [];
-list($insql, $params) = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
+[$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
 $records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
 foreach ($records as $entry) {
     $entries[$entry->userid][$entry->insightjournalid] = $entry;
@@ -117,8 +122,10 @@ foreach ($participants as $user) {
     }
     $rows[] = [
         'fullname' => fullname($user),
-        'summaryurl' => (new moodle_url('/mod/insightjournal/summary.php',
-            ['courseid' => $course->id, 'userid' => $user->id]))->out(false),
+        'summaryurl' => (new moodle_url(
+            '/mod/insightjournal/summary.php',
+            ['courseid' => $course->id, 'userid' => $user->id]
+        ))->out(false),
         'cells' => $cells,
         'progress' => $done . ' / ' . count($diaries),
     ];
@@ -128,8 +135,10 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('coursereport', 'insightjournal'));
 echo $OUTPUT->render_from_template('mod_insightjournal/coursereport', [
     'backurl' => (new moodle_url('/course/view.php', ['id' => $course->id]))->out(false),
-    'downloadurl' => (new moodle_url('/mod/insightjournal/coursereport.php',
-        ['courseid' => $course->id, 'download' => 'csv', 'sesskey' => sesskey()]))->out(false),
+    'downloadurl' => (new moodle_url(
+        '/mod/insightjournal/coursereport.php',
+        ['courseid' => $course->id, 'download' => 'csv', 'sesskey' => sesskey()]
+    ))->out(false),
     'activities' => $activityheaders,
     'rows' => $rows,
     'hasactivities' => !empty($activityheaders),

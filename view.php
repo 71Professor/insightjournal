@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once('../../config.php');
@@ -59,7 +59,13 @@ $templatecontext = [
     'canwrite' => $canwrite,
     'autosave' => (bool)$diary->autosave,
     'minchars' => (int)$diary->minchars,
-    'lastsaved' => $entry ? get_string('lastsaved', 'insightjournal', userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))) : '',
+    'lastsaved' => $entry
+        ? get_string(
+            'lastsaved',
+            'insightjournal',
+            userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
+        )
+        : '',
     'sesskey' => sesskey(),
     'reporturl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out(false),
     'summaryurl' => (new moodle_url('/mod/insightjournal/summary.php', ['courseid' => $course->id]))->out(false),

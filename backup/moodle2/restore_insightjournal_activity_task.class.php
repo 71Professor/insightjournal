@@ -20,7 +20,7 @@
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -32,7 +32,7 @@ require_once($CFG->dirroot . '/mod/insightjournal/backup/moodle2/restore_insight
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
  * @author     Michael Kohl
- * @license    https://www.gnu.org/licenses/gpl-3.0.html GNU GPL v3 or later
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class restore_insightjournal_activity_task extends restore_activity_task {
     /**
@@ -40,7 +40,8 @@ class restore_insightjournal_activity_task extends restore_activity_task {
      *
      * @return void
      */
-    protected function define_my_settings() {}
+    protected function define_my_settings() {
+    }
 
     /**
      * Defines the activity specific restore steps.
@@ -56,12 +57,16 @@ class restore_insightjournal_activity_task extends restore_activity_task {
      *
      * @return array Array of restore_decode_content objects.
      */
-    public static function define_decode_contents() { return []; }
+    public static function define_decode_contents() {
+        return [];
+    }
 
     /**
      * Defines the decoding rules for links belonging to the activity.
      *
      * @return array Array of restore_decode_rule objects.
      */
-    public static function define_decode_rules() { return []; }
+    public static function define_decode_rules() {
+        return [];
+    }
 }
