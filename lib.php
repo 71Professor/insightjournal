@@ -108,13 +108,18 @@ function insightjournal_delete_instance($id) {
  */
 function insightjournal_get_coursemodule_info($coursemodule) {
     global $DB;
-    if (!$diary = $DB->get_record('insightjournal', ['id' => $coursemodule->instance], 'id,name,intro,introformat')) {
+    if (!$diary = $DB->get_record('insightjournal', ['id' => $coursemodule->instance],
+            'id,name,intro,introformat,completionentries')) {
         return null;
     }
     $info = new cached_cm_info();
     $info->name = $diary->name;
     if ($coursemodule->showdescription && trim((string)$diary->intro) !== '') {
         $info->content = format_module_intro('insightjournal', $diary, $coursemodule->id, false);
+    }
+    // Expose the custom completion rule to core completion (Moodle 4.3+ custom_completion).
+    if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        $info->customdata['customcompletionrules']['completionentries'] = $diary->completionentries;
     }
     return $info;
 }

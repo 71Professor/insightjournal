@@ -209,5 +209,40 @@ Alle sechs Befunde wurden umgesetzt:
 
 **Verifikation:** Keine verwaisten Referenzen auf die entfernte Funktion und keine
 `externallib`-/global-`external_*`-Verwendung mehr im Code (per `grep` bestätigt).
-Eine PHP-Syntaxprüfung (`php -l`) war mangels PHP-CLI in der Umgebung nicht möglich –
-empfohlen vor dem Deployment auf einer Moodle-Instanz.
+
+---
+
+## F. Live-Test auf Moodle 5.0.2 (2026-06-17)
+
+Getestet in einer laufenden Bitnami-Moodle-Instanz (Moodle 5.0.2, PHP 8.2.29, MariaDB 11.1).
+
+**Erfolgreich verifiziert:**
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| `php -l` über alle `.php`-Dateien | ✅ keine Syntaxfehler |
+| Plugin-Installation (`admin/cli/upgrade.php`) | ✅ fehlerfrei auf MariaDB (bestätigt Fix #6 live) |
+| DB-Tabellen `insightjournal` + `_entries` | ✅ angelegt |
+| External Function registriert | ✅ `mod_insightjournal\external\save_entry::execute` |
+| Capabilities | ✅ genau 6, kein `manageentries` (Punkt C) |
+| **B1 zur Laufzeit:** `save_entry::execute()` aufgerufen | ✅ `success:true`, Eintrag in DB (kein Fatal Error) |
+| **#2 XSS:** HTML-Payload an Service | ✅ `invalid_parameter_exception` an der Service-Grenze (PARAM_TEXT) |
+
+### 🔴 F1 – KRITISCH (gefixt): Custom-Completion-Regel wurde nie an Moodle gemeldet
+
+**Ort:** `lib.php`, `insightjournal_get_coursemodule_info()`
+
+**Problem (nur zur Laufzeit sichtbar)**
+Die Funktion befüllte `$info->customdata['customcompletionrules']` nicht. Dadurch:
+`custom_completion::validate_rule()` wirft „rule not used by this activity",
+`insightjournal_get_completion_active_rule_descriptions()` gibt immer `[]` zurück,
+und die Aktivität wird über die `completionentries`-Regel **nie abgeschlossen**.
+Die in FIXPLAN #8 angelegte `custom_completion`-Klasse war damit nie wirksam.
+
+**Fix**
+`completionentries` in `get_record` mitladen und bei `COMPLETION_TRACKING_AUTOMATIC`
+nach `$info->customdata['customcompletionrules']['completionentries']` schreiben.
+
+**Live-Verifikation nach Fix:** `customcompletionrules = {"completionentries":"1"}`;
+state vor Speichern = 0 (INCOMPLETE), nach Speichern einer ausreichend langen Antwort = 1 (COMPLETE);
+Hinweistext erscheint korrekt. ✅
