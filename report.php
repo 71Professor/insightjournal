@@ -38,7 +38,9 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
-$sql = "SELECT e.*, u.firstname, u.lastname, u.email
+$sql = "SELECT e.*, u.firstname, u.lastname,
+               u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename,
+               u.email
           FROM {insightjournal_entries} e
           JOIN {user} u ON u.id = e.userid
          WHERE e.insightjournalid = :diaryid
@@ -48,7 +50,11 @@ $entries = $DB->get_records_sql($sql, ['diaryid' => $diary->id]);
 if ($search !== '') {
     $needle = core_text::strtolower($search);
     $entries = array_filter($entries, static function ($entry) use ($needle): bool {
-        $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname];
+        $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname,
+                         'firstnamephonetic' => $entry->firstnamephonetic,
+                         'lastnamephonetic' => $entry->lastnamephonetic,
+                         'middlename' => $entry->middlename,
+                         'alternatename' => $entry->alternatename];
         $haystack = core_text::strtolower(fullname($user) . ' ' . $entry->email);
         return core_text::strpos($haystack, $needle) !== false;
     });
@@ -61,7 +67,11 @@ if ($download === 'csv') {
     $out = fopen('php://output', 'w');
     fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
     foreach ($entries as $entry) {
-        $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname];
+        $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname,
+                         'firstnamephonetic' => $entry->firstnamephonetic,
+                         'lastnamephonetic' => $entry->lastnamephonetic,
+                         'middlename' => $entry->middlename,
+                         'alternatename' => $entry->alternatename];
         fputcsv($out, [
             $course->id,
             insightjournal_csv_value($course->fullname),

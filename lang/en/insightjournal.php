@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Insight Journal';
+$string['pluginadministration'] = 'Insight Journal administration';
 $string['modulename'] = 'Insight Journal';
 $string['modulenameplural'] = 'Insight Journals';
 $string['modulename_help'] = 'The Insight Journal activity lets learners write responses to insight prompts. Teachers can view and export entries.';
