@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace mod_insightjournal;
 
 use advanced_testcase;
+use PHPUnit\Framework\Attributes\CoversFunction;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -37,11 +38,13 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 /**
  * Tests for the mod_insightjournal lib.php callbacks.
  */
+#[CoversFunction('insightjournal_supports')]
+#[CoversFunction('insightjournal_delete_instance')]
+#[CoversFunction('insightjournal_get_coursemodule_info')]
+#[CoversFunction('insightjournal_get_completion_active_rule_descriptions')]
 final class lib_test extends advanced_testcase {
     /**
      * insightjournal_supports() reports the expected feature support.
-     *
-     * @covers ::insightjournal_supports
      */
     public function test_supports(): void {
         $this->assertTrue(insightjournal_supports(FEATURE_MOD_INTRO));
@@ -55,8 +58,6 @@ final class lib_test extends advanced_testcase {
 
     /**
      * Creating and deleting an instance round-trips correctly and cleans up entries.
-     *
-     * @covers ::insightjournal_delete_instance
      */
     public function test_create_and_delete_instance(): void {
         global $DB;
@@ -85,8 +86,6 @@ final class lib_test extends advanced_testcase {
      *
      * Regression test: the callback previously omitted customcompletionrules, so
      * core completion never saw the completionentries rule.
-     *
-     * @covers ::insightjournal_get_coursemodule_info
      */
     public function test_get_coursemodule_info_registers_rule(): void {
         $this->resetAfterTest();
@@ -110,8 +109,6 @@ final class lib_test extends advanced_testcase {
 
     /**
      * Without automatic completion the custom rule is not registered.
-     *
-     * @covers ::insightjournal_get_coursemodule_info
      */
     public function test_get_coursemodule_info_without_automatic_completion(): void {
         $this->resetAfterTest();
@@ -131,8 +128,6 @@ final class lib_test extends advanced_testcase {
 
     /**
      * The active rule description is returned only when the rule is enabled.
-     *
-     * @covers ::insightjournal_get_completion_active_rule_descriptions
      */
     public function test_get_completion_active_rule_descriptions(): void {
         $this->resetAfterTest();

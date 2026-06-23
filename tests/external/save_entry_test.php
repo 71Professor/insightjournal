@@ -29,12 +29,12 @@ namespace mod_insightjournal\external;
 
 use advanced_testcase;
 use core_external\external_api;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Tests for {@see \mod_insightjournal\external\save_entry}.
- *
- * @covers \mod_insightjournal\external\save_entry
  */
+#[CoversClass(save_entry::class)]
 final class save_entry_test extends advanced_testcase {
     /** @var \stdClass The created course. */
     protected $course;

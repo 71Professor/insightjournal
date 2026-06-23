@@ -34,12 +34,12 @@ use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 use mod_insightjournal\privacy\provider;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Tests for {@see \mod_insightjournal\privacy\provider}.
- *
- * @covers \mod_insightjournal\privacy\provider
  */
+#[CoversClass(provider::class)]
 final class provider_test extends \core_privacy\tests\provider_testcase {
     /** @var \stdClass The course. */
     protected $course;

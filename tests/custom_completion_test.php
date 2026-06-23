@@ -30,12 +30,12 @@ namespace mod_insightjournal;
 use advanced_testcase;
 use cm_info;
 use mod_insightjournal\completion\custom_completion;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Tests for {@see \mod_insightjournal\completion\custom_completion}.
- *
- * @covers \mod_insightjournal\completion\custom_completion
  */
+#[CoversClass(custom_completion::class)]
 final class custom_completion_test extends advanced_testcase {
     /**
      * Builds a course module with an entry and returns the computed completion state.
