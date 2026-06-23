@@ -38,6 +38,7 @@
     * summaryurl - URL to the personal summary page.
     * canviewall - Whether the user may view the activity report.
     * reporturl - URL to the activity report.
+    * sectionurl - URL to the course section where this activity lives.
 
     Example context (json):
     {
@@ -49,7 +50,8 @@
         "minchars": 100,
         "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2",
         "canviewall": false,
-        "reporturl": "https://example.com/mod/insightjournal/report.php?id=5"
+        "reporturl": "https://example.com/mod/insightjournal/report.php?id=5",
+        "sectionurl": "https://example.com/course/view.php?id=2&section=3"
     }
 }}
 <div class="insightjournal-view" data-cmid="{{cmid}}">
@@ -74,5 +76,6 @@
     <div class="mt-3">
         <a href="{{summaryurl}}" class="btn btn-secondary">{{#str}}mysummary, mod_insightjournal{{/str}}</a>
         {{#canviewall}}<a href="{{reporturl}}" class="btn btn-outline-secondary">{{#str}}report, mod_insightjournal{{/str}}</a>{{/canviewall}}
+        <a href="{{sectionurl}}" class="btn btn-outline-secondary">{{#str}}backtosection, mod_insightjournal{{/str}}</a>
     </div>
 </div>

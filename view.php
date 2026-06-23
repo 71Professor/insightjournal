@@ -52,6 +52,9 @@ if (trim((string)$diary->intro) !== '') {
     echo $OUTPUT->box(format_module_intro('insightjournal', $diary, $cm->id), 'generalbox mod_introbox');
 }
 
+$modinfo = get_fast_modinfo($course);
+$sectionnum = $modinfo->get_cm($cm->id)->sectionnum;
+
 $templatecontext = [
     'cmid' => $cm->id,
     'prompt' => format_text($diary->prompttext, $diary->promptformat, ['context' => $context]),
@@ -69,6 +72,7 @@ $templatecontext = [
     'sesskey' => sesskey(),
     'reporturl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out(false),
     'summaryurl' => (new moodle_url('/mod/insightjournal/summary.php', ['courseid' => $course->id]))->out(false),
+    'sectionurl' => (new moodle_url('/course/view.php', ['id' => $course->id, 'section' => $sectionnum]))->out(false),
     'canviewall' => $canviewall,
 ];
 echo $OUTPUT->render_from_template('mod_insightjournal/view', $templatecontext);

@@ -68,6 +68,7 @@ $string['mysummaryfor'] = 'Insight Journal: {$a}';
 $string['noreflectionsincourse'] = 'There are no insight journal activities in this course yet.';
 $string['backtocourse'] = 'Back to course';
 $string['backtoactivity'] = 'Back to activity';
+$string['backtosection'] = 'Back to section';
 $string['print'] = 'Print / save as PDF';
 $string['privacy:metadata:insightjournal_entries'] = 'Stores users\' insight journal responses.';
 $string['privacy:metadata:insightjournal_entries:insightjournalid'] = 'The activity instance the response belongs to.';
