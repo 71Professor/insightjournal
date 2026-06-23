@@ -67,6 +67,7 @@ $string['mysummaryfor'] = 'Insight Journal: {$a}';
 $string['noreflectionsincourse'] = 'In diesem Kurs gibt es noch keine Insight-Journal-Aktivitäten.';
 $string['backtocourse'] = 'Zurück zum Kurs';
 $string['backtoactivity'] = 'Zurück zur Aktivität';
+$string['backtosection'] = 'Zurück';
 $string['print'] = 'Drucken / als PDF speichern';
 $string['privacy:metadata:insightjournal_entries'] = 'Speichert Insight-Journal-Antworten von Nutzer/innen.';
 $string['privacy:metadata:insightjournal_entries:insightjournalid'] = 'Die Aktivitätsinstanz, zu der die Antwort gehört.';
