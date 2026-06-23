@@ -35,6 +35,7 @@
     * response - The user's current response text.
     * lastsaved - Localised "last saved" status text.
     * minchars - Minimum characters required, or 0 if none.
+    * maxchars - Maximum characters allowed, or 0 for no limit.
     * summaryurl - URL to the personal summary page.
     * canviewall - Whether the user may view the activity report.
     * reporturl - URL to the activity report.
@@ -48,6 +49,7 @@
         "response": "Today I learned about Mustache templates.",
         "lastsaved": "Saved 2 minutes ago",
         "minchars": 100,
+        "maxchars": 500,
         "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2",
         "canviewall": false,
         "reporturl": "https://example.com/mod/insightjournal/report.php?id=5",
@@ -65,6 +67,7 @@
                 <div class="d-flex align-items-center gap-2 mt-2">
                     <button type="button" class="btn btn-primary" data-insightjournal-save>{{#str}}save, mod_insightjournal{{/str}}</button>
                     <span data-insightjournal-status role="status" aria-live="polite">{{lastsaved}}</span>
+                    {{#maxchars}}<span data-insightjournal-charcounter class="small text-muted ms-auto" aria-live="polite"></span>{{/maxchars}}
                 </div>
                 {{#minchars}}<p id="insightjournal-minchars-{{cmid}}" class="small text-muted mt-2">{{#str}}mincharsnote, mod_insightjournal, {{minchars}}{{/str}}</p>{{/minchars}}
             {{/canwrite}}

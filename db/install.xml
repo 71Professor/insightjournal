@@ -12,6 +12,7 @@
         <FIELD NAME="promptformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1"/>
         <FIELD NAME="autosave" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
         <FIELD NAME="minchars" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="maxchars" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="completionentries" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>

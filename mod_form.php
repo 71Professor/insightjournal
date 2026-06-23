@@ -71,6 +71,11 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $mform->setDefault('minchars', 0);
         $mform->addHelpButton('minchars', 'minchars', 'insightjournal');
 
+        $mform->addElement('text', 'maxchars', get_string('maxchars', 'insightjournal'), ['size' => 6]);
+        $mform->setType('maxchars', PARAM_INT);
+        $mform->setDefault('maxchars', 0);
+        $mform->addHelpButton('maxchars', 'maxchars', 'insightjournal');
+
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
     }

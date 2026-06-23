@@ -45,5 +45,16 @@ function xmldb_insightjournal_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026061701, 'insightjournal');
     }
 
+    if ($oldversion < 2026061703) {
+        $table = new xmldb_table('insightjournal');
+        $field = new xmldb_field('maxchars', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'minchars');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026061703, 'insightjournal');
+    }
+
     return true;
 }
