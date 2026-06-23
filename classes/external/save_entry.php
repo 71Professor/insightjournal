@@ -65,7 +65,7 @@ class save_entry extends external_api {
         require_capability('mod/insightjournal:submit', $context);
         $now = time();
         $response = clean_param($params['response'], PARAM_TEXT);
-        if (!empty($diary->maxchars) && core_text::strlen($response) > (int)$diary->maxchars) {
+        if (!empty($diary->maxchars) && \core_text::strlen($response) > (int)$diary->maxchars) {
             throw new \moodle_exception('maxcharserror', 'mod_insightjournal', '', (int)$diary->maxchars);
         }
         $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);

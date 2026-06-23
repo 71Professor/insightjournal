@@ -80,6 +80,22 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $this->add_action_buttons();
     }
 
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        $minchars = (int)($data['minchars'] ?? 0);
+        $maxchars = (int)($data['maxchars'] ?? 0);
+        if ($minchars < 0) {
+            $errors['minchars'] = get_string('err_numeric', 'form');
+        }
+        if ($maxchars < 0) {
+            $errors['maxchars'] = get_string('err_numeric', 'form');
+        }
+        if ($maxchars > 0 && $minchars > $maxchars) {
+            $errors['minchars'] = get_string('err_numeric', 'form');
+        }
+        return $errors;
+    }
+
     /**
      * Prepares the editor field default values before the form is displayed.
      *

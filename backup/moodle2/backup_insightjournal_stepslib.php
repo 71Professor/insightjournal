@@ -42,7 +42,7 @@ class backup_insightjournal_activity_structure_step extends backup_activity_stru
 
         $diary = new backup_nested_element('insightjournal', ['id'], [
             'course', 'name', 'intro', 'introformat', 'prompttext', 'promptformat',
-            'autosave', 'minchars', 'completionentries', 'timecreated', 'timemodified',
+            'autosave', 'minchars', 'maxchars', 'completionentries', 'timecreated', 'timemodified',
         ]);
         $entries = new backup_nested_element('entries');
         $entry = new backup_nested_element('entry', ['id'], [
