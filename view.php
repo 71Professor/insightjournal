@@ -37,7 +37,7 @@ require_capability('mod/insightjournal:view', $context);
 $PAGE->set_url('/mod/insightjournal/view.php', ['id' => $id]);
 $PAGE->set_title(format_string($diary->name));
 $PAGE->set_heading(format_string($course->fullname));
-$PAGE->requires->js_call_amd('mod_insightjournal/autosave', 'init', [$cm->id, (int)$diary->autosave, (int)$diary->maxchars]);
+$PAGE->requires->js_call_amd('mod_insightjournal/autosave', 'init', [$cm->id, (int)$diary->autosave, (int)($diary->maxchars ?? 0)]);
 
 $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
 $canwrite = has_capability('mod/insightjournal:submit', $context);
@@ -62,7 +62,7 @@ $templatecontext = [
     'canwrite' => $canwrite,
     'autosave' => (bool)$diary->autosave,
     'minchars' => (int)$diary->minchars,
-    'maxchars' => (int)$diary->maxchars,
+    'maxchars' => (int)($diary->maxchars ?? 0),
     'lastsaved' => $entry
         ? get_string(
             'lastsaved',
