@@ -70,8 +70,12 @@ if ($userid && $userid != $USER->id) {
 }
 
 // Only fetch fields needed for display – avoids exposing password hashes etc. if object is passed further.
-$viewuser = $DB->get_record('user', ['id' => $viewuserid],
-    'id,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,email', MUST_EXIST);
+$viewuser = $DB->get_record(
+    'user',
+    ['id' => $viewuserid],
+    'id,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,email',
+    MUST_EXIST
+);
 // When viewing another user, restrict to journals where viewall is explicitly granted.
 $querycms = ($viewuserid !== $USER->id) ? $viewallcms : $cms;
 $diaryids = array_keys($querycms);
