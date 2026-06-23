@@ -70,7 +70,7 @@ $templatecontext = [
         )
         : '',
     'sesskey' => sesskey(),
-    'reporturl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out(false),
+    'reporturl' => (new moodle_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id]))->out(false),
     'summaryurl' => (new moodle_url('/mod/insightjournal/summary.php', ['courseid' => $course->id]))->out(false),
     'sectionurl' => (new moodle_url('/course/view.php', ['id' => $course->id, 'section' => $sectionnum]))->out(false),
     'canviewall' => $canviewall,

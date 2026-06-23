@@ -55,7 +55,7 @@ $participants = get_enrolled_users(
     $coursecontext,
     'mod/insightjournal:submit',
     0,
-    'u.id,u.firstname,u.lastname,u.email',
+    'u.id,u.firstname,u.lastname,u.firstnamephonetic,u.lastnamephonetic,u.middlename,u.alternatename,u.email',
     'u.lastname,u.firstname'
 );
 
