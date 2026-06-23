@@ -95,7 +95,14 @@ $PAGE->set_heading(format_string($course->fullname));
 
 $rows = [];
 foreach ($entries as $entry) {
-    $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname];
+    $user = (object)[
+        'firstname' => $entry->firstname,
+        'lastname' => $entry->lastname,
+        'firstnamephonetic' => '',
+        'lastnamephonetic' => '',
+        'middlename' => '',
+        'alternatename' => '',
+    ];
     $rows[] = [
         'fullname' => fullname($user),
         'email' => $entry->email,
