@@ -66,6 +66,7 @@ $string['mysummary'] = 'Mein Insight Journal';
 $string['mysummaryfor'] = 'Insight Journal: {$a}';
 $string['noreflectionsincourse'] = 'In diesem Kurs gibt es noch keine Insight-Journal-Aktivitäten.';
 $string['backtocourse'] = 'Zurück zum Kurs';
+$string['backtolist'] = 'Zurück zur Liste';
 $string['backtoactivity'] = 'Zurück zur Aktivität';
 $string['backtosection'] = 'Zurück';
 $string['print'] = 'Drucken / als PDF speichern';

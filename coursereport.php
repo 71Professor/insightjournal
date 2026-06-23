@@ -124,7 +124,11 @@ foreach ($participants as $user) {
         'fullname' => fullname($user),
         'summaryurl' => (new moodle_url(
             '/mod/insightjournal/summary.php',
-            ['courseid' => $course->id, 'userid' => $user->id]
+            [
+                'courseid' => $course->id,
+                'userid' => $user->id,
+                'returnurl' => (new moodle_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id]))->out_as_local_url(false),
+            ]
         ))->out(false),
         'cells' => $cells,
         'progress' => $done . ' / ' . count($diaries),

@@ -108,7 +108,11 @@ foreach ($entries as $entry) {
         'email' => $entry->email,
         'summaryurl' => (new moodle_url(
             '/mod/insightjournal/summary.php',
-            ['courseid' => $course->id, 'userid' => $entry->userid]
+            [
+                'courseid' => $course->id,
+                'userid' => $entry->userid,
+                'returnurl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out_as_local_url(false),
+            ]
         ))->out(false),
         'response' => $entry->response,
         'timemodified' => userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')),

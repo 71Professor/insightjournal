@@ -27,6 +27,7 @@ require_once('../../config.php');
 
 $courseid = required_param('courseid', PARAM_INT);
 $userid = optional_param('userid', 0, PARAM_INT);
+$returnurl = optional_param('returnurl', '', PARAM_LOCALURL);
 
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 require_login($course);
@@ -110,9 +111,13 @@ foreach ($records as $record) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('mysummaryfor', 'insightjournal', fullname($viewuser)));
-echo $OUTPUT->render_from_template('mod_insightjournal/summary', [
+$templatecontext = [
     'backurl' => (new moodle_url('/course/view.php', ['id' => $courseid]))->out(false),
     'items' => $items,
     'hasitems' => !empty($items),
-]);
+];
+if ($returnurl !== '' && $viewuserid !== $USER->id) {
+    $templatecontext['listurl'] = (new moodle_url($returnurl))->out(false);
+}
+echo $OUTPUT->render_from_template('mod_insightjournal/summary', $templatecontext);
 echo $OUTPUT->footer();
