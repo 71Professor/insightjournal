@@ -27,7 +27,7 @@
  * Returns whether this module supports a given feature.
  *
  * @param string $feature FEATURE_xx constant.
- * @return bool|null True if yes, false if no, null if unknown.
+ * @return bool|string|null True/false for boolean features, string for purpose features, null if unknown.
  */
 function insightjournal_supports($feature) {
     switch ($feature) {

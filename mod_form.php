@@ -41,7 +41,7 @@ class mod_insightjournal_mod_form extends moodleform_mod {
      *
      * @return void
      */
-    public function definition() {
+    public function definition(): void {
         $mform = $this->_form;
 
         $mform->addElement('header', 'general', get_string('general', 'form'));
