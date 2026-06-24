@@ -80,6 +80,13 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $this->add_action_buttons();
     }
 
+    /**
+     * Validates the form data.
+     *
+     * @param array $data Submitted form data.
+     * @param array $files Submitted files.
+     * @return array Validation errors, keyed by field name.
+     */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
         $minchars = (int)($data['minchars'] ?? 0);
@@ -91,7 +98,7 @@ class mod_insightjournal_mod_form extends moodleform_mod {
             $errors['maxchars'] = get_string('err_numeric', 'form');
         }
         if ($maxchars > 0 && $minchars > $maxchars) {
-            $errors['minchars'] = get_string('err_numeric', 'form');
+            $errors['minchars'] = get_string('err_mingtmax', 'insightjournal');
         }
         return $errors;
     }

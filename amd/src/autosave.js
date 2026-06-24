@@ -34,13 +34,17 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
         status.className = cssclass || '';
     };
 
+    var charCount = function (str) {
+        return [...str].length;
+    };
+
     var updateCounter = function (textarea) {
         var counter = document.querySelector('[data-insightjournal-charcounter]');
         var button = document.querySelector('[data-insightjournal-save]');
         if (!counter) {
             return;
         }
-        var current = textarea.value.length;
+        var current = charCount(textarea.value);
         var over = current > maxChars;
         counter.textContent = current + ' / ' + maxChars;
         counter.className = 'small ms-auto ' + (over ? 'text-danger fw-bold' : 'text-muted');
@@ -55,7 +59,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
         if (!textarea) {
             return;
         }
-        if (maxChars > 0 && textarea.value.length > maxChars) {
+        if (maxChars > 0 && charCount(textarea.value) > maxChars) {
             return;
         }
         if (button) {
@@ -69,7 +73,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
             }])[0];
         }).then(function (result) {
             if (button) {
-                button.disabled = maxChars > 0 && textarea.value.length > maxChars;
+                button.disabled = maxChars > 0 && charCount(textarea.value) > maxChars;
             }
             return Str.get_string('savedat', 'mod_insightjournal', result.timestr);
         }).then(function (text) {
@@ -77,7 +81,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
             return text;
         }).catch(function (error) {
             if (button) {
-                button.disabled = maxChars > 0 && textarea.value.length > maxChars;
+                button.disabled = maxChars > 0 && charCount(textarea.value) > maxChars;
             }
             Str.get_string('saveerror', 'mod_insightjournal').then(function (text) {
                 setStatus(text, 'text-danger');

@@ -98,6 +98,9 @@ class provider implements
                 continue;
             }
             $diary = $DB->get_record('insightjournal', ['id' => $cm->instance]);
+            if (!$diary) {
+                continue;
+            }
             $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $userid]);
             if ($entry) {
                 $data = (object)[

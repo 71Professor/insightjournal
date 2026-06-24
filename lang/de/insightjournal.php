@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Insight Journal';
+$string['pluginadministration'] = 'Insight-Journal-Administration';
 $string['modulename'] = 'Insight Journal';
 $string['modulenameplural'] = 'Insight Journals';
 $string['modulename_help'] = 'Mit der Aktivität Insight Journal schreiben Teilnehmende Antworten auf Insight-Impulse. Trainer/innen können Einträge anzeigen und exportieren.';
@@ -81,5 +82,8 @@ $string['privacy:metadata:insightjournal_entries:response'] = 'Der Antworttext.'
 $string['privacy:metadata:insightjournal_entries:responseformat'] = 'Das Antwortformat.';
 $string['privacy:metadata:insightjournal_entries:timecreated'] = 'Zeitpunkt der Erstellung.';
 $string['privacy:metadata:insightjournal_entries:timemodified'] = 'Zeitpunkt der letzten Änderung.';
+$string['err_mingtmax'] = 'Die Mindestzeichenzahl darf die Höchstzeichenzahl nicht überschreiten.';
+$string['submitted'] = 'Eingereicht';
+$string['notsubmitted'] = 'Nicht eingereicht';
 $string['coursereport'] = 'Kurs-Insight-Journal-Bericht';
 $string['progress'] = 'Fortschritt';

@@ -93,8 +93,10 @@ function insightjournal_delete_instance($id) {
     if (!$diary = $DB->get_record('insightjournal', ['id' => $id])) {
         return false;
     }
+    $transaction = $DB->start_delegated_transaction();
     $DB->delete_records('insightjournal_entries', ['insightjournalid' => $diary->id]);
     $DB->delete_records('insightjournal', ['id' => $diary->id]);
+    $transaction->allow_commit();
     return true;
 }
 

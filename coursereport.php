@@ -116,7 +116,7 @@ foreach ($participants as $user) {
         }
         $cells[] = [
             'completed' => $completed,
-            'status' => get_string($completed ? 'completed' : 'notcompleted', 'completion'),
+            'status' => get_string($completed ? 'submitted' : 'notsubmitted', 'insightjournal'),
             'timemodified' => $completed ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
         ];
     }

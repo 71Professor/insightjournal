@@ -38,27 +38,25 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
+$sqlparams = ['diaryid' => $diary->id];
+$where = 'e.insightjournalid = :diaryid';
+if ($search !== '') {
+    $needle = '%' . $DB->sql_like_escape($search) . '%';
+    $where .= ' AND (' . $DB->sql_like('u.firstname', ':sfn', false) .
+              ' OR ' . $DB->sql_like('u.lastname', ':sln', false) .
+              ' OR ' . $DB->sql_like('u.email', ':sem', false) . ')';
+    $sqlparams['sfn'] = $needle;
+    $sqlparams['sln'] = $needle;
+    $sqlparams['sem'] = $needle;
+}
 $sql = "SELECT e.*, u.firstname, u.lastname,
                u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename,
                u.email
           FROM {insightjournal_entries} e
           JOIN {user} u ON u.id = e.userid
-         WHERE e.insightjournalid = :diaryid
+         WHERE $where
       ORDER BY u.lastname, u.firstname";
-$entries = $DB->get_records_sql($sql, ['diaryid' => $diary->id]);
-
-if ($search !== '') {
-    $needle = core_text::strtolower($search);
-    $entries = array_filter($entries, static function ($entry) use ($needle): bool {
-        $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname,
-                         'firstnamephonetic' => $entry->firstnamephonetic,
-                         'lastnamephonetic' => $entry->lastnamephonetic,
-                         'middlename' => $entry->middlename,
-                         'alternatename' => $entry->alternatename];
-        $haystack = core_text::strtolower(fullname($user) . ' ' . $entry->email);
-        return core_text::strpos($haystack, $needle) !== false;
-    });
-}
+$entries = $DB->get_records_sql($sql, $sqlparams);
 
 if ($download === 'csv') {
     require_capability('mod/insightjournal:export', $context);
@@ -98,10 +96,10 @@ foreach ($entries as $entry) {
     $user = (object)[
         'firstname' => $entry->firstname,
         'lastname' => $entry->lastname,
-        'firstnamephonetic' => '',
-        'lastnamephonetic' => '',
-        'middlename' => '',
-        'alternatename' => '',
+        'firstnamephonetic' => $entry->firstnamephonetic,
+        'lastnamephonetic' => $entry->lastnamephonetic,
+        'middlename' => $entry->middlename,
+        'alternatename' => $entry->alternatename,
     ];
     $rows[] = [
         'fullname' => fullname($user),
