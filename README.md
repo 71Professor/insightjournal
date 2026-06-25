@@ -1,79 +1,108 @@
-# mod_insightjournal - Insight Journal activity for Moodle
+# mod_insightjournal – Insight Journal for Moodle
 
-`mod_insightjournal` is a beta Moodle activity module for course-based insight prompts.
-Each activity contains one prompt. Learners save their own response, can return to edit it,
-and can open a printable course summary of their insight journal entries.
+**Version 0.2.0-beta · June 2026 · Moodle 4.5+**
+
+`mod_insightjournal` is a Moodle activity module for focused reflection prompts.
+Each activity holds one prompt. Learners write and save their own response, can return
+to edit it, and can open a printable personal summary of all their journal entries
+across the course. Trainers see all entries, track course-wide progress, and can
+export responses to CSV.
+
+> **This is a beta release** distributed to a small group of educators and Moodle
+> developers for feedback. See the [Feedback](#feedback) section below.
+
+---
 
 ## Installation
 
-1. Copy this folder to `mod/insightjournal` in a Moodle installation.
-2. Visit `Site administration > Notifications` to install or upgrade the plugin.
-3. Purge caches after changing language strings, templates, or AMD JavaScript.
-4. For production JavaScript builds, run Moodle's AMD build process from the Moodle root:
+1. Copy the `insightjournal` folder into the `mod/` directory of your Moodle
+   installation, so the path is `mod/insightjournal/`.
+2. Visit **Site administration → Notifications** — Moodle will detect the plugin
+   and run the database installation automatically.
+3. Purge caches after changing language strings, templates, or AMD JavaScript
+   (**Site administration → Development → Purge caches**).
+4. For production JavaScript builds, run Moodle's AMD build from the Moodle root:
 
    ```bash
    npx grunt amd
    ```
 
-The plugin targets Moodle 4.5+ and is currently marked `MATURITY_BETA`.
+   In development environments with `$CFG->cachejs = false` this step is not required.
+
+**Requirements:** Moodle 4.5+ · PHP 7.4+ · No Composer or Node.js runtime dependencies.
+
+---
 
 ## Trainer Workflow
 
-1. In a course, choose `Add an activity or resource > Insight Journal`.
-2. Enter the activity name, optional description, and the insight prompt.
-3. Configure autosave and the optional minimum character count.
-4. In activity completion settings, keep `Learner must save an insight journal response` enabled
-   when saved responses should mark the activity complete.
-5. Open the activity report to review entries for one prompt.
-6. Open the course insight report for progress across all Insight Journal activities.
-7. Download CSV exports where the role has `mod/insightjournal:export`.
+1. In a course, choose **Add an activity or resource → Insight Journal**.
+2. Enter the activity **name** (shown in the course navigation).
+3. Enter the **Insight prompt** — the reflection question or task for learners.
+4. Optionally enable **autosave** (response is saved after a pause in typing).
+5. Optionally set a **minimum character count** as an activity completion condition.
+6. In the **Activity completion** settings, keep *Learner must save an Insight Journal
+   response* enabled when saved responses should mark the activity complete.
+7. After the course runs, open the **activity report** to review entries for one prompt,
+   or the **course report** for progress across all Insight Journal activities.
+
+---
 
 ## Learner Workflow
 
 Learners open the activity, read the prompt, write a response, and save manually.
 If autosave is enabled, the response is saved after a short pause in typing.
-Learners can reopen and edit their saved response. The personal summary page lists all visible
-insight journal activities in the course and is suitable for browser printing.
+Learners can reopen and edit their saved response at any time. The personal summary
+page lists all their Insight Journal responses in the course and is suitable for
+browser printing (including save-as-PDF).
+
+---
 
 ## Capabilities
 
-- `mod/insightjournal:addinstance`: add an activity instance.
-- `mod/insightjournal:view`: view the activity.
-- `mod/insightjournal:submit`: save an own response.
-- `mod/insightjournal:viewown`: view own insight journal entries.
-- `mod/insightjournal:viewall`: view learner responses and reports.
-- `mod/insightjournal:export`: export report data to CSV.
+| Capability | Default roles |
+|---|---|
+| `mod/insightjournal:addinstance` | Editing teacher, Manager |
+| `mod/insightjournal:view` | Student, Teacher, Editing teacher |
+| `mod/insightjournal:submit` | Student |
+| `mod/insightjournal:viewown` | Student |
+| `mod/insightjournal:viewall` | Teacher, Editing teacher, Manager |
+| `mod/insightjournal:export` | Teacher, Editing teacher, Manager |
 
-Default archetypes:
+---
 
-- Student: view, submit, view own.
-- Teacher/editing teacher: view, view all, export.
-- Manager: all configured capabilities.
+## Reports
 
-## Data And Privacy
+- **`report.php`** — activity-level report with participant search and CSV export
+  (requires `mod/insightjournal:export`).
+- **`coursereport.php`** — course-level progress report across all Insight Journal
+  activities.
+- **`summary.php`** — personal or trainer-selected learner summary; suitable for
+  browser printing.
+
+---
+
+## Data and Privacy
 
 Insight Journal responses can contain sensitive personal content. The plugin stores:
 
 - activity configuration in `insightjournal`;
-- learner responses in `insightjournal_entries`;
-- `userid`, response text, response format, creation time, and modification time.
+- learner responses in `insightjournal_entries`:
+  `userid`, response text, response format, creation time, and modification time.
 
-The Privacy API declares stored data, exports user responses, deletes all data in a module
-context, deletes data for one approved user, and deletes data for approved user lists.
-CSV exports are restricted by capability and prefix spreadsheet-formula values to reduce
-CSV injection risk.
+The Privacy API declares stored data, exports user responses, and deletes all data
+for a module context, a single approved user, or approved user lists.
+CSV exports are restricted by capability; spreadsheet-formula values are prefixed
+to reduce CSV injection risk.
 
-## Backup And Restore
+---
 
-Moodle backup includes activity settings. Learner entries are included only when user data is
-included in the backup. Restore maps user IDs through Moodle's restore mapping and skips entries
-when the mapped user is unavailable.
+## Backup and Restore
 
-## Reports
+Moodle backup includes activity settings. Learner entries are included only when
+user data is included in the backup. Restore maps user IDs through Moodle's restore
+mapping and skips entries when the mapped user is unavailable.
 
-- `report.php`: activity-level report with participant search and CSV export.
-- `coursereport.php`: course-level progress report across insight journal activities.
-- `summary.php`: personal or trainer-selected learner summary.
+---
 
 ## Testing
 
@@ -81,39 +110,58 @@ Recommended local test flow:
 
 1. Install the plugin in a Moodle 4.5+ development site.
 2. Create a course with at least one teacher and two students.
-3. Add two insight journal activities, one with autosave enabled and one disabled.
-4. As a student, save a response, reload the activity, edit it, and confirm completion updates.
-5. As a teacher, open the activity report, search by participant, and download CSV.
+3. Add two Insight Journal activities: one with autosave enabled, one disabled.
+4. As a student: save a response, reload the activity, edit it, confirm completion
+   updates (check the completion condition with minimum characters, if set).
+5. As a teacher: open the activity report, search by participant, download CSV.
 6. Open the course report and verify progress counts.
 7. Open a learner summary as the learner and as a teacher with `viewall`.
-8. Run Moodle backup and restore once with user data and once without user data.
+8. Run Moodle backup and restore — once with user data, once without.
 9. Run privacy export and deletion for a test user.
-10. Run PHP lint, Moodle Code Checker, and Moodle PHPUnit/Behat where available.
+10. Run PHP lint, Moodle Code Checker, and PHPUnit where available.
 
-Suggested PHPUnit coverage:
+PHPUnit tests are in `tests/` and cover the custom completion rule, lib callbacks,
+the `save_entry` external function, and the Privacy API provider.
 
-- creating and updating an entry through the external API;
-- capability failures for save/report/export;
-- completion state after saving and after clearing a response;
-- Privacy API export and deletion;
-- backup/restore with and without user data.
+---
 
-## Mobile App Support
+## Known Limitations (Beta)
 
-This release does not ship a dedicated Moodle Mobile App addon (`db/mobile.php`).
-The activity is reachable in the app through its responsive web view; native in-app
-editing support is planned for a later version.
+- **No native Moodle Mobile App addon** (`db/mobile.php` is not provided). The
+  activity is usable in the app via its responsive web view; native in-app editing
+  is planned for a later version.
+- **No server-side PDF export.** The summary page uses the browser print dialog.
+  A direct PDF download is planned for a later version.
+- **PHPStan** has not yet been run in a full Moodle checkout.
+- **Behat tests** are not yet provided (PHPUnit tests are included).
+
+---
 
 ## Development Status
 
-Beta. Remaining review-hardening work:
+Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
+Outstanding work before a stable release:
 
-- Moodle Code Checker (phpcs `moodle` standard) passes;
-- PHPStan in a full Moodle checkout still to be run;
-- automated PHPUnit tests added (run via `moodle-plugin-ci`); Behat still to be added;
-- verify Moodle 4.5 and 5.x compatibility;
-- add screenshots;
-- accessibility reviewed (status live region, label associations); Bootstrap 4 classes
-  kept intentionally for Moodle 4.5 support;
-- native Moodle Mobile App addon not yet provided (see above);
-- decide whether a dedicated moderation/entry-management capability is needed in a later version.
+- [ ] Run PHPStan in a full Moodle checkout
+- [ ] Add Behat tests
+- [ ] Verify on Moodle 4.5 and 5.x (tested on 5.0.2)
+- [ ] Add screenshots for the Plugin Directory
+- [ ] Decide whether a dedicated moderation/entry-management capability is needed
+
+---
+
+## Feedback
+
+This beta is distributed to a small group of educators and Moodle developers.
+All feedback is welcome — whether you are evaluating it as a developer or as a trainer.
+
+**Particularly interested in:**
+- Is the trainer workflow intuitive enough inside Moodle?
+- Are there features missing for real-world use?
+- Does autosave behave as expected? Does the completion condition work correctly?
+- Any issues with specific Moodle versions, themes, or role configurations?
+- Code review: anything that violates Moodle coding standards or best practices?
+
+**Contact:** Michael Kohl — michaelkohl71@gmail.com
+
+**GitHub:** https://github.com/71Professor/insightjournal/issues
