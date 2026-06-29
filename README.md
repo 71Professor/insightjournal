@@ -17,16 +17,19 @@ export responses to CSV.
 
 1. Copy the `insightjournal` folder into the `mod/` directory of your Moodle
    installation, so the path is `mod/insightjournal/`.
+
 2. Visit **Site administration → Notifications** — Moodle will detect the plugin
    and run the database installation automatically.
+
 3. Purge caches after changing language strings, templates, or AMD JavaScript
    (**Site administration → Development → Purge caches**).
-4. For production JavaScript builds, run Moodle's AMD build from the Moodle root:
 
+4. For production JavaScript builds, run Moodle's AMD build from the Moodle root:
+   
    ```bash
    npx grunt amd
    ```
-
+   
    In development environments with `$CFG->cachejs = false` this step is not required.
 
 **Requirements:** Moodle 4.5+ · PHP 7.4+ · No Composer or Node.js runtime dependencies.
@@ -59,14 +62,14 @@ browser printing (including save-as-PDF).
 
 ## Capabilities
 
-| Capability | Default roles |
-|---|---|
-| `mod/insightjournal:addinstance` | Editing teacher, Manager |
-| `mod/insightjournal:view` | Student, Teacher, Editing teacher |
-| `mod/insightjournal:submit` | Student |
-| `mod/insightjournal:viewown` | Student |
-| `mod/insightjournal:viewall` | Teacher, Editing teacher, Manager |
-| `mod/insightjournal:export` | Teacher, Editing teacher, Manager |
+| Capability                       | Default roles                     |
+| -------------------------------- | --------------------------------- |
+| `mod/insightjournal:addinstance` | Editing teacher, Manager          |
+| `mod/insightjournal:view`        | Student, Teacher, Editing teacher |
+| `mod/insightjournal:submit`      | Student                           |
+| `mod/insightjournal:viewown`     | Student                           |
+| `mod/insightjournal:viewall`     | Teacher, Editing teacher, Manager |
+| `mod/insightjournal:export`      | Teacher, Editing teacher, Manager |
 
 ---
 
@@ -144,7 +147,7 @@ Outstanding work before a stable release:
 
 - [ ] Run PHPStan in a full Moodle checkout
 - [ ] Add Behat tests
-- [ ] Verify on Moodle 4.5 and 5.x (tested on 5.0.2)
+- [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory
 - [ ] Decide whether a dedicated moderation/entry-management capability is needed
 
@@ -156,6 +159,7 @@ This beta is distributed to a small group of educators and Moodle developers.
 All feedback is welcome — whether you are evaluating it as a developer or as a trainer.
 
 **Particularly interested in:**
+
 - Is the trainer workflow intuitive enough inside Moodle?
 - Are there features missing for real-world use?
 - Does autosave behave as expected? Does the completion condition work correctly?

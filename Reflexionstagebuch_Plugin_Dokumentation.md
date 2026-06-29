@@ -1,21 +1,10 @@
 # mod_insightjournal – Insight Journal für Moodle
 
-**Moodle Activity Module · Version 0.2.0-beta · Juni 2026**
+## **1 Moodle Activity Module · Version 0.2.0-beta · Juni 2026**
 
 > **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einem gezielten Impuls an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
 
 ---
-
-## 1  Was unterscheidet Insight Journal von Forum oder Tagebuch?
-
-| Merkmal | Insight Journal | Moodle-Forum | Moodle-Tagebuch |
-|---|---|---|---|
-| Einträge pro Aktivität | **1 (ein Impuls, eine Antwort)** | beliebig viele Beiträge | beliebig viele Einträge |
-| Fokus | ein konkreter Reflexionsimpuls | Diskussion | freies Schreiben |
-| Antworten für andere sichtbar? | Nein | Ja (standardmäßig) | Nein |
-| Kursweite Gesamtübersicht | **Ja – druckbar/PDF** | Nein | Nein |
-| Kursfortschrittsbericht (alle Aktivitäten) | **Ja** | Nein | Nein |
-| Mindestzeichenzahl als Abschlussbedingung | **Ja** | Nein | begrenzt |
 
 Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexionen und Portfolio-Ansätze, bei denen jede Lerneinheit einen eigenen Reflexionspunkt bekommt.
 
@@ -45,34 +34,36 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 4. Nach Änderungen an Sprachstrings, Templates oder JavaScript: **Cache bereinigen** (Website-Administration → Entwicklung → Cache löschen).
 
 > **Hinweis zu JavaScript:** Für Produktionsumgebungen sollte der AMD-Build-Prozess von Moodle ausgeführt werden:
+> 
 > ```bash
 > npx grunt amd
 > ```
+> 
 > In Entwicklungsumgebungen mit `$CFG->cachejs = false` ist das nicht notwendig.
 
 ### 3.2  Systemanforderungen
 
-| | |
-|---|---|
-| Plugin-Typ | Moodle Activity Module (`mod`) |
-| Plugin-Name | `mod_insightjournal` |
-| Moodle-Kompatibilität | Moodle 4.5+ (`requires = 2024100700`) |
-| PHP-Anforderung | PHP 7.4+ |
+|                        |                                                  |
+| ---------------------- | ------------------------------------------------ |
+| Plugin-Typ             | Moodle Activity Module (`mod`)                   |
+| Plugin-Name            | `mod_insightjournal`                             |
+| Moodle-Kompatibilität  | Moodle 4.5+ (`requires = 2024100700`)            |
+| PHP-Anforderung        | PHP 7.4+                                         |
 | Externe Abhängigkeiten | Keine (kein Composer, kein Node.js zur Laufzeit) |
-| Reifegrad | Beta (`MATURITY_BETA`) |
+| Reifegrad              | Beta (`MATURITY_BETA`)                           |
 
 ### 3.3  Rechte prüfen
 
 Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle unter **Website-Administration → Nutzer/innen → Rechte → Rollen** prüfen:
 
-| Capability | Standardmäßig vergeben an |
-|---|---|
-| `mod/insightjournal:view` | Lernende, Trainer/in |
-| `mod/insightjournal:submit` | Lernende |
-| `mod/insightjournal:viewown` | Lernende |
-| `mod/insightjournal:viewall` | Trainer/in, Editing Trainer/in, Manager/in |
-| `mod/insightjournal:export` | Trainer/in, Editing Trainer/in, Manager/in |
-| `mod/insightjournal:addinstance` | Editing Trainer/in, Manager/in |
+| Capability                       | Standardmäßig vergeben an                  |
+| -------------------------------- | ------------------------------------------ |
+| `mod/insightjournal:view`        | Lernende, Trainer/in                       |
+| `mod/insightjournal:submit`      | Lernende                                   |
+| `mod/insightjournal:viewown`     | Lernende                                   |
+| `mod/insightjournal:viewall`     | Trainer/in, Editing Trainer/in, Manager/in |
+| `mod/insightjournal:export`      | Trainer/in, Editing Trainer/in, Manager/in |
+| `mod/insightjournal:addinstance` | Editing Trainer/in, Manager/in             |
 
 ---
 
@@ -105,22 +96,15 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 Aufruf: Innerhalb der Aktivität auf **Bericht** klicken (nur für Trainer/innen sichtbar).
 
 - Zeigt alle Einträge der Kursteilnehmenden für diesen Impuls
-- Volltextsuche nach Teilnehmernamen
+- Detailansicht bei Kiick auf Teilnehmernamen
 - CSV-Export (erfordert Capability `mod/insightjournal:export`)
 
-### 6.2  Kursgesamtbericht
-
-Aufruf: **Website-Administration** (im Kurs) → **Berichte** → **Insight Journal Kursbericht** (oder direkt via `coursereport.php?id=KURS-ID`).
-
-- Zeigt alle Insight-Journal-Aktivitäten des Kurses
-- Fortschritt je Teilnehmende/r (Anzahl beantworteter Impulse)
-
-### 6.3  Persönliche Zusammenfassung
+### 6.2  Persönliche Zusammenfassung
 
 Aufruf: In der Aktivität auf **Meine Zusammenfassung** klicken.
 
 - Lernende sehen alle eigenen Antworten im Kurs
-- Trainer/innen können eine Teilnehmerin/einen Teilnehmenden auswählen und deren/dessen Zusammenfassung einsehen
+- Trainer/innen können einen Teilnehmenden auswählen und deren/dessen Zusammenfassung einsehen
 - Für den Ausdruck geeignet (Browserdruckdialog → als PDF speichern)
 
 ---
@@ -161,6 +145,7 @@ CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert.
 Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Moodle-Community zur Rückmeldung verteilt. Jedes Feedback ist willkommen – ob als Entwickler/in oder als Lehrende/r.
 
 **Was besonders interessiert:**
+
 - Ist der Trainer-Workflow in Moodle intuitiv genug?
 - Fehlen wichtige Funktionen für den realen Einsatz?
 - Verhalten sich Autosave und Abschlussbedingung erwartungsgemäß?
