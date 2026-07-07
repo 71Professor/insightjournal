@@ -40,7 +40,8 @@ class custom_completion extends activity_custom_completion {
      * @return int COMPLETION_COMPLETE or COMPLETION_INCOMPLETE.
      */
     public function get_state(string $rule): int {
-        global $DB;
+        global $DB, $CFG;
+        require_once($CFG->libdir . '/completionlib.php');
 
         $this->validate_rule($rule);
 

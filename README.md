@@ -147,6 +147,7 @@ Outstanding work before a stable release:
 
 - [ ] Run PHPStan in a full Moodle checkout
 - [ ] Add Behat tests
+- [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory
 - [ ] Decide whether a dedicated moderation/entry-management capability is needed

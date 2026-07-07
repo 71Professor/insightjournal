@@ -54,7 +54,8 @@ class save_entry extends external_api {
      * @return array Result with success flag, entry id and timestamps.
      */
     public static function execute(int $cmid, string $response): array {
-        global $DB, $USER;
+        global $DB, $USER, $CFG;
+        require_once($CFG->libdir . '/completionlib.php');
         $params = self::validate_parameters(self::execute_parameters(), ['cmid' => $cmid, 'response' => $response]);
         $cm = get_coursemodule_from_id('insightjournal', $params['cmid'], 0, false, MUST_EXIST);
         $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);

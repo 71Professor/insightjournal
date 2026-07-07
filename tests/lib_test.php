@@ -34,6 +34,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
+require_once($CFG->libdir . '/completionlib.php');
 
 /**
  * Tests for the mod_insightjournal lib.php callbacks.

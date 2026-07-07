@@ -44,6 +44,15 @@ Versions map to the `$plugin->release` value in `version.php`.
   forced `COMPLETION_COMPLETE`, which bypassed the `minchars` rule (any save,
   even an empty or too-short response, marked the activity complete and it never
   reverted). Found during browser UI testing on Moodle 5.0.2.
+- `view.php`, `save_entry`, `custom_completion::get_state()`, and
+  `insightjournal_get_coursemodule_info()` now explicitly `require_once` Moodle's
+  `completionlib.php` before using `completion_info` or any `COMPLETION_*`
+  constant, matching the convention used throughout Moodle core (e.g.
+  `mod/page/view.php`). That library is never autoloaded or included by Moodle's
+  bootstrap; production code was only working by incidentally relying on some
+  other part of the same request already having loaded it. Found by actually
+  executing the PHPUnit suite for the first time (moodle-docker, Moodle 5.0.8),
+  which has no such incidental load and failed with `Undefined constant` errors.
 
 ## [0.2.0-beta] - 2026-06-17
 

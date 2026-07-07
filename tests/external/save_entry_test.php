@@ -52,6 +52,9 @@ final class save_entry_test extends advanced_testcase {
         parent::setUp();
         $this->resetAfterTest();
 
+        global $CFG;
+        require_once($CFG->libdir . '/completionlib.php');
+
         $generator = $this->getDataGenerator();
         $this->course = $generator->create_course(['enablecompletion' => 1]);
         $this->journal = $generator->create_module('insightjournal', [

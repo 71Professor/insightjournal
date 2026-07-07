@@ -24,6 +24,7 @@
  */
 
 require_once('../../config.php');
+require_once($CFG->libdir . '/completionlib.php');
 
 $id = required_param('id', PARAM_INT);
 $cm = get_coursemodule_from_id('insightjournal', $id, 0, false, MUST_EXIST);

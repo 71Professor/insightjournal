@@ -38,6 +38,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(custom_completion::class)]
 final class custom_completion_test extends advanced_testcase {
     /**
+     * Loads the legacy completion library so the COMPLETION_* constants are defined.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        global $CFG;
+        require_once($CFG->libdir . '/completionlib.php');
+    }
+
+    /**
      * Builds a course module with an entry and returns the computed completion state.
      *
      * The state is fetched through a real cm_info object, which only carries the

@@ -107,7 +107,8 @@ function insightjournal_delete_instance($id) {
  * @return cached_cm_info|null Info object or null.
  */
 function insightjournal_get_coursemodule_info($coursemodule) {
-    global $DB;
+    global $DB, $CFG;
+    require_once($CFG->libdir . '/completionlib.php');
     if (
         !$diary = $DB->get_record(
             'insightjournal',
