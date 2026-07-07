@@ -1,0 +1,7 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#1 \$customlabel of method moodleform_mod\:\:standard_intro_elements\(\) expects null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: mod_form.php

@@ -121,10 +121,22 @@ Recommended local test flow:
 7. Open a learner summary as the learner and as a teacher with `viewall`.
 8. Run Moodle backup and restore — once with user data, once without.
 9. Run privacy export and deletion for a test user.
-10. Run PHP lint, Moodle Code Checker, and PHPUnit where available.
+10. Run PHP lint, Moodle Code Checker, PHPUnit, PHPStan, and Behat where available.
 
 PHPUnit tests are in `tests/` and cover the custom completion rule, lib callbacks,
 the `save_entry` external function, and the Privacy API provider.
+
+PHPStan (level 5) is configured via `phpstan.neon` and requires the
+[`micaherne/phpstan-moodle`](https://packagist.org/packages/micaherne/phpstan-moodle)
+extension installed in the Moodle checkout being analysed
+(`composer require --dev micaherne/phpstan-moodle`), plus `phpstan-bootstrap.php`
+to load a real site. Run from the Moodle root:
+`vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon`.
+
+Behat scenarios are in `tests/behat/insight_journal.feature` and cover the
+save/reload roundtrip and the minchars completion regression. Run via
+`php admin/tool/behat/cli/run.php --tags=@mod_insightjournal` after
+`php admin/tool/behat/cli/init.php`.
 
 ---
 
@@ -135,8 +147,9 @@ the `save_entry` external function, and the Privacy API provider.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **PHPStan** has not yet been run in a full Moodle checkout.
-- **Behat tests** are not yet provided (PHPUnit tests are included).
+- **Behat coverage is minimal**: two scenarios cover the save/reload roundtrip
+  and the minchars completion regression. Broader coverage (reports, CSV
+  export, privacy) is not yet automated.
 
 ---
 
@@ -145,8 +158,8 @@ the `save_entry` external function, and the Privacy API provider.
 Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
-- [ ] Run PHPStan in a full Moodle checkout
-- [ ] Add Behat tests
+- [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
+- [x] Add Behat tests (2 scenarios: save/reload roundtrip, completion regression) — 2026-07-07
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory

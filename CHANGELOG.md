@@ -16,6 +16,16 @@ Versions map to the `$plugin->release` value in `version.php`.
 - PHPUnit test suite (`tests/`): custom completion rule, lib callbacks, the
   `save_entry` external function, and the privacy provider, plus a test data
   generator. Includes regression tests for both completion fixes below.
+- PHPStan static analysis (`phpstan.neon`, `phpstan-bootstrap.php`, level 5),
+  using the `micaherne/phpstan-moodle` extension for Moodle-aware class/global
+  resolution. One pre-existing Moodle core PHPDoc inaccuracy
+  (`moodleform_mod::standard_intro_elements()` documents its `$customlabel`
+  parameter as `null`-only even though passing a string is the documented,
+  intended use) is baselined in `phpstan-baseline.neon` rather than worked
+  around in our code.
+- Behat acceptance tests (`tests/behat/insight_journal.feature`): the
+  save/reload roundtrip and the minchars completion regression, run against
+  Firefox via Selenium.
 
 ### Changed
 
