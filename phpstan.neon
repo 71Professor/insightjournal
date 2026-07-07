@@ -1,0 +1,9 @@
+parameters:
+    level: 5
+    paths:
+        - .
+    excludePaths:
+        - amd/build/*
+        - tests/*
+    bootstrapFiles:
+        - phpstan-bootstrap.php
