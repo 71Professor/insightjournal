@@ -38,6 +38,29 @@ function insightjournal_csv_value($value): string {
 }
 
 /**
+ * Convert stored response HTML to its visible plain-text form.
+ *
+ * Used to measure "visible characters" for minchars/maxchars and to decide
+ * whether a response is meaningfully empty. An empty rich-text editor
+ * serialises to markup like "<p></p>" or "<p><br></p>", not "", so a raw
+ * trim()/strlen() check on stored HTML is unreliable.
+ *
+ * Moodle's html_to_text() upper-cases the visible content of <b>, <strong>,
+ * <h1>-<h6> and <th> elements to convey emphasis in its plain-text output.
+ * That case transform is undesirable for a character-count/emptiness check,
+ * so those tags are unwrapped (keeping their inner text as-is) before
+ * delegating to html_to_text().
+ *
+ * @param string $html Stored response HTML (or plain text).
+ * @return string Trimmed visible text, with all markup stripped.
+ */
+function insightjournal_html_to_text(string $html): string {
+    $html = preg_replace('#</?(?:b|strong|h[1-6]|th)(?:\s[^>]*)?>#i', '', $html);
+
+    return trim(html_to_text($html, 0, false));
+}
+
+/**
  * Send standard CSV download headers.
  *
  * @param string $filename Clean file name.
