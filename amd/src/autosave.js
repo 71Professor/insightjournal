@@ -125,6 +125,7 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
     };
 
     var save = function (cmid, manual) {
+        clearTimeout(timer);
         var textarea = document.querySelector('[data-insightjournal-response]');
         var button = document.querySelector('[data-insightjournal-save]');
         if (!textarea) {
