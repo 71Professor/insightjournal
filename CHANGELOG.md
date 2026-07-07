@@ -26,6 +26,14 @@ Versions map to the `$plugin->release` value in `version.php`.
 - Behat acceptance tests (`tests/behat/insight_journal.feature`): the
   save/reload roundtrip and the minchars completion regression, run against
   Firefox via Selenium.
+- Learner responses now use Moodle's site-configured rich-text editor
+  (matching the existing prompt field) instead of a plain textarea, with a
+  view/edit toggle: a saved response renders read-only with an "Edit"
+  button, and "Save" returns to the read-only view. Responses are stored as
+  HTML (`FORMAT_HTML`) going forward; `minchars`/`maxchars` and the
+  `completionentries` completion rule are measured against visible
+  characters (HTML tags stripped), not raw markup length. No image/file
+  embedding is supported.
 
 ### Changed
 
