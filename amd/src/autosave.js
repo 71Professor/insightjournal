@@ -87,6 +87,14 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
             panel.classList.remove('d-none');
         }
         if (textarea) {
+            // Resync the poll's change-detection baseline to whatever the
+            // editor actually holds right now. Without this, lastSeenValue
+            // can be stale here (e.g. the user clicked Save less than a
+            // second after typing, before the poll had a chance to catch
+            // up), which would make the next poll tick misread the gap as a
+            // fresh edit and fire a spurious autosave a few seconds after
+            // reopening, even though nothing was typed since.
+            lastSeenValue = getCurrentValue(textarea);
             var instance = TinyEditor.getInstanceForElementId(textarea.id);
             if (instance) {
                 instance.focus();
