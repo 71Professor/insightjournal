@@ -78,7 +78,7 @@ if ($download === 'csv') {
             $entry->userid,
             insightjournal_csv_value(fullname($user)),
             insightjournal_csv_value($entry->email),
-            insightjournal_csv_value($entry->response),
+            insightjournal_csv_value(insightjournal_html_to_text($entry->response)),
             userdate($entry->timemodified),
         ]);
     }
@@ -112,7 +112,7 @@ foreach ($entries as $entry) {
                 'returnurl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out_as_local_url(false),
             ]
         ))->out(false),
-        'response' => $entry->response,
+        'response' => format_text($entry->response, $entry->responseformat, ['context' => $context]),
         'timemodified' => userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')),
     ];
 }
