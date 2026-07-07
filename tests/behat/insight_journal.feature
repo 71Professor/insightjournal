@@ -65,3 +65,15 @@ Feature: Insight journal activity
     And I press "Save"
     Then I should see "Updated response." in the "[data-insightjournal-view]" "css_element"
     And "[data-insightjournal-edit-panel]" "css_element" should not be visible
+
+  @javascript
+  Scenario: Autosave persists a change without leaving edit mode
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars | autosave |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 1        |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Drafting my reflection."
+    And I wait "6" seconds
+    Then "[data-insightjournal-edit-panel]" "css_element" should be visible
+    And "[data-insightjournal-view]" "css_element" should not be visible
+    And I should see "Saved at" in the "[data-insightjournal-status]" "css_element"
