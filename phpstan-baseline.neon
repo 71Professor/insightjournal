@@ -5,3 +5,9 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: mod_form.php
+
+		-
+			message: '#^Parameter \#2 \$format of function format_text expects int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: classes/external/save_entry.php

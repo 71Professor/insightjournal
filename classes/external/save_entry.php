@@ -103,7 +103,7 @@ class save_entry extends external_api {
             'id' => $id,
             'timemodified' => $now,
             'timestr' => $timestr,
-            'responsehtml' => format_text($response, (int) FORMAT_HTML, ['context' => $context]),
+            'responsehtml' => format_text($response, FORMAT_HTML, ['context' => $context]),
         ];
     }
 
