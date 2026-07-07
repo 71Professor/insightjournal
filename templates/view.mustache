@@ -19,11 +19,23 @@
 
     Insight journal activity main view with the prompt and the learner response area.
 
+    The response area has two mutually-exclusive panels, toggled by
+    amd/src/autosave.js: a read-only view panel (shown when a saved entry
+    exists) and an edit panel containing the rich-text editor (shown
+    otherwise, or after clicking Edit). Both panels are always rendered;
+    visibility is controlled purely via the "d-none" class so the editor
+    only needs to be attached once, at page load.
+
     Classes required for JS:
     * none
 
     Data attributes required for JS:
     * data-cmid
+    * data-insightjournal-view
+    * data-insightjournal-response-display
+    * data-insightjournal-view-status
+    * data-insightjournal-edit
+    * data-insightjournal-edit-panel
     * data-insightjournal-response
     * data-insightjournal-save
     * data-insightjournal-status
@@ -32,7 +44,9 @@
     * cmid - Course module id.
     * prompt - Pre-formatted prompt HTML (rendered via triple braces).
     * canwrite - Whether the current user may write a response.
-    * response - The user's current response text.
+    * haveentry - Whether a saved, non-empty response already exists.
+    * responseraw - The user's current response, as stored HTML (for the editor).
+    * responseformatted - The user's current response, pre-formatted for display.
     * lastsaved - Localised "last saved" status text.
     * minchars - Minimum characters required, or 0 if none.
     * maxchars - Maximum characters allowed, or 0 for no limit.
@@ -46,7 +60,9 @@
         "cmid": 5,
         "prompt": "<p>What did you learn today?</p>",
         "canwrite": true,
-        "response": "Today I learned about Mustache templates.",
+        "haveentry": true,
+        "responseraw": "<p>Today I learned about Mustache templates.</p>",
+        "responseformatted": "<p>Today I learned about Mustache templates.</p>",
         "lastsaved": "Saved 2 minutes ago",
         "minchars": 100,
         "maxchars": 500,
@@ -62,14 +78,23 @@
             {{! prompt is pre-sanitised via format_text() in PHP – triple braces intentional, never use for student response }}
             <div class="insightjournal-prompt mb-3">{{{prompt}}}</div>
             {{#canwrite}}
-                <label for="insightjournal-response-{{cmid}}" class="sr-only">{{#str}}response, mod_insightjournal{{/str}}</label>
-                <textarea id="insightjournal-response-{{cmid}}" class="form-control" rows="10" data-insightjournal-response {{#minchars}}aria-describedby="insightjournal-minchars-{{cmid}}" {{/minchars}}placeholder="{{#str}}responseplaceholder, mod_insightjournal{{/str}}">{{response}}</textarea>
-                <div class="d-flex align-items-center gap-2 mt-2">
-                    <button type="button" class="btn btn-primary" data-insightjournal-save>{{#str}}save, mod_insightjournal{{/str}}</button>
-                    <span data-insightjournal-status role="status" aria-live="polite">{{lastsaved}}</span>
-                    {{#maxchars}}<span data-insightjournal-charcounter class="small text-muted ms-auto" aria-live="polite"></span>{{/maxchars}}
+                <div data-insightjournal-view class="{{^haveentry}}d-none{{/haveentry}}">
+                    <div class="insightjournal-response-text mb-2" data-insightjournal-response-display>{{{responseformatted}}}</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-secondary" data-insightjournal-edit>{{#str}}edit{{/str}}</button>
+                        <span data-insightjournal-view-status class="small text-muted">{{lastsaved}}</span>
+                    </div>
                 </div>
-                {{#minchars}}<p id="insightjournal-minchars-{{cmid}}" class="small text-muted mt-2">{{#str}}mincharsnote, mod_insightjournal, {{minchars}}{{/str}}</p>{{/minchars}}
+                <div data-insightjournal-edit-panel class="{{#haveentry}}d-none{{/haveentry}}">
+                    <label for="insightjournal-response-{{cmid}}" class="sr-only">{{#str}}response, mod_insightjournal{{/str}}</label>
+                    <textarea id="insightjournal-response-{{cmid}}" name="insightjournalresponse" class="form-control" rows="10" cols="80" spellcheck="true" data-insightjournal-response {{#minchars}}aria-describedby="insightjournal-minchars-{{cmid}}" {{/minchars}}placeholder="{{#str}}responseplaceholder, mod_insightjournal{{/str}}">{{responseraw}}</textarea>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <button type="button" class="btn btn-primary" data-insightjournal-save>{{#str}}save, mod_insightjournal{{/str}}</button>
+                        <span data-insightjournal-status role="status" aria-live="polite">{{lastsaved}}</span>
+                        {{#maxchars}}<span data-insightjournal-charcounter class="small text-muted ms-auto" aria-live="polite"></span>{{/maxchars}}
+                    </div>
+                    {{#minchars}}<p id="insightjournal-minchars-{{cmid}}" class="small text-muted mt-2">{{#str}}mincharsnote, mod_insightjournal, {{minchars}}{{/str}}</p>{{/minchars}}
+                </div>
             {{/canwrite}}
             {{^canwrite}}
                 <div class="alert alert-info">{{#str}}readonlyteacher, mod_insightjournal{{/str}}</div>
