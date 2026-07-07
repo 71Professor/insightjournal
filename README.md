@@ -168,4 +168,4 @@ All feedback is welcome — whether you are evaluating it as a developer or as a
 
 **Contact:** Michael Kohl — michaelkohl71@gmail.com
 
-**GitHub:** https://github.com/71Professor/insightjournal/issues
+**GitHub:** https://github.com/71Professor/moodle-mod_insightjournal/issues
