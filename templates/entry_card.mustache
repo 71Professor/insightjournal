@@ -28,24 +28,26 @@
     Context variables required for this template:
     * activityname - Name of the activity the entry belongs to.
     * prompt - Pre-formatted prompt HTML (rendered via triple braces).
-    * response - The user's response text, or empty if none.
+    * hasresponse - Whether the user has entered a response.
+    * response - The user's pre-formatted response HTML (rendered via triple braces), or empty if none.
     * timemodified - Localised last modified date, or empty if none.
 
     Example context (json):
     {
         "activityname": "Week 1 reflection",
         "prompt": "<p>What did you learn today?</p>",
-        "response": "Today I learned about Mustache templates.",
+        "hasresponse": true,
+        "response": "<p>Today I learned about Mustache templates.</p>",
         "timemodified": "1 January 2026, 10:00 AM"
     }
 }}
 <div class="card mb-3">
     <div class="card-header"><strong>{{activityname}}</strong></div>
     <div class="card-body">
-        {{! prompt is pre-sanitised via format_text() in PHP – triple braces intentional, never use for student response }}
+        {{! prompt and response are pre-sanitised via format_text() in PHP – triple braces intentional }}
         <div class="mb-2">{{{prompt}}}</div>
-        {{#response}}<div class="border rounded p-3 bg-light insightjournal-response-text">{{response}}</div>{{/response}}
-        {{^response}}<div class="text-muted font-italic">{{#str}}noresponse, mod_insightjournal{{/str}}</div>{{/response}}
+        {{#hasresponse}}<div class="border rounded p-3 bg-light insightjournal-response-text">{{{response}}}</div>{{/hasresponse}}
+        {{^hasresponse}}<div class="text-muted font-italic">{{#str}}noresponse, mod_insightjournal{{/str}}</div>{{/hasresponse}}
         {{#timemodified}}<div class="small text-muted mt-2">{{timemodified}}</div>{{/timemodified}}
     </div>
 </div>

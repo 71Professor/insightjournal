@@ -24,6 +24,7 @@
  */
 
 require_once('../../config.php');
+require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 $courseid = required_param('courseid', PARAM_INT);
 $userid = optional_param('userid', 0, PARAM_INT);
@@ -83,7 +84,7 @@ $diaryids = array_keys($querycms);
 [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
 $params['userid'] = $viewuserid;
 $records = $DB->get_records_sql(
-    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, e.response, e.timemodified
+    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, e.response, e.responseformat, e.timemodified
        FROM {insightjournal} rd
   LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
       WHERE rd.id $insql
@@ -100,10 +101,15 @@ $PAGE->requires->js_call_amd('mod_insightjournal/summary', 'init');
 $items = [];
 foreach ($records as $record) {
     $modulecontext = context_module::instance($cms[$record->id]->id);
+    $rawresponse = $record->response ?? '';
+    $hasresponse = insightjournal_html_to_text($rawresponse) !== '';
     $items[] = [
         'activityname' => format_string($record->name),
         'prompt' => format_text($record->prompttext, $record->promptformat, ['context' => $modulecontext]),
-        'response' => $record->response ?? '',
+        'hasresponse' => $hasresponse,
+        'response' => $hasresponse
+            ? format_text($rawresponse, $record->responseformat, ['context' => $modulecontext])
+            : '',
         'timemodified' => !empty($record->timemodified) ?
             userdate($record->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
     ];
