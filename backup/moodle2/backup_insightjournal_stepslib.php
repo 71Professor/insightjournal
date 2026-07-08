@@ -41,7 +41,7 @@ class backup_insightjournal_activity_structure_step extends backup_activity_stru
         $userinfo = $this->get_setting_value('userinfo');
 
         $diary = new backup_nested_element('insightjournal', ['id'], [
-            'course', 'name', 'intro', 'introformat', 'prompttext', 'promptformat',
+            'course', 'name', 'intro', 'introformat', 'prompttext', 'promptformat', 'promptcolor',
             'autosave', 'minchars', 'maxchars', 'completionentries', 'timecreated', 'timemodified',
         ]);
         $entries = new backup_nested_element('entries');

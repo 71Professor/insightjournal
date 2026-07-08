@@ -34,6 +34,10 @@ Versions map to the `$plugin->release` value in `version.php`.
   `completionentries` completion rule are measured against visible
   characters (HTML tags stripped), not raw markup length. No image/file
   embedding is supported.
+- Optional `promptcolor` activity setting: a hex colour code (e.g. `#ffcc00`)
+  used as the background of the insight prompt box, on both the activity
+  view and the personal summary page. Never affects the learner's response.
+  Blank (the default) keeps today's appearance unchanged.
 
 ### Changed
 
