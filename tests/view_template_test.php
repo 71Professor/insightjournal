@@ -56,6 +56,7 @@ final class view_template_test extends advanced_testcase {
             'summaryurl' => 'https://example.com/summary.php',
             'sectionurl' => 'https://example.com/course.php',
             'canviewall' => false,
+            'promptstyle' => '',
         ], $overrides);
     }
 
@@ -99,5 +100,34 @@ final class view_template_test extends advanced_testcase {
         $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context(['canwrite' => false]));
 
         $this->assertStringNotContainsString('data-insightjournal-response', $html);
+    }
+
+    /**
+     * A configured promptstyle is rendered as a style attribute on the prompt box.
+     */
+    public function test_prompt_style_applied_when_configured(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context([
+            'promptstyle' => 'background-color: #ffcc00;',
+        ]));
+
+        $this->assertStringContainsString(
+            'class="insightjournal-prompt mb-3" style="background-color: #ffcc00;"',
+            $html
+        );
+    }
+
+    /**
+     * With no promptstyle configured, the prompt box has no style attribute.
+     */
+    public function test_prompt_style_absent_by_default(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context());
+
+        $this->assertDoesNotMatchRegularExpression('/insightjournal-prompt[^>]*style=/', $html);
     }
 }

@@ -36,9 +36,10 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 /**
- * Tests for {@see \insightjournal_html_to_text()}.
+ * Tests for {@see \insightjournal_html_to_text()} and {@see \insightjournal_prompt_style()}.
  */
 #[CoversFunction('insightjournal_html_to_text')]
+#[CoversFunction('insightjournal_prompt_style')]
 final class locallib_test extends advanced_testcase {
     /**
      * Tags are stripped but visible text survives.
@@ -79,5 +80,36 @@ final class locallib_test extends advanced_testcase {
         $text = \insightjournal_html_to_text('<ul><li>one</li><li>two</li></ul>');
         $this->assertStringContainsString('one', $text);
         $this->assertStringContainsString('two', $text);
+    }
+
+    /**
+     * A 6-digit hex colour with a leading hash produces a background-colour style.
+     */
+    public function test_prompt_style_with_six_digit_hex(): void {
+        $style = \insightjournal_prompt_style('#ffcc00');
+        $this->assertStringContainsString('background-color: #ffcc00;', $style);
+    }
+
+    /**
+     * A 3-digit hex colour missing its leading hash is normalised.
+     */
+    public function test_prompt_style_normalises_missing_hash(): void {
+        $style = \insightjournal_prompt_style('abc');
+        $this->assertStringContainsString('background-color: #abc;', $style);
+    }
+
+    /**
+     * Invalid colour values produce no style at all.
+     */
+    public function test_prompt_style_rejects_invalid_colour(): void {
+        $this->assertEquals('', \insightjournal_prompt_style('notacolor'));
+    }
+
+    /**
+     * Empty or null input produces no style, meaning "use the default appearance".
+     */
+    public function test_prompt_style_empty_for_blank_input(): void {
+        $this->assertEquals('', \insightjournal_prompt_style(''));
+        $this->assertEquals('', \insightjournal_prompt_style(null));
     }
 }

@@ -43,6 +43,8 @@ require_once($CFG->libdir . '/completionlib.php');
 #[CoversFunction('insightjournal_delete_instance')]
 #[CoversFunction('insightjournal_get_coursemodule_info')]
 #[CoversFunction('insightjournal_get_completion_active_rule_descriptions')]
+#[CoversFunction('insightjournal_add_instance')]
+#[CoversFunction('insightjournal_update_instance')]
 final class lib_test extends advanced_testcase {
     /**
      * insightjournal_supports() reports the expected feature support.
@@ -125,6 +127,43 @@ final class lib_test extends advanced_testcase {
 
         $this->assertNotNull($info);
         $this->assertTrue(empty($info->customdata['customcompletionrules']));
+    }
+
+    /**
+     * A promptcolor missing its leading hash is normalised on instance creation.
+     */
+    public function test_add_instance_normalises_promptcolor_without_hash(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $journal = $this->getDataGenerator()->create_module('insightjournal', [
+            'course' => $course->id,
+            'promptcolor' => 'ffcc00',
+        ]);
+
+        $stored = $DB->get_record('insightjournal', ['id' => $journal->id]);
+        $this->assertEquals('#ffcc00', $stored->promptcolor);
+    }
+
+    /**
+     * A promptcolor missing its leading hash is normalised on instance update.
+     */
+    public function test_update_instance_normalises_promptcolor_without_hash(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $journal = $this->getDataGenerator()->create_module('insightjournal', ['course' => $course->id]);
+
+        $update = (object) [
+            'instance' => $journal->id,
+            'promptcolor' => 'abc',
+        ];
+        insightjournal_update_instance($update);
+
+        $stored = $DB->get_record('insightjournal', ['id' => $journal->id]);
+        $this->assertEquals('#abc', $stored->promptcolor);
     }
 
     /**

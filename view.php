@@ -90,6 +90,7 @@ $sectionnum = $modinfo->get_cm($cm->id)->sectionnum;
 $templatecontext = [
     'cmid' => $cm->id,
     'prompt' => format_text($diary->prompttext, $diary->promptformat, ['context' => $context]),
+    'promptstyle' => insightjournal_prompt_style($diary->promptcolor ?? ''),
     'canwrite' => $canwrite,
     'haveentry' => $haveentry,
     'responseraw' => $responseraw,

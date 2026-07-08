@@ -84,7 +84,7 @@ $diaryids = array_keys($querycms);
 [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
 $params['userid'] = $viewuserid;
 $records = $DB->get_records_sql(
-    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, e.response, e.responseformat, e.timemodified
+    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, e.response, e.responseformat, e.timemodified
        FROM {insightjournal} rd
   LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
       WHERE rd.id $insql
@@ -106,6 +106,7 @@ foreach ($records as $record) {
     $items[] = [
         'activityname' => format_string($record->name),
         'prompt' => format_text($record->prompttext, $record->promptformat, ['context' => $modulecontext]),
+        'promptstyle' => insightjournal_prompt_style($record->promptcolor ?? ''),
         'hasresponse' => $hasresponse,
         'response' => $hasresponse
             ? format_text($rawresponse, $record->responseformat, ['context' => $modulecontext])

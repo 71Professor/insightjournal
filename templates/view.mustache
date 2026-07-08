@@ -43,6 +43,7 @@
     Context variables required for this template:
     * cmid - Course module id.
     * prompt - Pre-formatted prompt HTML (rendered via triple braces).
+    * promptstyle - Inline CSS for the prompt box background colour, or '' for none.
     * canwrite - Whether the current user may write a response.
     * haveentry - Whether a saved, non-empty response already exists.
     * responseraw - The user's current response, as stored HTML (for the editor).
@@ -59,6 +60,7 @@
     {
         "cmid": 5,
         "prompt": "<p>What did you learn today?</p>",
+        "promptstyle": "",
         "canwrite": true,
         "haveentry": true,
         "responseraw": "<p>Today I learned about Mustache templates.</p>",
@@ -76,7 +78,7 @@
     <div class="card mb-3">
         <div class="card-body">
             {{! prompt is pre-sanitised via format_text() in PHP – triple braces intentional, never use for student response }}
-            <div class="insightjournal-prompt mb-3">{{{prompt}}}</div>
+            <div class="insightjournal-prompt mb-3"{{#promptstyle}} style="{{promptstyle}}"{{/promptstyle}}>{{{prompt}}}</div>
             {{#canwrite}}
                 <div data-insightjournal-view class="{{^haveentry}}d-none{{/haveentry}}">
                     <div class="insightjournal-response-text mb-2" data-insightjournal-response-display>{{{responseformatted}}}</div>

@@ -61,6 +61,24 @@ function insightjournal_html_to_text(string $html): string {
 }
 
 /**
+ * Build an inline CSS style for the insight prompt box's background colour.
+ *
+ * @param string|null $hexcolor Hex colour code (e.g. "#ffcc00" or "abc"), or empty/null for none.
+ * @return string Inline style attribute value, or '' if no valid colour is set.
+ */
+function insightjournal_prompt_style(?string $hexcolor): string {
+    $hexcolor = trim((string)$hexcolor);
+    if ($hexcolor === '' || !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $hexcolor)) {
+        return '';
+    }
+    if ($hexcolor[0] !== '#') {
+        $hexcolor = '#' . $hexcolor;
+    }
+
+    return "background-color: {$hexcolor}; padding: 0.75rem 1rem; border-radius: 0.25rem;";
+}
+
+/**
  * Send standard CSV download headers.
  *
  * @param string $filename Clean file name.
