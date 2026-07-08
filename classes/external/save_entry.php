@@ -42,7 +42,7 @@ class save_entry extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module id'),
-            'response' => new external_value(PARAM_TEXT, 'Learner response'),
+            'response' => new external_value(PARAM_RAW, 'Learner response (HTML)'),
         ]);
     }
 
@@ -50,12 +50,13 @@ class save_entry extends external_api {
      * Saves or updates the entry for the current user and updates completion.
      *
      * @param int $cmid Course module id.
-     * @param string $response Learner response text.
-     * @return array Result with success flag, entry id and timestamps.
+     * @param string $response Learner response HTML.
+     * @return array Result with success flag, entry id, timestamps, and rendered HTML.
      */
     public static function execute(int $cmid, string $response): array {
         global $DB, $USER, $CFG;
         require_once($CFG->libdir . '/completionlib.php');
+        require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
         $params = self::validate_parameters(self::execute_parameters(), ['cmid' => $cmid, 'response' => $response]);
         $cm = get_coursemodule_from_id('insightjournal', $params['cmid'], 0, false, MUST_EXIST);
         $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -65,14 +66,15 @@ class save_entry extends external_api {
         require_login($course, false, $cm);
         require_capability('mod/insightjournal:submit', $context);
         $now = time();
-        $response = clean_param($params['response'], PARAM_TEXT);
-        if (!empty($diary->maxchars) && \core_text::strlen($response) > (int)$diary->maxchars) {
+        $response = clean_param($params['response'], PARAM_CLEANHTML);
+        $visiblelength = \core_text::strlen(insightjournal_html_to_text($response));
+        if (!empty($diary->maxchars) && $visiblelength > (int)$diary->maxchars) {
             throw new \moodle_exception('maxcharserror', 'mod_insightjournal', '', (int)$diary->maxchars);
         }
         $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
         if ($entry) {
             $entry->response = $response;
-            $entry->responseformat = FORMAT_PLAIN;
+            $entry->responseformat = FORMAT_HTML;
             $entry->timemodified = $now;
             $DB->update_record('insightjournal_entries', $entry);
             $id = $entry->id;
@@ -81,7 +83,7 @@ class save_entry extends external_api {
                 'insightjournalid' => $diary->id,
                 'userid' => $USER->id,
                 'response' => $response,
-                'responseformat' => FORMAT_PLAIN,
+                'responseformat' => FORMAT_HTML,
                 'timecreated' => $now,
                 'timemodified' => $now,
             ]);
@@ -96,7 +98,13 @@ class save_entry extends external_api {
         }
 
         $timestr = userdate($now, get_string('strftimedatetimeshort', 'langconfig'));
-        return ['success' => true, 'id' => $id, 'timemodified' => $now, 'timestr' => $timestr];
+        return [
+            'success' => true,
+            'id' => $id,
+            'timemodified' => $now,
+            'timestr' => $timestr,
+            'responsehtml' => format_text($response, FORMAT_HTML, ['context' => $context]),
+        ];
     }
 
     /**
@@ -110,6 +118,7 @@ class save_entry extends external_api {
             'id' => new external_value(PARAM_INT, 'Entry id'),
             'timemodified' => new external_value(PARAM_INT, 'Unix timestamp'),
             'timestr' => new external_value(PARAM_TEXT, 'Formatted timestamp'),
+            'responsehtml' => new external_value(PARAM_RAW, 'The saved response, cleaned and rendered for display'),
         ]);
     }
 }

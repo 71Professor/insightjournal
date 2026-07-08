@@ -5,3 +5,21 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: mod_form.php
+
+		-
+			message: '#^Parameter \#2 \$format of function format_text expects int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: classes/external/save_entry.php
+
+		-
+			message: '#^Parameter \#1 \$format of function editors_get_preferred_editor expects int\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: view.php
+
+		-
+			message: '#^Parameter \#3 \$fpoptions of method texteditor\:\:use_editor\(\) expects obejct\|null, array given\.$#'
+			identifier: argument.type
+			count: 1
+			path: view.php

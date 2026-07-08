@@ -137,6 +137,27 @@ final class custom_completion_test extends advanced_testcase {
     }
 
     /**
+     * An empty rich-text editor shell (no visible text) does not complete.
+     */
+    public function test_empty_html_shell_is_incomplete(): void {
+        $this->resetAfterTest();
+        $this->assertEquals(COMPLETION_INCOMPLETE, $this->compute_state(0, '<p></p>'));
+        $this->assertEquals(COMPLETION_INCOMPLETE, $this->compute_state(0, '<p><br></p>'));
+    }
+
+    /**
+     * minchars counts visible characters, not HTML markup.
+     */
+    public function test_minchars_counts_visible_text_not_markup(): void {
+        $this->resetAfterTest();
+        // 5 visible characters ("hello") wrapped in markup meets a 5-character minimum.
+        $this->assertEquals(
+            COMPLETION_COMPLETE,
+            $this->compute_state(5, '<p><strong><em>hello</em></strong></p>')
+        );
+    }
+
+    /**
      * The plugin defines exactly the completionentries rule.
      */
     public function test_get_defined_custom_rules(): void {

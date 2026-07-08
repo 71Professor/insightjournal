@@ -42,6 +42,7 @@ class custom_completion extends activity_custom_completion {
     public function get_state(string $rule): int {
         global $DB, $CFG;
         require_once($CFG->libdir . '/completionlib.php');
+        require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
         $this->validate_rule($rule);
 
@@ -62,11 +63,16 @@ class custom_completion extends activity_custom_completion {
             'response'
         );
 
-        if (!$entry || trim((string)$entry->response) === '') {
+        if (!$entry) {
             return COMPLETION_INCOMPLETE;
         }
 
-        $meetsminchars = \core_text::strlen(trim($entry->response)) >= (int)$diary->minchars;
+        $visibletext = \insightjournal_html_to_text($entry->response);
+        if ($visibletext === '') {
+            return COMPLETION_INCOMPLETE;
+        }
+
+        $meetsminchars = \core_text::strlen($visibletext) >= (int)$diary->minchars;
         return $meetsminchars ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
     }
 

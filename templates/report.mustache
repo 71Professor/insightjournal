@@ -36,7 +36,7 @@
         * summaryurl - URL to the participant's personal summary.
         * fullname - Participant full name.
         * email - Participant email.
-        * response - Response text.
+        * response - Pre-formatted response HTML (rendered via triple braces).
         * timemodified - Localised last modified date.
 
     Example context (json):
@@ -52,7 +52,7 @@
                 "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2&userid=3",
                 "fullname": "Jane Doe",
                 "email": "jane@example.com",
-                "response": "Today I learned about Mustache templates.",
+                "response": "<p>Today I learned about Mustache templates.</p>",
                 "timemodified": "1 January 2026, 10:00 AM"
             }
         ]
@@ -91,7 +91,7 @@
                             <a href="{{summaryurl}}">{{fullname}}</a>
                             <div class="small text-muted">{{email}}</div>
                         </td>
-                        <td><div class="insightjournal-response-text">{{response}}</div></td>
+                        <td><div class="insightjournal-response-text">{{{response}}}</div></td>
                         <td>{{timemodified}}</td>
                     </tr>
                 {{/rows}}

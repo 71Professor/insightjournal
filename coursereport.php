@@ -85,7 +85,7 @@ if ($download === 'csv') {
                 $user->id,
                 insightjournal_csv_value(fullname($user)),
                 insightjournal_csv_value($user->email),
-                insightjournal_csv_value($entry->response ?? ''),
+                insightjournal_csv_value(insightjournal_html_to_text($entry->response ?? '')),
                 $entry ? userdate($entry->timemodified) : '',
             ]);
         }
@@ -110,7 +110,7 @@ foreach ($participants as $user) {
     $cells = [];
     foreach ($diaries as $diary) {
         $entry = $entries[$user->id][$diary->id] ?? null;
-        $completed = $entry && trim((string)$entry->response) !== '';
+        $completed = $entry && insightjournal_html_to_text($entry->response) !== '';
         if ($completed) {
             $done++;
         }

@@ -90,7 +90,7 @@ final class save_entry_test extends advanced_testcase {
     }
 
     /**
-     * A first save persists the entry for the current user.
+     * A first save persists the entry for the current user, as HTML.
      */
     public function test_save_creates_entry(): void {
         global $DB;
@@ -103,7 +103,9 @@ final class save_entry_test extends advanced_testcase {
             'userid' => $this->student->id,
         ]);
         $this->assertCount(1, $entries);
-        $this->assertEquals('short', reset($entries)->response);
+        $entry = reset($entries);
+        $this->assertEquals('short', $entry->response);
+        $this->assertEquals(FORMAT_HTML, (int) $entry->responseformat);
     }
 
     /**
@@ -154,5 +156,65 @@ final class save_entry_test extends advanced_testcase {
 
         $this->save('tiny');
         $this->assertEquals(COMPLETION_INCOMPLETE, $this->completionstate());
+    }
+
+    /**
+     * Allowed formatting tags survive HTML cleaning and are stored as-is.
+     */
+    public function test_html_formatting_is_preserved(): void {
+        global $DB;
+
+        $this->save('<p>Hello <strong>world</strong></p>');
+
+        $entry = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertStringContainsString('<strong>world</strong>', $entry->response);
+    }
+
+    /**
+     * Disallowed tags (e.g. script) are stripped by the server-side HTML cleaner.
+     */
+    public function test_script_tags_are_stripped(): void {
+        global $DB;
+
+        $this->save('<p>Hello</p><script>alert(1)</script>');
+
+        $entry = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertStringNotContainsString('<script', $entry->response);
+        $this->assertStringContainsString('Hello', $entry->response);
+    }
+
+    /**
+     * The return value includes the cleaned response, formatted for display.
+     */
+    public function test_returns_formatted_response_html(): void {
+        $result = $this->save('<p>Hello <strong>world</strong></p>');
+
+        $this->assertStringContainsString('<strong>world</strong>', $result['responsehtml']);
+    }
+
+    /**
+     * maxchars counts visible characters, not HTML markup.
+     */
+    public function test_maxchars_counts_visible_text_not_markup(): void {
+        $generator = $this->getDataGenerator();
+        $journal = $generator->create_module('insightjournal', [
+            'course' => $this->course->id,
+            'maxchars' => 10,
+        ]);
+
+        // Heavy markup, but only 5 visible characters: fits within maxchars.
+        $result = save_entry::execute((int) $journal->cmid, '<p><strong><em>hello</em></strong></p>');
+        $result = external_api::clean_returnvalue(save_entry::execute_returns(), $result);
+        $this->assertTrue($result['success']);
+
+        // 12 visible characters, no markup at all: exceeds maxchars of 10.
+        $this->expectException(\moodle_exception::class);
+        save_entry::execute((int) $journal->cmid, 'twelve chars');
     }
 }

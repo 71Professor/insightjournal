@@ -47,6 +47,23 @@ function insightjournal_supports($feature) {
 }
 
 /**
+ * Normalise a stored promptcolor value to a lowercase hex code with a leading hash.
+ *
+ * @param string $promptcolor Raw colour value, as submitted by the form.
+ * @return string Normalised colour (e.g. "#ffcc00"), or '' if blank.
+ */
+function insightjournal_normalise_promptcolor(string $promptcolor): string {
+    $promptcolor = trim($promptcolor);
+    if ($promptcolor === '') {
+        return '';
+    }
+    if ($promptcolor[0] !== '#') {
+        $promptcolor = '#' . $promptcolor;
+    }
+    return strtolower($promptcolor);
+}
+
+/**
  * Adds a new insight journal instance.
  *
  * @param stdClass $data Form data.
@@ -60,6 +77,9 @@ function insightjournal_add_instance($data, $mform = null) {
     if (isset($data->prompttext_editor)) {
         $data->prompttext = $data->prompttext_editor['text'];
         $data->promptformat = $data->prompttext_editor['format'];
+    }
+    if (isset($data->promptcolor)) {
+        $data->promptcolor = insightjournal_normalise_promptcolor($data->promptcolor);
     }
     return $DB->insert_record('insightjournal', $data);
 }
@@ -78,6 +98,9 @@ function insightjournal_update_instance($data, $mform = null) {
     if (isset($data->prompttext_editor)) {
         $data->prompttext = $data->prompttext_editor['text'];
         $data->promptformat = $data->prompttext_editor['format'];
+    }
+    if (isset($data->promptcolor)) {
+        $data->promptcolor = insightjournal_normalise_promptcolor($data->promptcolor);
     }
     return $DB->update_record('insightjournal', $data);
 }

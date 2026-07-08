@@ -38,6 +38,47 @@ function insightjournal_csv_value($value): string {
 }
 
 /**
+ * Convert stored response HTML to its visible plain-text form.
+ *
+ * Used to measure "visible characters" for minchars/maxchars and to decide
+ * whether a response is meaningfully empty. An empty rich-text editor
+ * serialises to markup like "<p></p>" or "<p><br></p>", not "", so a raw
+ * trim()/strlen() check on stored HTML is unreliable.
+ *
+ * Moodle's html_to_text() upper-cases the visible content of <b>, <strong>,
+ * <h1>-<h6> and <th> elements to convey emphasis in its plain-text output.
+ * That case transform is undesirable for a character-count/emptiness check,
+ * so those tags are unwrapped (keeping their inner text as-is) before
+ * delegating to html_to_text().
+ *
+ * @param string $html Stored response HTML (or plain text).
+ * @return string Trimmed visible text, with all markup stripped.
+ */
+function insightjournal_html_to_text(string $html): string {
+    $html = preg_replace('#</?(?:b|strong|h[1-6]|th)(?:\s[^>]*)?>#i', '', $html);
+
+    return trim(html_to_text($html, 0, false));
+}
+
+/**
+ * Build an inline CSS style for the insight prompt box's background colour.
+ *
+ * @param string|null $hexcolor Hex colour code (e.g. "#ffcc00" or "abc"), or empty/null for none.
+ * @return string Inline style attribute value, or '' if no valid colour is set.
+ */
+function insightjournal_prompt_style(?string $hexcolor): string {
+    $hexcolor = trim((string)$hexcolor);
+    if ($hexcolor === '' || !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $hexcolor)) {
+        return '';
+    }
+    if ($hexcolor[0] !== '#') {
+        $hexcolor = '#' . $hexcolor;
+    }
+
+    return "background-color: {$hexcolor}; padding: 0.75rem 1rem; border-radius: 0.25rem;";
+}
+
+/**
  * Send standard CSV download headers.
  *
  * @param string $filename Clean file name.

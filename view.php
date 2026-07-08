@@ -25,6 +25,12 @@
 
 require_once('../../config.php');
 require_once($CFG->libdir . '/completionlib.php');
+require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
+// Needed by editors_get_preferred_editor()->use_editor() below: unlike the mform
+// 'editor' element (see mod_form.php), which pulls this in itself via
+// lib/form/editor.php, calling use_editor() directly does not. Without it,
+// FILE_EXTERNAL is undefined and TinyMCE's media plugin fatals.
+require_once($CFG->dirroot . '/repository/lib.php');
 
 $id = required_param('id', PARAM_INT);
 $cm = get_coursemodule_from_id('insightjournal', $id, 0, false, MUST_EXIST);
@@ -44,6 +50,31 @@ $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary
 $canwrite = has_capability('mod/insightjournal:submit', $context);
 $canviewall = has_capability('mod/insightjournal:viewall', $context);
 
+$responseraw = $entry ? $entry->response : '';
+$haveentry = insightjournal_html_to_text($responseraw) !== '';
+
+if ($canwrite) {
+    // Same restriction options as the prompt field's editor (mod_form.php): no
+    // file/image attachments, content is never trusted.
+    $editoroptions = [
+        'subdirs' => false,
+        'maxbytes' => 0,
+        'maxfiles' => 0,
+        'changeformat' => 0,
+        'areamaxbytes' => FILE_AREA_MAX_BYTES_UNLIMITED,
+        'context' => $context,
+        'noclean' => 0,
+        'trusttext' => false,
+        'trusted' => false,
+        'return_types' => 15,
+        'enable_filemanagement' => true,
+        'removeorphaneddrafts' => false,
+        'autosave' => true,
+    ];
+    editors_head_setup();
+    editors_get_preferred_editor(FORMAT_HTML)->use_editor('insightjournal-response-' . $cm->id, $editoroptions, []);
+}
+
 $completion = new completion_info($course);
 $completion->set_module_viewed($cm);
 
@@ -59,8 +90,13 @@ $sectionnum = $modinfo->get_cm($cm->id)->sectionnum;
 $templatecontext = [
     'cmid' => $cm->id,
     'prompt' => format_text($diary->prompttext, $diary->promptformat, ['context' => $context]),
-    'response' => $entry ? $entry->response : '',
+    'promptstyle' => insightjournal_prompt_style($diary->promptcolor ?? ''),
     'canwrite' => $canwrite,
+    'haveentry' => $haveentry,
+    'responseraw' => $responseraw,
+    'responseformatted' => $haveentry
+        ? format_text($responseraw, $entry->responseformat, ['context' => $context])
+        : '',
     'autosave' => (bool)$diary->autosave,
     'minchars' => (int)$diary->minchars,
     'maxchars' => (int)($diary->maxchars ?? 0),

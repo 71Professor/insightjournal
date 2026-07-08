@@ -62,6 +62,10 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $mform->addRule('prompttext_editor', null, 'required', null, 'client');
         $mform->addHelpButton('prompttext_editor', 'prompttext', 'insightjournal');
 
+        $mform->addElement('text', 'promptcolor', get_string('promptcolor', 'insightjournal'), ['size' => 10]);
+        $mform->setType('promptcolor', PARAM_RAW);
+        $mform->addHelpButton('promptcolor', 'promptcolor', 'insightjournal');
+
         $mform->addElement('advcheckbox', 'autosave', get_string('autosave', 'insightjournal'));
         $mform->setDefault('autosave', 1);
         $mform->addHelpButton('autosave', 'autosave', 'insightjournal');
@@ -99,6 +103,10 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         }
         if ($maxchars > 0 && $minchars > $maxchars) {
             $errors['minchars'] = get_string('err_mingtmax', 'insightjournal');
+        }
+        $promptcolor = trim((string)($data['promptcolor'] ?? ''));
+        if ($promptcolor !== '' && !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $promptcolor)) {
+            $errors['promptcolor'] = get_string('err_invalidcolor', 'insightjournal');
         }
         return $errors;
     }

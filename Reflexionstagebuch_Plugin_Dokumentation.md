@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal für Moodle
 
-## **1 Moodle Activity Module · Version 0.2.0-beta · Juni 2026**
+## **1 Moodle Activity Module · Version 0.3.0-beta · Juli 2026**
 
 > **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einem gezielten Impuls an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
 
@@ -72,17 +72,18 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 1. Im Kurs auf **Aktivität oder Material anlegen** klicken und **Insight Journal** wählen.
 2. **Name** der Aktivität eingeben (erscheint in der Kursnavigation).
 3. **Insight-Impuls** formulieren – das ist die Reflexionsfrage oder -aufgabe für die Lernenden.
-4. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
-5. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht.
-6. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
-7. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht.
+4. Optional: **Hintergrundfarbe des Impulses** als Hex-Code festlegen (z. B. `#ffcc00`), um den Impuls überall dort, wo er angezeigt wird, optisch von der Antwort der/des Lernenden abzuheben.
+5. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
+6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird.
+7. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
+8. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht.
 
 ---
 
 ## 5  Lernenden-Workflow
 
 1. Insight-Journal-Aktivität im Kurs öffnen.
-2. Impuls lesen, Antwort im Textfeld eingeben.
+2. Impuls lesen, Antwort im Rich-Text-Editor von Moodle eingeben.
 3. Auf **Speichern** klicken – oder bei aktiviertem Autosave einfach einige Sekunden aufhören zu tippen.
 4. Aktivität kann jederzeit wieder geöffnet und die Antwort überarbeitet werden.
 5. Am Kursende: **Persönliche Zusammenfassung** öffnen – alle Antworten auf einer Seite, geeignet für den Browser-Druckdialog (inkl. PDF-Export über den Browser).
@@ -135,8 +136,7 @@ CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert.
 
 - **Keine native Moodle-App-Unterstützung:** Es gibt kein `db/mobile.php`. Die Aktivität ist in der Moodle-App über die responsive Webansicht nutzbar; eine native App-Integration ist für eine spätere Version geplant.
 - **Kein Server-seitiger PDF-Export:** Die Druckfunktion nutzt den Browserdruckdialog. Ein direkter PDF-Download ist für eine spätere Version geplant.
-- **PHPStan:** Noch nicht in einem vollständigen Moodle-Checkout ausgeführt.
-- **Behat-Tests:** Noch nicht vorhanden (PHPUnit-Tests sind enthalten).
+- **Behat-Testabdeckung ist begrenzt:** Vier Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave und die Mindestzeichenzahl-Abschlussregel ab. Umfassendere Abdeckung (Berichte, CSV-Export, Datenschutz) ist noch nicht automatisiert.
 
 ---
 
@@ -158,4 +158,4 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 ---
 
-*Erstellt: Juni 2026 · Plugin: mod_insightjournal v0.2.0-beta*
+*Erstellt: Juli 2026 · Plugin: mod_insightjournal v0.3.0-beta*

@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal for Moodle
 
-**Version 0.2.0-beta · June 2026 · Moodle 4.5+**
+**Version 0.3.0-beta · July 2026 · Moodle 4.5+**
 
 `mod_insightjournal` is a Moodle activity module for focused reflection prompts.
 Each activity holds one prompt. Learners write and save their own response, can return
@@ -41,19 +41,23 @@ export responses to CSV.
 1. In a course, choose **Add an activity or resource → Insight Journal**.
 2. Enter the activity **name** (shown in the course navigation).
 3. Enter the **Insight prompt** — the reflection question or task for learners.
-4. Optionally enable **autosave** (response is saved after a pause in typing).
-5. Optionally set a **minimum character count** as an activity completion condition.
-6. In the **Activity completion** settings, keep *Learner must save an Insight Journal
+4. Optionally set a **prompt background colour** (a hex code, e.g. `#ffcc00`) to set the
+   prompt visually apart from the learner's response, wherever it is shown.
+5. Optionally enable **autosave** (response is saved after a pause in typing).
+6. Optionally set a **minimum character count** as an activity completion condition,
+   and/or a **maximum character count**, enforced with a live counter as learners type.
+7. In the **Activity completion** settings, keep *Learner must save an Insight Journal
    response* enabled when saved responses should mark the activity complete.
-7. After the course runs, open the **activity report** to review entries for one prompt,
+8. After the course runs, open the **activity report** to review entries for one prompt,
    or the **course report** for progress across all Insight Journal activities.
 
 ---
 
 ## Learner Workflow
 
-Learners open the activity, read the prompt, write a response, and save manually.
-If autosave is enabled, the response is saved after a short pause in typing.
+Learners open the activity, read the prompt, write a response using Moodle's
+rich-text editor, and save manually. If autosave is enabled, the response is
+saved after a short pause in typing.
 Learners can reopen and edit their saved response at any time. The personal summary
 page lists all their Insight Journal responses in the course and is suitable for
 browser printing (including save-as-PDF).
@@ -134,9 +138,10 @@ to load a real site. Run from the Moodle root:
 `vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon`.
 
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover the
-save/reload roundtrip and the minchars completion regression. Run via
-`php admin/tool/behat/cli/run.php --tags=@mod_insightjournal` after
-`php admin/tool/behat/cli/init.php`.
+save/reload roundtrip, editing a previously saved response, autosave
+persisting a change without leaving edit mode, and the minchars completion
+regression. Run via `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
+after `php admin/tool/behat/cli/init.php`.
 
 ---
 
@@ -147,9 +152,10 @@ save/reload roundtrip and the minchars completion regression. Run via
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is minimal**: two scenarios cover the save/reload roundtrip
-  and the minchars completion regression. Broader coverage (reports, CSV
-  export, privacy) is not yet automated.
+- **Behat coverage is limited**: four scenarios cover the save/reload
+  roundtrip, editing a saved response, autosave, and the minchars completion
+  regression. Broader coverage (reports, CSV export, privacy) is not yet
+  automated.
 
 ---
 
@@ -159,7 +165,8 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (2 scenarios: save/reload roundtrip, completion regression) — 2026-07-07
+- [x] Add Behat tests (4 scenarios: save/reload roundtrip, editing a saved
+      response, autosave, completion regression) — 2026-07-07
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory
