@@ -24,6 +24,7 @@
  */
 
 require_once('../../config.php');
+require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 $courseid = required_param('courseid', PARAM_INT);
@@ -59,11 +60,16 @@ $participants = get_enrolled_users(
     'u.lastname,u.firstname'
 );
 
-$entriesvisible = insightjournal_entries_visible_to_teacher();
+$visiblediaryids = [];
+foreach ($diaries as $diary) {
+    if (insightjournal_entries_visible_to_teacher($diary)) {
+        $visiblediaryids[] = $diary->id;
+    }
+}
 
 $entries = [];
-if ($entriesvisible) {
-    [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
+if (!empty($visiblediaryids)) {
+    [$insql, $params] = $DB->get_in_or_equal($visiblediaryids, SQL_PARAMS_NAMED);
     $records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
     foreach ($records as $entry) {
         $entries[$entry->userid][$entry->insightjournalid] = $entry;
@@ -74,16 +80,14 @@ if ($download === 'csv') {
     foreach ($activities as $cm) {
         require_capability('mod/insightjournal:export', context_module::instance($cm->id));
     }
-    if (!$entriesvisible) {
-        throw new moodle_exception('entriesprivatenotice', 'insightjournal');
-    }
     confirm_sesskey();
     insightjournal_send_csv_headers('insightjournal-course-' . $course->shortname . '.csv');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
     foreach ($participants as $user) {
         foreach ($diaries as $diary) {
-            $entry = $entries[$user->id][$diary->id] ?? null;
+            $private = !in_array($diary->id, $visiblediaryids, true);
+            $entry = $private ? null : ($entries[$user->id][$diary->id] ?? null);
             fputcsv($out, [
                 $course->id,
                 insightjournal_csv_value($course->fullname),
@@ -92,8 +96,10 @@ if ($download === 'csv') {
                 $user->id,
                 insightjournal_csv_value(fullname($user)),
                 insightjournal_csv_value($user->email),
-                insightjournal_csv_value(insightjournal_html_to_text($entry->response ?? '')),
-                $entry ? userdate($entry->timemodified) : '',
+                $private
+                    ? insightjournal_csv_value(get_string('entriesprivatenotice', 'insightjournal'))
+                    : insightjournal_csv_value(insightjournal_html_to_text($entry->response ?? '')),
+                (!$private && $entry) ? userdate($entry->timemodified) : '',
             ]);
         }
     }
@@ -108,7 +114,10 @@ $PAGE->set_heading(format_string($course->fullname));
 
 $activityheaders = [];
 foreach ($diaries as $diary) {
-    $activityheaders[] = ['name' => format_string($diary->name)];
+    $activityheaders[] = [
+        'name' => format_string($diary->name),
+        'private' => !in_array($diary->id, $visiblediaryids, true),
+    ];
 }
 
 $rows = [];
@@ -116,12 +125,17 @@ foreach ($participants as $user) {
     $done = 0;
     $cells = [];
     foreach ($diaries as $diary) {
+        if (!in_array($diary->id, $visiblediaryids, true)) {
+            $cells[] = ['private' => true];
+            continue;
+        }
         $entry = $entries[$user->id][$diary->id] ?? null;
         $completed = $entry && insightjournal_html_to_text($entry->response) !== '';
         if ($completed) {
             $done++;
         }
         $cells[] = [
+            'private' => false,
             'completed' => $completed,
             'status' => get_string($completed ? 'submitted' : 'notsubmitted', 'insightjournal'),
             'timemodified' => $completed ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
@@ -156,6 +170,5 @@ echo $OUTPUT->render_from_template('mod_insightjournal/coursereport', [
     'activities' => $activityheaders,
     'rows' => $rows,
     'hasactivities' => !empty($activityheaders),
-    'entriesprivate' => !$entriesvisible,
 ]);
 echo $OUTPUT->footer();

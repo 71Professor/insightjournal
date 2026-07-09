@@ -76,7 +76,8 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 5. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
 6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird.
 7. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
-8. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Ob Trainer/innen die Einträge überhaupt sehen dürfen, steuert eine globale Admin-Einstellung – siehe Abschnitt 7 „Datenschutz".
+8. Optional: **Sichtbarkeit der Einträge für Trainer/innen** setzen, um den globalen Standard nur für diese Aktivität zu überschreiben (*Website-Standard verwenden* / *Für Trainer/innen sichtbar* / *Privat*) – siehe Abschnitt 7 „Datenschutz".
+9. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Ob Trainer/innen die Einträge sehen dürfen, steuert eine globale Admin-Einstellung, die einzelne Aktivitäten überschreiben können – siehe Abschnitt 7 „Datenschutz".
 
 ---
 
@@ -124,6 +125,16 @@ CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert.
 
 **Einträge für Trainer/innen sichtbar** (Website-Administration → Plugins → Aktivitäten → Insight Journal) ist eine globale, standardmäßig aktivierte Einstellung. Wird sie deaktiviert, sind Einträge privat: Nur die Person, die einen Eintrag verfasst hat, kann ihn sehen. Aktivitätsbericht, Kursbericht und persönliche Zusammenfassung bleiben für alle mit `mod/insightjournal:viewall` erreichbar, zeigen dann aber einen Hinweistext statt der Einträge; der CSV-Export ist gesperrt. Die Einstellung gilt einheitlich für alle Rollen, auch Manager/innen und Site-Admins – es gibt keine Ausnahme.
 
+Jede Aktivität kann diesen globalen Standard über die eigene Einstellung
+**Sichtbarkeit der Einträge für Trainer/innen** überschreiben (*Website-Standard
+verwenden* / *Für Trainer/innen sichtbar* / *Privat*) – nicht nur die
+Website-Administration, sondern auch die Kurstrainer/innen entscheiden damit
+pro Aktivität. Neue und bereits bestehende Aktivitäten stehen standardmäßig auf
+„Website-Standard verwenden", sodass sich ohne aktives Umschalten nichts ändert.
+Aktivitäten im selben Kurs können dadurch unterschiedlich eingestellt sein;
+Kursbericht und persönliche Zusammenfassung berücksichtigen das pro Aktivität,
+statt die ganze Seite auszublenden.
+
 ---
 
 ## 8  Backup & Wiederherstellen
@@ -138,7 +149,7 @@ CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert.
 
 - **Keine native Moodle-App-Unterstützung:** Es gibt kein `db/mobile.php`. Die Aktivität ist in der Moodle-App über die responsive Webansicht nutzbar; eine native App-Integration ist für eine spätere Version geplant.
 - **Kein Server-seitiger PDF-Export:** Die Druckfunktion nutzt den Browserdruckdialog. Ein direkter PDF-Download ist für eine spätere Version geplant.
-- **Behat-Testabdeckung ist begrenzt:** Fünf Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel und den Datenschutz-Schalter ab. Umfassendere Abdeckung (CSV-Export, Kursbericht) ist noch nicht automatisiert.
+- **Behat-Testabdeckung ist begrenzt:** Sechs Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den globalen Datenschutz-Schalter und die Aktivitäts-Überschreibung ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
 
 ---
 

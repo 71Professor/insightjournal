@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Unit tests for the mod_insightjournal/summary template's privacy-notice rendering.
+ * Unit tests for the mod_insightjournal/summary and entry_card templates' per-activity privacy rendering.
  *
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
@@ -30,7 +30,7 @@ namespace mod_insightjournal;
 use advanced_testcase;
 
 /**
- * Tests for the mod_insightjournal/summary template.
+ * Tests for the mod_insightjournal/summary template (and the entry_card partial it renders).
  */
 final class summary_template_test extends advanced_testcase {
     /**
@@ -45,14 +45,13 @@ final class summary_template_test extends advanced_testcase {
             'listurl' => '',
             'hasitems' => false,
             'items' => [],
-            'entriesprivate' => false,
         ], $overrides);
     }
 
     /**
-     * With entries visible, entry cards render and no privacy notice appears.
+     * A visible entry card renders its response and no privacy notice.
      */
-    public function test_visible_mode_shows_entries(): void {
+    public function test_visible_item_shows_response(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
@@ -62,6 +61,7 @@ final class summary_template_test extends advanced_testcase {
                 'activityname' => 'Week 1 reflection',
                 'prompt' => '<p>What did you learn today?</p>',
                 'promptstyle' => '',
+                'private' => false,
                 'hasresponse' => true,
                 'response' => '<p>Today I learned about Mustache templates.</p>',
                 'timemodified' => '1 January 2026, 10:00 AM',
@@ -69,45 +69,95 @@ final class summary_template_test extends advanced_testcase {
         ]));
 
         $this->assertStringContainsString('Today I learned about Mustache templates.', $html);
-        $this->assertStringContainsString(get_string('print', 'mod_insightjournal'), $html);
         $this->assertStringNotContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
     }
 
     /**
-     * In private mode, the notice replaces the entry cards and print button, and no
-     * response content leaks into the markup even if items were (mistakenly) supplied.
+     * A private entry card still shows its prompt (trainer-authored content) but
+     * replaces the response with the privacy notice, and hides timemodified.
      */
-    public function test_private_mode_shows_notice_and_hides_entries(): void {
+    public function test_private_item_shows_prompt_but_hides_response(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
-            'entriesprivate' => true,
             'hasitems' => true,
             'items' => [[
-                'activityname' => 'Week 1 reflection',
-                'prompt' => '<p>What did you learn today?</p>',
+                'activityname' => 'Week 2 reflection',
+                'prompt' => '<p>What surprised you this week?</p>',
                 'promptstyle' => '',
-                'hasresponse' => true,
-                'response' => '<p>Secret reflection.</p>',
-                'timemodified' => '1 January 2026, 10:00 AM',
+                'private' => true,
+                'hasresponse' => false,
+                'response' => '',
+                'timemodified' => '',
             ]],
         ]));
 
+        $this->assertStringContainsString('What surprised you this week?', $html);
         $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
-        $this->assertStringNotContainsString('Secret reflection.', $html);
-        $this->assertStringNotContainsString(get_string('print', 'mod_insightjournal'), $html);
+        $this->assertStringNotContainsString('Secret reflection', $html);
     }
 
     /**
-     * The back-to-course link always remains available, in both modes.
+     * A mix of a visible and a private activity in the same summary renders both
+     * correctly: the visible item's response shows, the private item's does not,
+     * and no response content leaks for the private one even if it were (mistakenly) supplied.
      */
-    public function test_back_link_always_present(): void {
+    public function test_mixed_visibility_only_hides_the_private_item(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
-        $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context(['entriesprivate' => true]));
+        $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
+            'hasitems' => true,
+            'items' => [
+                [
+                    'activityname' => 'Week 1 reflection',
+                    'prompt' => '<p>What did you learn today?</p>',
+                    'promptstyle' => '',
+                    'private' => false,
+                    'hasresponse' => true,
+                    'response' => '<p>Public reflection.</p>',
+                    'timemodified' => '1 January 2026, 10:00 AM',
+                ],
+                [
+                    'activityname' => 'Week 2 reflection',
+                    'prompt' => '<p>What surprised you this week?</p>',
+                    'promptstyle' => '',
+                    'private' => true,
+                    'hasresponse' => true,
+                    'response' => '<p>Secret reflection.</p>',
+                    'timemodified' => '8 January 2026, 10:00 AM',
+                ],
+            ],
+        ]));
 
+        $this->assertStringContainsString('Public reflection.', $html);
+        $this->assertStringNotContainsString('Secret reflection.', $html);
+        $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
+    }
+
+    /**
+     * The print button and back-to-course link are always shown now (privacy is
+     * per-card, not a page-wide gate).
+     */
+    public function test_print_and_back_links_always_present(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
+            'hasitems' => true,
+            'items' => [[
+                'activityname' => 'Week 2 reflection',
+                'prompt' => '<p>What surprised you this week?</p>',
+                'promptstyle' => '',
+                'private' => true,
+                'hasresponse' => false,
+                'response' => '',
+                'timemodified' => '',
+            ]],
+        ]));
+
+        $this->assertStringContainsString(get_string('print', 'mod_insightjournal'), $html);
         $this->assertStringContainsString(get_string('backtocourse', 'mod_insightjournal'), $html);
     }
 }

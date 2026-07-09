@@ -47,6 +47,16 @@ Versions map to the `$plugin->release` value in `version.php`.
   `mod/insightjournal:viewall`, but show a notice instead of entry content,
   and CSV export is blocked. Applies uniformly to every role, including
   managers and site admins — there is no bypass.
+- Per-activity override for trainer visibility: a new **Trainer visibility
+  for this activity** setting on each activity (Use site default / Visible
+  to trainer / Private) lets the course teacher who creates or edits an
+  Insight Journal activity override the site-wide default for that activity
+  alone — not just the site administrator. Defaults to "Use site default"
+  for new and pre-existing activities, so nothing changes until a teacher
+  deliberately picks an override. The course report and personal summary now
+  reflect this per activity (e.g. one activity's entries can be private
+  while another's stay visible in the same course), instead of a single
+  page-wide notice.
 
 ### Changed
 

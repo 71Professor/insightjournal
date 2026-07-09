@@ -34,6 +34,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
+require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
  * Tests for {@see \insightjournal_html_to_text()}, {@see \insightjournal_prompt_style()},
@@ -116,33 +117,78 @@ final class locallib_test extends advanced_testcase {
     }
 
     /**
-     * With the config never set (e.g. a fresh install before the admin visits
-     * the settings page), entries default to visible to preserve prior behaviour.
+     * Builds a minimal diary stdClass with a given visibility override.
+     *
+     * @param int $entriesvisibility One of the INSIGHTJOURNAL_VISIBILITY_* constants.
+     * @return stdClass
+     */
+    protected function make_diary(int $entriesvisibility = INSIGHTJOURNAL_VISIBILITY_SITEDEFAULT): \stdClass {
+        return (object) ['entriesvisibility' => $entriesvisibility];
+    }
+
+    /**
+     * With SITEDEFAULT and the config never set (e.g. a fresh install before
+     * the admin visits the settings page), entries default to visible to
+     * preserve prior behaviour.
      */
     public function test_entries_visible_by_default_when_unset(): void {
         $this->resetAfterTest();
         unset_config('entriesvisibletoteacher', 'insightjournal');
 
-        $this->assertTrue(\insightjournal_entries_visible_to_teacher());
+        $this->assertTrue(\insightjournal_entries_visible_to_teacher($this->make_diary()));
     }
 
     /**
-     * Explicitly enabling the setting keeps entries visible to the teacher.
+     * With SITEDEFAULT, explicitly enabling the site setting keeps entries visible.
      */
-    public function test_entries_visible_when_explicitly_enabled(): void {
+    public function test_entries_visible_when_site_setting_explicitly_enabled(): void {
         $this->resetAfterTest();
         set_config('entriesvisibletoteacher', 1, 'insightjournal');
 
-        $this->assertTrue(\insightjournal_entries_visible_to_teacher());
+        $this->assertTrue(\insightjournal_entries_visible_to_teacher($this->make_diary()));
     }
 
     /**
-     * Explicitly disabling the setting makes entries private.
+     * With SITEDEFAULT, explicitly disabling the site setting makes entries private.
      */
-    public function test_entries_hidden_when_explicitly_disabled(): void {
+    public function test_entries_hidden_when_site_setting_explicitly_disabled(): void {
         $this->resetAfterTest();
         set_config('entriesvisibletoteacher', 0, 'insightjournal');
 
-        $this->assertFalse(\insightjournal_entries_visible_to_teacher());
+        $this->assertFalse(\insightjournal_entries_visible_to_teacher($this->make_diary()));
+    }
+
+    /**
+     * A VISIBLE override forces entries visible even when the site setting is off.
+     */
+    public function test_visible_override_wins_over_disabled_site_setting(): void {
+        $this->resetAfterTest();
+        set_config('entriesvisibletoteacher', 0, 'insightjournal');
+
+        $diary = $this->make_diary(INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+        $this->assertTrue(\insightjournal_entries_visible_to_teacher($diary));
+    }
+
+    /**
+     * A PRIVATE override forces entries hidden even when the site setting is on.
+     */
+    public function test_private_override_wins_over_enabled_site_setting(): void {
+        $this->resetAfterTest();
+        set_config('entriesvisibletoteacher', 1, 'insightjournal');
+
+        $diary = $this->make_diary(INSIGHTJOURNAL_VISIBILITY_PRIVATE);
+        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
+    }
+
+    /**
+     * A diary record with no entriesvisibility property at all (e.g. hand-built
+     * in older test/generator code) is treated as SITEDEFAULT.
+     */
+    public function test_missing_property_treated_as_sitedefault(): void {
+        $this->resetAfterTest();
+        set_config('entriesvisibletoteacher', 0, 'insightjournal');
+
+        $diary = (object) [];
+        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
     }
 }

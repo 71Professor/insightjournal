@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Unit tests for the mod_insightjournal/coursereport template's privacy-notice rendering.
+ * Unit tests for the mod_insightjournal/coursereport template's per-activity privacy rendering.
  *
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
@@ -46,66 +46,101 @@ final class coursereport_template_test extends advanced_testcase {
             'hasactivities' => false,
             'activities' => [],
             'rows' => [],
-            'entriesprivate' => false,
         ], $overrides);
     }
 
     /**
-     * With entries visible, the participant matrix renders and no privacy notice appears.
+     * With every activity visible, the participant matrix renders with no private badges.
      */
-    public function test_visible_mode_shows_table(): void {
+    public function test_all_visible_shows_full_table(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
             'hasactivities' => true,
-            'activities' => [['name' => 'Week 1 reflection']],
+            'activities' => [['name' => 'Week 1 reflection', 'private' => false]],
             'rows' => [[
                 'summaryurl' => 'https://example.com/summary.php',
                 'fullname' => 'Jane Doe',
-                'cells' => [['completed' => true, 'status' => 'Done', 'timemodified' => '1 January 2026, 10:00 AM']],
+                'cells' => [
+                    ['private' => false, 'completed' => true, 'status' => 'Done', 'timemodified' => '1 January 2026, 10:00 AM'],
+                ],
                 'progress' => '1 / 1',
             ]],
         ]));
 
         $this->assertStringContainsString('Jane Doe', $html);
+        $this->assertStringContainsString('Done', $html);
         $this->assertStringContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
-        $this->assertStringNotContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
+        $this->assertStringNotContainsString(get_string('private', 'mod_insightjournal'), $html);
     }
 
     /**
-     * In private mode, the notice replaces the matrix and download link, and no
-     * participant data leaks into the markup even if rows were (mistakenly) supplied.
+     * A mix of a visible and a private activity in the same course renders both
+     * correctly: the private column gets a badge and a muted placeholder cell
+     * (no status/timemodified leak), while the visible column's data and the
+     * participant name still show normally.
      */
-    public function test_private_mode_shows_notice_and_hides_entries(): void {
+    public function test_mixed_visibility_only_hides_the_private_column(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
-            'entriesprivate' => true,
             'hasactivities' => true,
-            'activities' => [['name' => 'Week 1 reflection']],
+            'activities' => [
+                ['name' => 'Week 1 reflection', 'private' => false],
+                ['name' => 'Week 2 reflection', 'private' => true],
+            ],
             'rows' => [[
                 'summaryurl' => 'https://example.com/summary.php',
                 'fullname' => 'Jane Doe',
-                'cells' => [['completed' => true, 'status' => 'Done', 'timemodified' => '1 January 2026, 10:00 AM']],
-                'progress' => '1 / 1',
+                'cells' => [
+                    ['private' => false, 'completed' => true, 'status' => 'Done', 'timemodified' => '1 January 2026, 10:00 AM'],
+                    ['private' => true],
+                ],
+                'progress' => '1 / 2',
             ]],
         ]));
 
+        $this->assertStringContainsString('Jane Doe', $html);
+        $this->assertStringContainsString('Week 1 reflection', $html);
+        $this->assertStringContainsString('Week 2 reflection', $html);
+        $this->assertStringContainsString('Done', $html);
+        $this->assertStringContainsString(get_string('private', 'mod_insightjournal'), $html);
         $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
-        $this->assertStringNotContainsString('Jane Doe', $html);
-        $this->assertStringNotContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
+        $this->assertStringContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
     }
 
     /**
-     * The back-to-course link always remains available, in both modes.
+     * The download link is always shown now, even when some/all activities are private
+     * (private rows are substituted, not the whole export blocked).
+     */
+    public function test_download_link_always_present(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
+            'hasactivities' => true,
+            'activities' => [['name' => 'Week 1 reflection', 'private' => true]],
+            'rows' => [[
+                'summaryurl' => 'https://example.com/summary.php',
+                'fullname' => 'Jane Doe',
+                'cells' => [['private' => true]],
+                'progress' => '0 / 1',
+            ]],
+        ]));
+
+        $this->assertStringContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
+    }
+
+    /**
+     * The back-to-course link always remains available.
      */
     public function test_back_link_always_present(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
-        $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context(['entriesprivate' => true]));
+        $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context());
 
         $this->assertStringContainsString(get_string('backtocourse', 'mod_insightjournal'), $html);
     }

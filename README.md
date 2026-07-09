@@ -48,10 +48,13 @@ export responses to CSV.
    and/or a **maximum character count**, enforced with a live counter as learners type.
 7. In the **Activity completion** settings, keep *Learner must save an Insight Journal
    response* enabled when saved responses should mark the activity complete.
-8. After the course runs, open the **activity report** to review entries for one prompt,
+8. Optionally set **Trainer visibility for this activity** to override the site-wide
+   default for this activity alone (*Use site default* / *Visible to trainer* /
+   *Private*) — see [Data and Privacy](#data-and-privacy).
+9. After the course runs, open the **activity report** to review entries for one prompt,
    or the **course report** for progress across all Insight Journal activities. Whether
-   trainers can see learner entries at all is controlled by a site-wide admin setting —
-   see [Data and Privacy](#data-and-privacy).
+   trainers can see learner entries is controlled by a site-wide admin setting, which
+   individual activities can override — see [Data and Privacy](#data-and-privacy).
 
 ---
 
@@ -111,6 +114,14 @@ course report, and personal summary pages stay reachable to anyone with
 export is blocked. This applies to every role, including managers and site admins —
 there is no bypass.
 
+Each activity can override this site-wide default via its own **Trainer visibility
+for this activity** setting (*Use site default* / *Visible to trainer* / *Private*),
+so a course teacher — not only the site administrator — can decide per activity.
+New and pre-existing activities default to "Use site default", so nothing changes
+until a teacher deliberately picks an override. Activities in the same course can
+have different visibility; the course report and personal summary reflect this per
+activity rather than hiding the whole page.
+
 ---
 
 ## Backup and Restore
@@ -150,7 +161,8 @@ to load a real site. Run from the Moodle root:
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover the
 save/reload roundtrip, editing a previously saved response, autosave
 persisting a change without leaving edit mode, the minchars completion
-regression, and the trainer-visibility privacy toggle. Run via
+regression, the trainer-visibility privacy toggle, and a course teacher
+overriding the site-wide default per activity. Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
@@ -163,10 +175,10 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: five scenarios cover the save/reload
+- **Behat coverage is limited**: six scenarios cover the save/reload
   roundtrip, editing a saved response, autosave, the minchars completion
-  regression, and the trainer-visibility privacy toggle. Broader coverage
-  (CSV export, course report) is not yet automated.
+  regression, the trainer-visibility privacy toggle, and the per-activity
+  visibility override. Broader coverage (CSV export) is not yet automated.
 
 ---
 
@@ -176,8 +188,9 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (4 scenarios: save/reload roundtrip, editing a saved
-      response, autosave, completion regression) — 2026-07-07
+- [x] Add Behat tests (6 scenarios: save/reload roundtrip, editing a saved
+      response, autosave, completion regression, trainer-visibility privacy
+      toggle, per-activity visibility override) — 2026-07-09
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory

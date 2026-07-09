@@ -24,6 +24,7 @@
  */
 
 require_once('../../config.php');
+require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 $courseid = required_param('courseid', PARAM_INT);
@@ -80,23 +81,20 @@ $viewuser = $DB->get_record(
 );
 // When viewing another user, restrict to journals where viewall is explicitly granted.
 $viewingother = $viewuserid !== $USER->id;
-$entriesprivate = $viewingother && !insightjournal_entries_visible_to_teacher();
 $querycms = $viewingother ? $viewallcms : $cms;
 $diaryids = array_keys($querycms);
 
-$records = [];
-if (!$entriesprivate) {
-    [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
-    $params['userid'] = $viewuserid;
-    $records = $DB->get_records_sql(
-        "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, e.response, e.responseformat, e.timemodified
-           FROM {insightjournal} rd
-      LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
-          WHERE rd.id $insql
-       ORDER BY rd.id ASC",
-        $params
-    );
-}
+[$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
+$params['userid'] = $viewuserid;
+$records = $DB->get_records_sql(
+    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, rd.entriesvisibility,
+            e.response, e.responseformat, e.timemodified
+       FROM {insightjournal} rd
+  LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
+      WHERE rd.id $insql
+   ORDER BY rd.id ASC",
+    $params
+);
 
 $PAGE->set_url('/mod/insightjournal/summary.php', ['courseid' => $courseid, 'userid' => $viewuserid]);
 $PAGE->set_context($coursecontext);
@@ -107,17 +105,19 @@ $PAGE->requires->js_call_amd('mod_insightjournal/summary', 'init');
 $items = [];
 foreach ($records as $record) {
     $modulecontext = context_module::instance($cms[$record->id]->id);
+    $private = $viewingother && !insightjournal_entries_visible_to_teacher($record);
     $rawresponse = $record->response ?? '';
-    $hasresponse = insightjournal_html_to_text($rawresponse) !== '';
+    $hasresponse = !$private && insightjournal_html_to_text($rawresponse) !== '';
     $items[] = [
         'activityname' => format_string($record->name),
         'prompt' => format_text($record->prompttext, $record->promptformat, ['context' => $modulecontext]),
         'promptstyle' => insightjournal_prompt_style($record->promptcolor ?? ''),
+        'private' => $private,
         'hasresponse' => $hasresponse,
         'response' => $hasresponse
             ? format_text($rawresponse, $record->responseformat, ['context' => $modulecontext])
             : '',
-        'timemodified' => !empty($record->timemodified) ?
+        'timemodified' => (!$private && !empty($record->timemodified)) ?
             userdate($record->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
     ];
 }
@@ -128,7 +128,6 @@ $templatecontext = [
     'backurl' => (new moodle_url('/course/view.php', ['id' => $courseid]))->out(false),
     'items' => $items,
     'hasitems' => !empty($items),
-    'entriesprivate' => $entriesprivate,
 ];
 if ($returnurl !== '' && $viewuserid !== $USER->id) {
     $templatecontext['listurl'] = (new moodle_url($returnurl))->out(false);

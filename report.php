@@ -24,6 +24,7 @@
  */
 
 require_once('../../config.php');
+require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 $id = required_param('id', PARAM_INT);
@@ -38,7 +39,7 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
-$entriesvisible = insightjournal_entries_visible_to_teacher();
+$entriesvisible = insightjournal_entries_visible_to_teacher($diary);
 
 $entries = [];
 if ($entriesvisible) {
