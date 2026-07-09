@@ -38,28 +38,36 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
-$sqlparams = ['diaryid' => $diary->id];
-$where = 'e.insightjournalid = :diaryid';
-if ($search !== '') {
-    $needle = '%' . $DB->sql_like_escape($search) . '%';
-    $where .= ' AND (' . $DB->sql_like('u.firstname', ':sfn', false) .
-              ' OR ' . $DB->sql_like('u.lastname', ':sln', false) .
-              ' OR ' . $DB->sql_like('u.email', ':sem', false) . ')';
-    $sqlparams['sfn'] = $needle;
-    $sqlparams['sln'] = $needle;
-    $sqlparams['sem'] = $needle;
+$entriesvisible = insightjournal_entries_visible_to_teacher();
+
+$entries = [];
+if ($entriesvisible) {
+    $sqlparams = ['diaryid' => $diary->id];
+    $where = 'e.insightjournalid = :diaryid';
+    if ($search !== '') {
+        $needle = '%' . $DB->sql_like_escape($search) . '%';
+        $where .= ' AND (' . $DB->sql_like('u.firstname', ':sfn', false) .
+                  ' OR ' . $DB->sql_like('u.lastname', ':sln', false) .
+                  ' OR ' . $DB->sql_like('u.email', ':sem', false) . ')';
+        $sqlparams['sfn'] = $needle;
+        $sqlparams['sln'] = $needle;
+        $sqlparams['sem'] = $needle;
+    }
+    $sql = "SELECT e.*, u.firstname, u.lastname,
+                   u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename,
+                   u.email
+              FROM {insightjournal_entries} e
+              JOIN {user} u ON u.id = e.userid
+             WHERE $where
+          ORDER BY u.lastname, u.firstname";
+    $entries = $DB->get_records_sql($sql, $sqlparams);
 }
-$sql = "SELECT e.*, u.firstname, u.lastname,
-               u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename,
-               u.email
-          FROM {insightjournal_entries} e
-          JOIN {user} u ON u.id = e.userid
-         WHERE $where
-      ORDER BY u.lastname, u.firstname";
-$entries = $DB->get_records_sql($sql, $sqlparams);
 
 if ($download === 'csv') {
     require_capability('mod/insightjournal:export', $context);
+    if (!$entriesvisible) {
+        throw new moodle_exception('entriesprivatenotice', 'insightjournal');
+    }
     confirm_sesskey();
     insightjournal_send_csv_headers('insightjournal-' . $course->shortname . '-' . $diary->id . '.csv');
     $out = fopen('php://output', 'w');
@@ -130,5 +138,6 @@ echo $OUTPUT->render_from_template('mod_insightjournal/report', [
     'search' => $search,
     'rows' => $rows,
     'hasrows' => !empty($rows),
+    'entriesprivate' => !$entriesvisible,
 ]);
 echo $OUTPUT->footer();

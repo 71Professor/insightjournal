@@ -90,3 +90,6 @@ $string['submitted'] = 'Eingereicht';
 $string['notsubmitted'] = 'Nicht eingereicht';
 $string['coursereport'] = 'Kurs-Insight-Journal-Bericht';
 $string['progress'] = 'Fortschritt';
+$string['entriesvisibletoteacher'] = 'Einträge für Trainer/innen sichtbar';
+$string['entriesvisibletoteacher_desc'] = 'Wenn aktiviert (Standard), können Trainer/innen mit der Fähigkeit „Alle Einträge ansehen" die Insight-Journal-Einträge der Teilnehmenden im Bericht, im Kursbericht und in der persönlichen Übersicht sehen. Wenn deaktiviert, sind die Einträge privat: Nur die Person, die einen Eintrag verfasst hat, kann ihn sehen; Trainer/innen sehen stattdessen einen Hinweistext.';
+$string['entriesprivatenotice'] = 'Die Insight-Journal-Einträge sind derzeit privat. Nur die Person, die einen Eintrag verfasst hat, kann ihn einsehen.';

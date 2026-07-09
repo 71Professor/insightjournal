@@ -36,10 +36,12 @@ global $CFG;
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 /**
- * Tests for {@see \insightjournal_html_to_text()} and {@see \insightjournal_prompt_style()}.
+ * Tests for {@see \insightjournal_html_to_text()}, {@see \insightjournal_prompt_style()},
+ * and {@see \insightjournal_entries_visible_to_teacher()}.
  */
 #[CoversFunction('insightjournal_html_to_text')]
 #[CoversFunction('insightjournal_prompt_style')]
+#[CoversFunction('insightjournal_entries_visible_to_teacher')]
 final class locallib_test extends advanced_testcase {
     /**
      * Tags are stripped but visible text survives.
@@ -111,5 +113,36 @@ final class locallib_test extends advanced_testcase {
     public function test_prompt_style_empty_for_blank_input(): void {
         $this->assertEquals('', \insightjournal_prompt_style(''));
         $this->assertEquals('', \insightjournal_prompt_style(null));
+    }
+
+    /**
+     * With the config never set (e.g. a fresh install before the admin visits
+     * the settings page), entries default to visible to preserve prior behaviour.
+     */
+    public function test_entries_visible_by_default_when_unset(): void {
+        $this->resetAfterTest();
+        unset_config('entriesvisibletoteacher', 'insightjournal');
+
+        $this->assertTrue(\insightjournal_entries_visible_to_teacher());
+    }
+
+    /**
+     * Explicitly enabling the setting keeps entries visible to the teacher.
+     */
+    public function test_entries_visible_when_explicitly_enabled(): void {
+        $this->resetAfterTest();
+        set_config('entriesvisibletoteacher', 1, 'insightjournal');
+
+        $this->assertTrue(\insightjournal_entries_visible_to_teacher());
+    }
+
+    /**
+     * Explicitly disabling the setting makes entries private.
+     */
+    public function test_entries_hidden_when_explicitly_disabled(): void {
+        $this->resetAfterTest();
+        set_config('entriesvisibletoteacher', 0, 'insightjournal');
+
+        $this->assertFalse(\insightjournal_entries_visible_to_teacher());
     }
 }

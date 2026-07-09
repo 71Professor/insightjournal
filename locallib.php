@@ -90,3 +90,21 @@ function insightjournal_send_csv_headers(string $filename): void {
     header('Pragma: no-cache');
     header('Expires: 0');
 }
+
+/**
+ * Whether trainers/teachers may currently see learners' insight journal entries.
+ *
+ * Controlled by the site-wide "entriesvisibletoteacher" admin setting. When
+ * disabled, entries are private to the learner who wrote them: the report,
+ * course report, and summary pages remain reachable to anyone with the
+ * mod/insightjournal:viewall capability, but show a notice instead of entry
+ * content. Defaults to visible when unset (e.g. before an upgraded site's
+ * admin has saved the settings page), matching prior behaviour.
+ *
+ * @return bool
+ */
+function insightjournal_entries_visible_to_teacher(): bool {
+    $value = get_config('insightjournal', 'entriesvisibletoteacher');
+
+    return $value === false ? true : (bool) $value;
+}

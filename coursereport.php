@@ -59,16 +59,23 @@ $participants = get_enrolled_users(
     'u.lastname,u.firstname'
 );
 
+$entriesvisible = insightjournal_entries_visible_to_teacher();
+
 $entries = [];
-[$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
-$records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
-foreach ($records as $entry) {
-    $entries[$entry->userid][$entry->insightjournalid] = $entry;
+if ($entriesvisible) {
+    [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
+    $records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
+    foreach ($records as $entry) {
+        $entries[$entry->userid][$entry->insightjournalid] = $entry;
+    }
 }
 
 if ($download === 'csv') {
     foreach ($activities as $cm) {
         require_capability('mod/insightjournal:export', context_module::instance($cm->id));
+    }
+    if (!$entriesvisible) {
+        throw new moodle_exception('entriesprivatenotice', 'insightjournal');
     }
     confirm_sesskey();
     insightjournal_send_csv_headers('insightjournal-course-' . $course->shortname . '.csv');
@@ -127,7 +134,10 @@ foreach ($participants as $user) {
             [
                 'courseid' => $course->id,
                 'userid' => $user->id,
-                'returnurl' => (new moodle_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id]))->out_as_local_url(false),
+                'returnurl' => (new moodle_url(
+                    '/mod/insightjournal/coursereport.php',
+                    ['courseid' => $course->id]
+                ))->out_as_local_url(false),
             ]
         ))->out(false),
         'cells' => $cells,
@@ -146,5 +156,6 @@ echo $OUTPUT->render_from_template('mod_insightjournal/coursereport', [
     'activities' => $activityheaders,
     'rows' => $rows,
     'hasactivities' => !empty($activityheaders),
+    'entriesprivate' => !$entriesvisible,
 ]);
 echo $OUTPUT->footer();

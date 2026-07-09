@@ -67,5 +67,17 @@ function xmldb_insightjournal_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026070800, 'insightjournal');
     }
 
+    if ($oldversion < 2026070900) {
+        // Seed the new global privacy toggle for existing installs. Admin
+        // setting defaults are only auto-applied on a fresh plugin install,
+        // so upgrading sites need this explicit seed to keep today's
+        // teacher-visible behaviour unless the admin opts into privacy mode.
+        if (get_config('insightjournal', 'entriesvisibletoteacher') === false) {
+            set_config('entriesvisibletoteacher', 1, 'insightjournal');
+        }
+
+        upgrade_mod_savepoint(true, 2026070900, 'insightjournal');
+    }
+
     return true;
 }

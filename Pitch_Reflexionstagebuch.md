@@ -151,7 +151,7 @@ Für die meisten Moodle-Instanzen – insbesondere in Weiterbildung, Berufsschul
 - **Datenschutz:** vollständige Moodle Privacy API-Integration (Export + Löschung)
 - **Lizenz:** GNU GPL v3
 - **Sprachen:** Deutsch, Englisch (weitere per Sprachpaket möglich)
-- **Reife:** Beta (0.3.0) – produktiv einsetzbar, aktiv entwickelt
+- **Reife:** Beta (0.4.0) – produktiv einsetzbar, aktiv entwickelt
 
 ---
 

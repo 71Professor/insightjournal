@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal for Moodle
 
-**Version 0.3.0-beta · July 2026 · Moodle 4.5+**
+**Version 0.4.0-beta · July 2026 · Moodle 4.5+**
 
 `mod_insightjournal` is a Moodle activity module for focused reflection prompts.
 Each activity holds one prompt. Learners write and save their own response, can return
@@ -49,7 +49,9 @@ export responses to CSV.
 7. In the **Activity completion** settings, keep *Learner must save an Insight Journal
    response* enabled when saved responses should mark the activity complete.
 8. After the course runs, open the **activity report** to review entries for one prompt,
-   or the **course report** for progress across all Insight Journal activities.
+   or the **course report** for progress across all Insight Journal activities. Whether
+   trainers can see learner entries at all is controlled by a site-wide admin setting —
+   see [Data and Privacy](#data-and-privacy).
 
 ---
 
@@ -101,6 +103,14 @@ for a module context, a single approved user, or approved user lists.
 CSV exports are restricted by capability; spreadsheet-formula values are prefixed
 to reduce CSV injection risk.
 
+**Entries visible to trainer** (Site administration → Plugins → Activity modules →
+Insight Journal) is a site-wide setting, enabled by default. When disabled, entries
+become private: only the learner who wrote an entry can see it. The activity report,
+course report, and personal summary pages stay reachable to anyone with
+`mod/insightjournal:viewall`, but show a notice instead of entry content, and CSV
+export is blocked. This applies to every role, including managers and site admins —
+there is no bypass.
+
 ---
 
 ## Backup and Restore
@@ -139,8 +149,9 @@ to load a real site. Run from the Moodle root:
 
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover the
 save/reload roundtrip, editing a previously saved response, autosave
-persisting a change without leaving edit mode, and the minchars completion
-regression. Run via `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
+persisting a change without leaving edit mode, the minchars completion
+regression, and the trainer-visibility privacy toggle. Run via
+`php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
 ---
@@ -152,10 +163,10 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: four scenarios cover the save/reload
-  roundtrip, editing a saved response, autosave, and the minchars completion
-  regression. Broader coverage (reports, CSV export, privacy) is not yet
-  automated.
+- **Behat coverage is limited**: five scenarios cover the save/reload
+  roundtrip, editing a saved response, autosave, the minchars completion
+  regression, and the trainer-visibility privacy toggle. Broader coverage
+  (CSV export, course report) is not yet automated.
 
 ---
 

@@ -79,18 +79,24 @@ $viewuser = $DB->get_record(
     MUST_EXIST
 );
 // When viewing another user, restrict to journals where viewall is explicitly granted.
-$querycms = ($viewuserid !== $USER->id) ? $viewallcms : $cms;
+$viewingother = $viewuserid !== $USER->id;
+$entriesprivate = $viewingother && !insightjournal_entries_visible_to_teacher();
+$querycms = $viewingother ? $viewallcms : $cms;
 $diaryids = array_keys($querycms);
-[$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
-$params['userid'] = $viewuserid;
-$records = $DB->get_records_sql(
-    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, e.response, e.responseformat, e.timemodified
-       FROM {insightjournal} rd
-  LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
-      WHERE rd.id $insql
-   ORDER BY rd.id ASC",
-    $params
-);
+
+$records = [];
+if (!$entriesprivate) {
+    [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
+    $params['userid'] = $viewuserid;
+    $records = $DB->get_records_sql(
+        "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, e.response, e.responseformat, e.timemodified
+           FROM {insightjournal} rd
+      LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
+          WHERE rd.id $insql
+       ORDER BY rd.id ASC",
+        $params
+    );
+}
 
 $PAGE->set_url('/mod/insightjournal/summary.php', ['courseid' => $courseid, 'userid' => $viewuserid]);
 $PAGE->set_context($coursecontext);
@@ -122,6 +128,7 @@ $templatecontext = [
     'backurl' => (new moodle_url('/course/view.php', ['id' => $courseid]))->out(false),
     'items' => $items,
     'hasitems' => !empty($items),
+    'entriesprivate' => $entriesprivate,
 ];
 if ($returnurl !== '' && $viewuserid !== $USER->id) {
     $templatecontext['listurl'] = (new moodle_url($returnurl))->out(false);

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version information for mod_insightjournal.
+ * Admin settings for mod_insightjournal.
  *
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
@@ -25,8 +25,11 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_insightjournal';
-$plugin->version   = 2026070900;
-$plugin->requires  = 2024100700; // Moodle 4.5+.
-$plugin->maturity  = MATURITY_BETA;
-$plugin->release   = '0.4.0-beta';
+if ($ADMIN->fulltree) {
+    $settings->add(new admin_setting_configcheckbox(
+        'insightjournal/entriesvisibletoteacher',
+        get_string('entriesvisibletoteacher', 'insightjournal'),
+        get_string('entriesvisibletoteacher_desc', 'insightjournal'),
+        1
+    ));
+}

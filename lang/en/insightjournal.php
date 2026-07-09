@@ -90,3 +90,6 @@ $string['submitted'] = 'Submitted';
 $string['notsubmitted'] = 'Not submitted';
 $string['coursereport'] = 'Course insight report';
 $string['progress'] = 'Progress';
+$string['entriesvisibletoteacher'] = 'Entries visible to trainer';
+$string['entriesvisibletoteacher_desc'] = 'When enabled (default), trainers/teachers with the "View all entries" capability can see learners\' insight journal entries in the report, course report, and personal summary pages. When disabled, entries are private: only the learner who wrote an entry can see it, and trainers see a notice instead of entry content.';
+$string['entriesprivatenotice'] = 'Insight journal entries are currently private. Only the learner who wrote an entry can view it.';

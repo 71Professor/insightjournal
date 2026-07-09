@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal für Moodle
 
-## **1 Moodle Activity Module · Version 0.3.0-beta · Juli 2026**
+## **1 Moodle Activity Module · Version 0.4.0-beta · Juli 2026**
 
 > **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einem gezielten Impuls an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
 
@@ -76,7 +76,7 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 5. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
 6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird.
 7. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
-8. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht.
+8. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Ob Trainer/innen die Einträge überhaupt sehen dürfen, steuert eine globale Admin-Einstellung – siehe Abschnitt 7 „Datenschutz".
 
 ---
 
@@ -122,6 +122,8 @@ Die Capability `mod/insightjournal:viewall` ist mit `RISK_PERSONAL` markiert, da
 
 CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert. Tabellenformeln in Antworten werden automatisch mit einem Präfix versehen, um CSV-Injection-Risiken zu reduzieren.
 
+**Einträge für Trainer/innen sichtbar** (Website-Administration → Plugins → Aktivitäten → Insight Journal) ist eine globale, standardmäßig aktivierte Einstellung. Wird sie deaktiviert, sind Einträge privat: Nur die Person, die einen Eintrag verfasst hat, kann ihn sehen. Aktivitätsbericht, Kursbericht und persönliche Zusammenfassung bleiben für alle mit `mod/insightjournal:viewall` erreichbar, zeigen dann aber einen Hinweistext statt der Einträge; der CSV-Export ist gesperrt. Die Einstellung gilt einheitlich für alle Rollen, auch Manager/innen und Site-Admins – es gibt keine Ausnahme.
+
 ---
 
 ## 8  Backup & Wiederherstellen
@@ -136,7 +138,7 @@ CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert.
 
 - **Keine native Moodle-App-Unterstützung:** Es gibt kein `db/mobile.php`. Die Aktivität ist in der Moodle-App über die responsive Webansicht nutzbar; eine native App-Integration ist für eine spätere Version geplant.
 - **Kein Server-seitiger PDF-Export:** Die Druckfunktion nutzt den Browserdruckdialog. Ein direkter PDF-Download ist für eine spätere Version geplant.
-- **Behat-Testabdeckung ist begrenzt:** Vier Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave und die Mindestzeichenzahl-Abschlussregel ab. Umfassendere Abdeckung (Berichte, CSV-Export, Datenschutz) ist noch nicht automatisiert.
+- **Behat-Testabdeckung ist begrenzt:** Fünf Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel und den Datenschutz-Schalter ab. Umfassendere Abdeckung (CSV-Export, Kursbericht) ist noch nicht automatisiert.
 
 ---
 
@@ -158,4 +160,4 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 ---
 
-*Erstellt: Juli 2026 · Plugin: mod_insightjournal v0.3.0-beta*
+*Erstellt: Juli 2026 · Plugin: mod_insightjournal v0.4.0-beta*
