@@ -26,7 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_insightjournal';
-$plugin->version   = 2026070902;
+$plugin->version   = 2026070903;
 $plugin->requires  = 2024100700; // Moodle 4.5+.
 $plugin->maturity  = MATURITY_BETA;
 $plugin->release   = '0.4.0-beta';

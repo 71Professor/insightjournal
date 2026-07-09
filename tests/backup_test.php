@@ -49,9 +49,8 @@ final class backup_test extends advanced_testcase {
     }
 
     /**
-     * The entriesvisibility override (added alongside the site-wide privacy
-     * setting) round-trips through a course backup/restore, the same as the
-     * other per-activity settings.
+     * The entriesvisibility setting round-trips through a course
+     * backup/restore, the same as the other per-activity settings.
      *
      * Regression coverage: backup_insightjournal_stepslib.php enumerates its
      * backed-up fields explicitly, so a new DB column silently vanishes on

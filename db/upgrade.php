@@ -68,14 +68,10 @@ function xmldb_insightjournal_upgrade($oldversion) {
     }
 
     if ($oldversion < 2026070900) {
-        // Seed the new global privacy toggle for existing installs. Admin
-        // setting defaults are only auto-applied on a fresh plugin install,
-        // so upgrading sites need this explicit seed to keep today's
-        // teacher-visible behaviour unless the admin opts into privacy mode.
-        if (get_config('insightjournal', 'entriesvisibletoteacher') === false) {
-            set_config('entriesvisibletoteacher', 1, 'insightjournal');
-        }
-
+        // This step used to seed a global "entriesvisibletoteacher" toggle.
+        // That setting has since been removed in favour of the per-activity
+        // entriesvisibility field, so there is nothing left to do here; the
+        // 2026070903 step below removes any value it wrote.
         upgrade_mod_savepoint(true, 2026070900, 'insightjournal');
     }
 
@@ -88,6 +84,25 @@ function xmldb_insightjournal_upgrade($oldversion) {
         }
 
         upgrade_mod_savepoint(true, 2026070901, 'insightjournal');
+    }
+
+    if ($oldversion < 2026070903) {
+        // The site-wide "entriesvisibletoteacher" setting is gone; trainer
+        // visibility is now decided per activity. Existing rows still carry
+        // the retired "follow the site default" value of 0, which no longer
+        // maps to a form option, so resolve them to VISIBLE and make that the
+        // column default for good measure. The literal 1 is
+        // INSIGHTJOURNAL_VISIBILITY_VISIBLE; lib.php is not necessarily loaded
+        // during upgrade, so the constant is not used here.
+        $table = new xmldb_table('insightjournal');
+        $field = new xmldb_field('entriesvisibility', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'completionentries');
+
+        $DB->set_field('insightjournal', 'entriesvisibility', 1, ['entriesvisibility' => 0]);
+        $dbman->change_field_default($table, $field);
+
+        unset_config('entriesvisibletoteacher', 'insightjournal');
+
+        upgrade_mod_savepoint(true, 2026070903, 'insightjournal');
     }
 
     return true;

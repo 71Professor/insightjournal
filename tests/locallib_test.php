@@ -117,78 +117,47 @@ final class locallib_test extends advanced_testcase {
     }
 
     /**
-     * Builds a minimal diary stdClass with a given visibility override.
+     * Builds a minimal diary stdClass with a given trainer visibility.
      *
      * @param int $entriesvisibility One of the INSIGHTJOURNAL_VISIBILITY_* constants.
      * @return stdClass
      */
-    protected function make_diary(int $entriesvisibility = INSIGHTJOURNAL_VISIBILITY_SITEDEFAULT): \stdClass {
+    protected function make_diary(int $entriesvisibility = INSIGHTJOURNAL_VISIBILITY_VISIBLE): \stdClass {
         return (object) ['entriesvisibility' => $entriesvisibility];
     }
 
     /**
-     * With SITEDEFAULT and the config never set (e.g. a fresh install before
-     * the admin visits the settings page), entries default to visible to
-     * preserve prior behaviour.
+     * VISIBLE, the default for new activities, lets trainers read the entries.
      */
-    public function test_entries_visible_by_default_when_unset(): void {
-        $this->resetAfterTest();
-        unset_config('entriesvisibletoteacher', 'insightjournal');
-
-        $this->assertTrue(\insightjournal_entries_visible_to_teacher($this->make_diary()));
-    }
-
-    /**
-     * With SITEDEFAULT, explicitly enabling the site setting keeps entries visible.
-     */
-    public function test_entries_visible_when_site_setting_explicitly_enabled(): void {
-        $this->resetAfterTest();
-        set_config('entriesvisibletoteacher', 1, 'insightjournal');
-
-        $this->assertTrue(\insightjournal_entries_visible_to_teacher($this->make_diary()));
-    }
-
-    /**
-     * With SITEDEFAULT, explicitly disabling the site setting makes entries private.
-     */
-    public function test_entries_hidden_when_site_setting_explicitly_disabled(): void {
-        $this->resetAfterTest();
-        set_config('entriesvisibletoteacher', 0, 'insightjournal');
-
-        $this->assertFalse(\insightjournal_entries_visible_to_teacher($this->make_diary()));
-    }
-
-    /**
-     * A VISIBLE override forces entries visible even when the site setting is off.
-     */
-    public function test_visible_override_wins_over_disabled_site_setting(): void {
-        $this->resetAfterTest();
-        set_config('entriesvisibletoteacher', 0, 'insightjournal');
-
+    public function test_entries_visible_when_activity_set_to_visible(): void {
         $diary = $this->make_diary(INSIGHTJOURNAL_VISIBILITY_VISIBLE);
         $this->assertTrue(\insightjournal_entries_visible_to_teacher($diary));
     }
 
     /**
-     * A PRIVATE override forces entries hidden even when the site setting is on.
+     * PRIVATE keeps the entries visible to the authoring learner only.
      */
-    public function test_private_override_wins_over_enabled_site_setting(): void {
-        $this->resetAfterTest();
-        set_config('entriesvisibletoteacher', 1, 'insightjournal');
-
+    public function test_entries_hidden_when_activity_set_to_private(): void {
         $diary = $this->make_diary(INSIGHTJOURNAL_VISIBILITY_PRIVATE);
         $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
     }
 
     /**
      * A diary record with no entriesvisibility property at all (e.g. hand-built
-     * in older test/generator code) is treated as SITEDEFAULT.
+     * in older test/generator code) is treated as visible.
      */
-    public function test_missing_property_treated_as_sitedefault(): void {
-        $this->resetAfterTest();
-        set_config('entriesvisibletoteacher', 0, 'insightjournal');
-
+    public function test_missing_property_treated_as_visible(): void {
         $diary = (object) [];
-        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
+        $this->assertTrue(\insightjournal_entries_visible_to_teacher($diary));
+    }
+
+    /**
+     * The retired "use site default" value of 0 predates the per-activity-only
+     * model. The upgrade step rewrites it to VISIBLE, but a stray 0 reaching
+     * this function must not be mistaken for PRIVATE.
+     */
+    public function test_legacy_sitedefault_value_treated_as_visible(): void {
+        $diary = $this->make_diary(0);
+        $this->assertTrue(\insightjournal_entries_visible_to_teacher($diary));
     }
 }
