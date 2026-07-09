@@ -38,6 +38,25 @@ Versions map to the `$plugin->release` value in `version.php`.
   used as the background of the insight prompt box, on both the activity
   view and the personal summary page. Never affects the learner's response.
   Blank (the default) keeps today's appearance unchanged.
+- New global admin setting **Entries visible to trainer**
+  (`entriesvisibletoteacher`, Site administration → Plugins → Activity
+  modules → Insight Journal), enabled by default so existing sites keep
+  today's behaviour. When disabled, learner entries become private: only the
+  learner who wrote an entry can see it. The activity report, course report,
+  and personal summary pages remain reachable to trainers with
+  `mod/insightjournal:viewall`, but show a notice instead of entry content,
+  and CSV export is blocked. Applies uniformly to every role, including
+  managers and site admins — there is no bypass.
+- Per-activity override for trainer visibility: a new **Trainer visibility
+  for this activity** setting on each activity (Use site default / Visible
+  to trainer / Private) lets the course teacher who creates or edits an
+  Insight Journal activity override the site-wide default for that activity
+  alone — not just the site administrator. Defaults to "Use site default"
+  for new and pre-existing activities, so nothing changes until a teacher
+  deliberately picks an override. The course report and personal summary now
+  reflect this per activity (e.g. one activity's entries can be private
+  while another's stay visible in the same course), instead of a single
+  page-wide notice.
 
 ### Changed
 

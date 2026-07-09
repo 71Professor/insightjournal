@@ -28,7 +28,9 @@
     Context variables required for this template:
     * backurl - URL back to the course.
     * hasitems - Whether there are any entries to display.
-    * items - List of entry_card contexts (see mod_insightjournal/entry_card).
+    * items - List of entry_card contexts (see mod_insightjournal/entry_card),
+      each carrying its own "private" flag since visibility is decided per
+      activity, not for the whole page.
 
     Example context (json):
     {
@@ -38,6 +40,8 @@
             {
                 "activityname": "Week 1 reflection",
                 "prompt": "<p>What did you learn today?</p>",
+                "private": false,
+                "hasresponse": true,
                 "response": "Today I learned about Mustache templates.",
                 "timemodified": "1 January 2026, 10:00 AM"
             }

@@ -90,3 +90,36 @@ function insightjournal_send_csv_headers(string $filename): void {
     header('Pragma: no-cache');
     header('Expires: 0');
 }
+
+/**
+ * Whether trainers/teachers may currently see this activity's insight journal entries.
+ *
+ * Each activity can override the site-wide "entriesvisibletoteacher" admin
+ * setting via its own entriesvisibility field:
+ * - INSIGHTJOURNAL_VISIBILITY_SITEDEFAULT: follow the site setting (default
+ *   for new and pre-existing activities, so it tracks later admin changes).
+ * - INSIGHTJOURNAL_VISIBILITY_VISIBLE / INSIGHTJOURNAL_VISIBILITY_PRIVATE:
+ *   force the result for this activity regardless of the site setting.
+ *
+ * When entries are not visible, the report, course report, and summary pages
+ * remain reachable to anyone with the mod/insightjournal:viewall capability,
+ * but show a notice instead of entry content. The site setting defaults to
+ * visible when unset (e.g. before an upgraded site's admin has saved the
+ * settings page), matching prior behaviour.
+ *
+ * @param stdClass $diary The activity instance record (needs entriesvisibility).
+ * @return bool
+ */
+function insightjournal_entries_visible_to_teacher(stdClass $diary): bool {
+    $override = (int) ($diary->entriesvisibility ?? INSIGHTJOURNAL_VISIBILITY_SITEDEFAULT);
+    if ($override === INSIGHTJOURNAL_VISIBILITY_VISIBLE) {
+        return true;
+    }
+    if ($override === INSIGHTJOURNAL_VISIBILITY_PRIVATE) {
+        return false;
+    }
+
+    $value = get_config('insightjournal', 'entriesvisibletoteacher');
+
+    return $value === false ? true : (bool) $value;
+}

@@ -31,13 +31,19 @@
     * hasactivities - Whether there are any activities to display.
     * activities - Column headers, one per activity.
         * name - Activity name.
+        * private - Whether this activity's entries are currently private
+          (site or per-activity setting resolves to off). Shows a short
+          badge next to the name; the column header itself always shows,
+          since the activity's existence isn't private data.
     * rows - One row per participant.
         * summaryurl - URL to the participant's personal summary.
         * fullname - Participant full name.
         * cells - One cell per activity.
-            * completed - Whether the entry is complete.
-            * status - Localised status text.
-            * timemodified - Localised last modified date, or empty.
+            * private - Whether this cell's activity is private. When true,
+              a muted placeholder is shown instead of completed/status/timemodified.
+            * completed - Whether the entry is complete (absent when private).
+            * status - Localised status text (absent when private).
+            * timemodified - Localised last modified date, or empty (absent when private).
         * progress - Localised overall progress text.
 
     Example context (json):
@@ -46,14 +52,14 @@
         "downloadurl": "https://example.com/mod/insightjournal/coursereport.php?courseid=2&download=csv",
         "hasactivities": true,
         "activities": [
-            {"name": "Week 1 reflection"}
+            {"name": "Week 1 reflection", "private": false}
         ],
         "rows": [
             {
                 "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2&userid=3",
                 "fullname": "Jane Doe",
                 "cells": [
-                    {"completed": true, "status": "Done", "timemodified": "1 January 2026, 10:00 AM"}
+                    {"private": false, "completed": true, "status": "Done", "timemodified": "1 January 2026, 10:00 AM"}
                 ],
                 "progress": "1 / 1"
             }
@@ -71,7 +77,9 @@
             <thead>
                 <tr>
                     <th scope="col">{{#str}}participant, mod_insightjournal{{/str}}</th>
-                    {{#activities}}<th scope="col">{{name}}</th>{{/activities}}
+                    {{#activities}}
+                        <th scope="col">{{name}}{{#private}} <span class="badge badge-secondary">{{#str}}private, mod_insightjournal{{/str}}</span>{{/private}}</th>
+                    {{/activities}}
                     <th scope="col">{{#str}}progress, mod_insightjournal{{/str}}</th>
                 </tr>
             </thead>
@@ -81,8 +89,13 @@
                         <td><a href="{{summaryurl}}">{{fullname}}</a></td>
                         {{#cells}}
                             <td>
-                                <span class="{{#completed}}text-success{{/completed}}{{^completed}}text-muted{{/completed}}">{{status}}</span>
-                                {{#timemodified}}<div class="small text-muted">{{timemodified}}</div>{{/timemodified}}
+                                {{#private}}
+                                    <span class="text-muted" title="{{#str}}entriesprivatenotice, mod_insightjournal{{/str}}">&mdash;</span>
+                                {{/private}}
+                                {{^private}}
+                                    <span class="{{#completed}}text-success{{/completed}}{{^completed}}text-muted{{/completed}}">{{status}}</span>
+                                    {{#timemodified}}<div class="small text-muted">{{timemodified}}</div>{{/timemodified}}
+                                {{/private}}
                             </td>
                         {{/cells}}
                         <td>{{progress}}</td>

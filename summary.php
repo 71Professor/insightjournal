@@ -24,6 +24,7 @@
  */
 
 require_once('../../config.php');
+require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 $courseid = required_param('courseid', PARAM_INT);
@@ -79,12 +80,15 @@ $viewuser = $DB->get_record(
     MUST_EXIST
 );
 // When viewing another user, restrict to journals where viewall is explicitly granted.
-$querycms = ($viewuserid !== $USER->id) ? $viewallcms : $cms;
+$viewingother = $viewuserid !== $USER->id;
+$querycms = $viewingother ? $viewallcms : $cms;
 $diaryids = array_keys($querycms);
+
 [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
 $params['userid'] = $viewuserid;
 $records = $DB->get_records_sql(
-    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, e.response, e.responseformat, e.timemodified
+    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, rd.entriesvisibility,
+            e.response, e.responseformat, e.timemodified
        FROM {insightjournal} rd
   LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
       WHERE rd.id $insql
@@ -101,17 +105,19 @@ $PAGE->requires->js_call_amd('mod_insightjournal/summary', 'init');
 $items = [];
 foreach ($records as $record) {
     $modulecontext = context_module::instance($cms[$record->id]->id);
+    $private = $viewingother && !insightjournal_entries_visible_to_teacher($record);
     $rawresponse = $record->response ?? '';
-    $hasresponse = insightjournal_html_to_text($rawresponse) !== '';
+    $hasresponse = !$private && insightjournal_html_to_text($rawresponse) !== '';
     $items[] = [
         'activityname' => format_string($record->name),
         'prompt' => format_text($record->prompttext, $record->promptformat, ['context' => $modulecontext]),
         'promptstyle' => insightjournal_prompt_style($record->promptcolor ?? ''),
+        'private' => $private,
         'hasresponse' => $hasresponse,
         'response' => $hasresponse
             ? format_text($rawresponse, $record->responseformat, ['context' => $modulecontext])
             : '',
-        'timemodified' => !empty($record->timemodified) ?
+        'timemodified' => (!$private && !empty($record->timemodified)) ?
             userdate($record->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
     ];
 }

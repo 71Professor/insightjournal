@@ -23,6 +23,15 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+// Per-activity override of the site-wide "entriesvisibletoteacher" setting.
+// SITEDEFAULT follows the site setting (and tracks later changes to it);
+// VISIBLE/PRIVATE force the result for this activity regardless of the site
+// setting. Defined here (not locallib.php) because course/modedit.php always
+// requires this file before instantiating mod_form.php.
+define('INSIGHTJOURNAL_VISIBILITY_SITEDEFAULT', 0);
+define('INSIGHTJOURNAL_VISIBILITY_VISIBLE', 1);
+define('INSIGHTJOURNAL_VISIBILITY_PRIVATE', 2);
+
 /**
  * Returns whether this module supports a given feature.
  *

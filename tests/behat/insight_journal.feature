@@ -77,3 +77,42 @@ Feature: Insight journal activity
     Then "[data-insightjournal-edit-panel]" "css_element" should be visible
     And "[data-insightjournal-view]" "css_element" should not be visible
     And I should see "Saved at" in the "[data-insightjournal-status]" "css_element"
+
+  @javascript
+  Scenario: A trainer sees a privacy notice instead of entries when the global toggle is off
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "This is my private reflection."
+    And I press "Save"
+    And I log out
+    And the following config values are set as admin:
+      | entriesvisibletoteacher | 0 | insightjournal |
+    When I am on the "My Journal" "insightjournal activity" page logged in as teacher1
+    And I follow "Insight report"
+    Then I should see "Insight journal entries are currently private. Only the learner who wrote an entry can view it."
+    And I should not see "This is my private reflection."
+    And I should not see "Download CSV"
+
+  @javascript
+  Scenario: A course teacher overrides the site-wide default per activity
+    Given the following "activities" exist:
+      | activity       | course | name            | prompttext            | minchars | entriesvisibility |
+      | insightjournal  | C1     | Open Journal    | What did you learn?   | 0        | 1                 |
+      | insightjournal  | C1     | Private Journal | What surprised you?   | 0        | 2                 |
+    And I am on the "Open Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Visible reflection."
+    And I press "Save"
+    And I am on the "Private Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Secret reflection."
+    And I press "Save"
+    And I log out
+    And the following config values are set as admin:
+      | entriesvisibletoteacher | 0 | insightjournal |
+    When I am on the "Open Journal" "insightjournal activity" page logged in as teacher1
+    And I follow "Insight report"
+    And I follow "Student 1"
+    Then I should see "Visible reflection."
+    And I should not see "Secret reflection."
+    And I should see "Insight journal entries are currently private. Only the learner who wrote an entry can view it."

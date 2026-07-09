@@ -167,6 +167,43 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
+     * A per-activity visibility override submitted via the form persists unchanged.
+     */
+    public function test_add_instance_persists_entriesvisibility(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $journal = $this->getDataGenerator()->create_module('insightjournal', [
+            'course' => $course->id,
+            'entriesvisibility' => INSIGHTJOURNAL_VISIBILITY_PRIVATE,
+        ]);
+
+        $stored = $DB->get_record('insightjournal', ['id' => $journal->id]);
+        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_PRIVATE, (int) $stored->entriesvisibility);
+    }
+
+    /**
+     * Updating an instance persists a changed visibility override unchanged.
+     */
+    public function test_update_instance_persists_entriesvisibility(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $journal = $this->getDataGenerator()->create_module('insightjournal', ['course' => $course->id]);
+
+        $update = (object) [
+            'instance' => $journal->id,
+            'entriesvisibility' => INSIGHTJOURNAL_VISIBILITY_VISIBLE,
+        ];
+        insightjournal_update_instance($update);
+
+        $stored = $DB->get_record('insightjournal', ['id' => $journal->id]);
+        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_VISIBLE, (int) $stored->entriesvisibility);
+    }
+
+    /**
      * The active rule description is returned only when the rule is enabled.
      */
     public function test_get_completion_active_rule_descriptions(): void {
