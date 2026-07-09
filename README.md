@@ -179,6 +179,14 @@ after `php admin/tool/behat/cli/init.php`.
   roundtrip, editing a saved response, autosave, the minchars completion
   regression, the trainer-visibility privacy toggle, and the per-activity
   visibility override. Broader coverage (CSV export) is not yet automated.
+- **Two navigation links share the label "Insight report"**: the activity
+  settings navigation link to the per-activity report (`report.php`) and the
+  on-page button to the course-wide report (`coursereport.php`) use the same
+  text, which can be confusing when both are visible on the same page.
+  Cosmetic only — found while adding Behat coverage for the per-activity
+  visibility override (2026-07-09); no functional impact. Planned: give the
+  course-wide link a distinct label (e.g. "Course insight report", matching
+  its own page heading).
 
 ---
 
