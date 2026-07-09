@@ -61,7 +61,7 @@ function insightjournal_html_to_text(string $html): string {
 }
 
 /**
- * Build an inline CSS style for the insight prompt box's background colour.
+ * Build an inline CSS style for the task/question box's background colour.
  *
  * @param string|null $hexcolor Hex colour code (e.g. "#ffcc00" or "abc"), or empty/null for none.
  * @return string Inline style attribute value, or '' if no valid colour is set.

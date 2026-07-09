@@ -2,7 +2,7 @@
 
 ## **1 Moodle Activity Module · Version 0.4.0-beta · Juli 2026**
 
-> **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einem gezielten Impuls an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
+> **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einer gezielten Aufgabe oder Frage an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
 
 ---
 
@@ -12,9 +12,9 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 
 ## 2  Funktionsübersicht
 
-**Aktivitätsansicht (`view.php`)** – Lernende sehen den Impuls und ihr persönliches Eingabefeld. Manuelles Speichern oder optionales Autosave nach einer Tippause.
+**Aktivitätsansicht (`view.php`)** – Lernende sehen die Aufgabe/Frage und ihr persönliches Eingabefeld. Manuelles Speichern oder optionales Autosave nach einer Tippause.
 
-**Aktivitätsbericht (`report.php`)** – Trainer/innen sehen alle Antworten der Kursteilnehmenden für einen Impuls; Volltextsuche nach Teilnehmenden; CSV-Export.
+**Aktivitätsbericht (`report.php`)** – Trainer/innen sehen alle Antworten der Kursteilnehmenden für eine Aufgabe/Frage; Volltextsuche nach Teilnehmenden; CSV-Export.
 
 **Kursgesamtbericht (`coursereport.php`)** – Übersicht über alle Insight-Journal-Aktivitäten im Kurs mit Fortschrittsanzeige je Teilnehmende/r.
 
@@ -71,8 +71,8 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 
 1. Im Kurs auf **Aktivität oder Material anlegen** klicken und **Insight Journal** wählen.
 2. **Name** der Aktivität eingeben (erscheint in der Kursnavigation).
-3. **Insight-Impuls** formulieren – das ist die Reflexionsfrage oder -aufgabe für die Lernenden.
-4. Optional: **Hintergrundfarbe des Impulses** als Hex-Code festlegen (z. B. `#ffcc00`), um den Impuls überall dort, wo er angezeigt wird, optisch von der Antwort der/des Lernenden abzuheben.
+3. **Aufgabe / Frage** formulieren – das ist die Reflexionsfrage oder -aufgabe für die Lernenden.
+4. Optional: **Hintergrundfarbe für Aufgabe / Frage** als Hex-Code festlegen (z. B. `#ffcc00`), um Aufgabe/Frage überall dort, wo sie angezeigt wird, optisch von der Antwort der/des Lernenden abzuheben.
 5. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
 6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird.
 7. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
@@ -84,7 +84,7 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 ## 5  Lernenden-Workflow
 
 1. Insight-Journal-Aktivität im Kurs öffnen.
-2. Impuls lesen, Antwort im Rich-Text-Editor von Moodle eingeben.
+2. Aufgabe/Frage lesen, Antwort im Rich-Text-Editor von Moodle eingeben.
 3. Auf **Speichern** klicken – oder bei aktiviertem Autosave einfach einige Sekunden aufhören zu tippen.
 4. Aktivität kann jederzeit wieder geöffnet und die Antwort überarbeitet werden.
 5. Am Kursende: **Persönliche Zusammenfassung** öffnen – alle Antworten auf einer Seite, geeignet für den Browser-Druckdialog (inkl. PDF-Export über den Browser).
@@ -97,7 +97,7 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 
 Aufruf: Innerhalb der Aktivität auf **Bericht** klicken (nur für Trainer/innen sichtbar).
 
-- Zeigt alle Einträge der Kursteilnehmenden für diesen Impuls
+- Zeigt alle Einträge der Kursteilnehmenden für diese Aufgabe/Frage
 - Detailansicht bei Kiick auf Teilnehmernamen
 - CSV-Export (erfordert Capability `mod/insightjournal:export`)
 

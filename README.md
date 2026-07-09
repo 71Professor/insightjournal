@@ -2,11 +2,11 @@
 
 **Version 0.4.0-beta · July 2026 · Moodle 4.5+**
 
-`mod_insightjournal` is a Moodle activity module for focused reflection prompts.
-Each activity holds one prompt. Learners write and save their own response, can return
-to edit it, and can open a printable personal summary of all their journal entries
-across the course. Trainers see all entries, track course-wide progress, and can
-export responses to CSV.
+`mod_insightjournal` is a Moodle activity module for focused reflection tasks and
+questions. Each activity holds one task or question. Learners write and save their
+own response, can return to edit it, and can open a printable personal summary of
+all their journal entries across the course. Trainers see all entries, track
+course-wide progress, and can export responses to CSV.
 
 > **This is a beta release** distributed to a small group of educators and Moodle
 > developers for feedback. See the [Feedback](#feedback) section below.
@@ -40,9 +40,9 @@ export responses to CSV.
 
 1. In a course, choose **Add an activity or resource → Insight Journal**.
 2. Enter the activity **name** (shown in the course navigation).
-3. Enter the **Insight prompt** — the reflection question or task for learners.
-4. Optionally set a **prompt background colour** (a hex code, e.g. `#ffcc00`) to set the
-   prompt visually apart from the learner's response, wherever it is shown.
+3. Enter the **Task / Question** — the reflection question or task for learners.
+4. Optionally set a **Task / Question background colour** (a hex code, e.g. `#ffcc00`) to
+   set it visually apart from the learner's response, wherever it is shown.
 5. Optionally enable **autosave** (response is saved after a pause in typing).
 6. Optionally set a **minimum character count** as an activity completion condition,
    and/or a **maximum character count**, enforced with a live counter as learners type.
@@ -51,7 +51,7 @@ export responses to CSV.
 8. Optionally set **Trainer visibility for this activity** to override the site-wide
    default for this activity alone (*Use site default* / *Visible to trainer* /
    *Private*) — see [Data and Privacy](#data-and-privacy).
-9. After the course runs, open the **activity report** to review entries for one prompt,
+9. After the course runs, open the **activity report** to review entries for one task/question,
    or the **course report** for progress across all Insight Journal activities. Whether
    trainers can see learner entries is controlled by a site-wide admin setting, which
    individual activities can override — see [Data and Privacy](#data-and-privacy).
@@ -60,7 +60,7 @@ export responses to CSV.
 
 ## Learner Workflow
 
-Learners open the activity, read the prompt, write a response using Moodle's
+Learners open the activity, read the task/question, write a response using Moodle's
 rich-text editor, and save manually. If autosave is enabled, the response is
 saved after a short pause in typing.
 Learners can reopen and edit their saved response at any time. The personal summary
