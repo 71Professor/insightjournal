@@ -11,7 +11,7 @@ Versions map to the `$plugin->release` value in `version.php`.
 ### Added
 
 - Help buttons (contextual `_help` strings) for the activity settings
-  `Insight prompt`, `Enable autosave`, and `Minimum characters for completion`,
+  `Task / Question`, `Enable autosave`, and `Minimum characters for completion`,
   in English and German.
 - PHPUnit test suite (`tests/`): custom completion rule, lib callbacks, the
   `save_entry` external function, and the privacy provider, plus a test data
@@ -35,7 +35,7 @@ Versions map to the `$plugin->release` value in `version.php`.
   characters (HTML tags stripped), not raw markup length. No image/file
   embedding is supported.
 - Optional `promptcolor` activity setting: a hex colour code (e.g. `#ffcc00`)
-  used as the background of the insight prompt box, on both the activity
+  used as the background of the task/question box, on both the activity
   view and the personal summary page. Never affects the learner's response.
   Blank (the default) keeps today's appearance unchanged.
 - New global admin setting **Entries visible to trainer**
@@ -60,6 +60,11 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ### Changed
 
+- Renamed the activity setting label from **Insight prompt** to **Task /
+  Question** (German: **Aufgabe / Frage**) for clarity, including its help
+  text and the related **Task / Question background colour** setting
+  (formerly **Prompt background colour**). The underlying `prompttext` and
+  `promptcolor` field names are unchanged, so no database upgrade is needed.
 - Accessibility: the autosave status now lives in an ARIA live region
   (`role="status"` / `aria-live="polite"`) so screen readers announce
   save progress, and the response field is associated with the minimum-character
