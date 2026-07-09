@@ -81,12 +81,11 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $mform->addHelpButton('maxchars', 'maxchars', 'insightjournal');
 
         $mform->addElement('select', 'entriesvisibility', get_string('entriesvisibility', 'insightjournal'), [
-            INSIGHTJOURNAL_VISIBILITY_SITEDEFAULT => get_string('entriesvisibility_sitedefault', 'insightjournal'),
             INSIGHTJOURNAL_VISIBILITY_VISIBLE => get_string('entriesvisibility_visible', 'insightjournal'),
             INSIGHTJOURNAL_VISIBILITY_PRIVATE => get_string('entriesvisibility_private', 'insightjournal'),
         ]);
         $mform->setType('entriesvisibility', PARAM_INT);
-        $mform->setDefault('entriesvisibility', INSIGHTJOURNAL_VISIBILITY_SITEDEFAULT);
+        $mform->setDefault('entriesvisibility', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
         $mform->addHelpButton('entriesvisibility', 'entriesvisibility', 'insightjournal');
 
         $this->standard_coursemodule_elements();
