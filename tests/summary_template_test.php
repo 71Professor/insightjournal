@@ -31,6 +31,8 @@ use advanced_testcase;
 
 /**
  * Tests for the mod_insightjournal/summary template (and the entry_card partial it renders).
+ *
+ * @coversNothing
  */
 final class summary_template_test extends advanced_testcase {
     /**

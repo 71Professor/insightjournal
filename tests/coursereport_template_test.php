@@ -31,6 +31,8 @@ use advanced_testcase;
 
 /**
  * Tests for the mod_insightjournal/coursereport template.
+ *
+ * @coversNothing
  */
 final class coursereport_template_test extends advanced_testcase {
     /**
