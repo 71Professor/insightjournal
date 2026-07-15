@@ -76,8 +76,8 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 5. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
 6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird.
 7. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
-8. Optional: **Sichtbarkeit der Einträge für Trainer/innen** setzen, um den globalen Standard nur für diese Aktivität zu überschreiben (*Website-Standard verwenden* / *Für Trainer/innen sichtbar* / *Privat*) – siehe Abschnitt 7 „Datenschutz".
-9. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Ob Trainer/innen die Einträge sehen dürfen, steuert eine globale Admin-Einstellung, die einzelne Aktivitäten überschreiben können – siehe Abschnitt 7 „Datenschutz".
+8. Optional: **Sichtbarkeit der Einträge für Trainer/innen** setzen (*Für Trainer/innen sichtbar* / *Privat*) – siehe Abschnitt 7 „Datenschutz".
+9. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Ob Trainer/innen die Einträge sehen dürfen, wird pro Aktivität festgelegt – siehe Abschnitt 7 „Datenschutz".
 
 ---
 
@@ -123,17 +123,19 @@ Die Capability `mod/insightjournal:viewall` ist mit `RISK_PERSONAL` markiert, da
 
 CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert. Tabellenformeln in Antworten werden automatisch mit einem Präfix versehen, um CSV-Injection-Risiken zu reduzieren.
 
-**Einträge für Trainer/innen sichtbar** (Website-Administration → Plugins → Aktivitäten → Insight Journal) ist eine globale, standardmäßig aktivierte Einstellung. Wird sie deaktiviert, sind Einträge privat: Nur die Person, die einen Eintrag verfasst hat, kann ihn sehen. Aktivitätsbericht, Kursbericht und persönliche Zusammenfassung bleiben für alle mit `mod/insightjournal:viewall` erreichbar, zeigen dann aber einen Hinweistext statt der Einträge; der CSV-Export ist gesperrt. Die Einstellung gilt einheitlich für alle Rollen, auch Manager/innen und Site-Admins – es gibt keine Ausnahme.
-
-Jede Aktivität kann diesen globalen Standard über die eigene Einstellung
-**Sichtbarkeit der Einträge für Trainer/innen** überschreiben (*Website-Standard
-verwenden* / *Für Trainer/innen sichtbar* / *Privat*) – nicht nur die
-Website-Administration, sondern auch die Kurstrainer/innen entscheiden damit
-pro Aktivität. Neue und bereits bestehende Aktivitäten stehen standardmäßig auf
-„Website-Standard verwenden", sodass sich ohne aktives Umschalten nichts ändert.
-Aktivitäten im selben Kurs können dadurch unterschiedlich eingestellt sein;
-Kursbericht und persönliche Zusammenfassung berücksichtigen das pro Aktivität,
-statt die ganze Seite auszublenden.
+Jede Aktivität hat ihre eigene Einstellung **Sichtbarkeit der Einträge für
+Trainer/innen** (*Für Trainer/innen sichtbar* / *Privat*), die der Kurstrainer/die
+Kurstrainerin beim Anlegen oder Bearbeiten der Aktivität festlegt. Standardmäßig
+steht sie auf „Für Trainer/innen sichtbar", sodass bestehende Aktivitäten ihr
+bisheriges Verhalten behalten. Bei „Privat" bleiben Einträge nur für die
+verfassende Person sichtbar: Aktivitätsbericht, Kursbericht und persönliche
+Zusammenfassung bleiben für alle mit `mod/insightjournal:viewall` erreichbar,
+zeigen dann aber einen Hinweistext statt der Einträge; der CSV-Export ist
+gesperrt. Das gilt einheitlich für alle Rollen, auch Manager/innen und
+Site-Admins – es gibt keine Ausnahme. Aktivitäten im selben Kurs können
+unterschiedlich eingestellt sein; Kursbericht und persönliche Zusammenfassung
+berücksichtigen das pro Aktivität, statt die ganze Seite auszublenden. Eine
+globale, website-weite Einstellung gibt es nicht.
 
 ---
 

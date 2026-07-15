@@ -48,13 +48,12 @@ course-wide progress, and can export responses to CSV.
    and/or a **maximum character count**, enforced with a live counter as learners type.
 7. In the **Activity completion** settings, keep *Learner must save an Insight Journal
    response* enabled when saved responses should mark the activity complete.
-8. Optionally set **Trainer visibility for this activity** to override the site-wide
-   default for this activity alone (*Use site default* / *Visible to trainer* /
+8. Optionally set **Trainer visibility for this activity** (*Visible to trainer* /
    *Private*) — see [Data and Privacy](#data-and-privacy).
 9. After the course runs, open the **activity report** to review entries for one task/question,
    or the **course report** for progress across all Insight Journal activities. Whether
-   trainers can see learner entries is controlled by a site-wide admin setting, which
-   individual activities can override — see [Data and Privacy](#data-and-privacy).
+   trainers can see learner entries is controlled per activity — see
+   [Data and Privacy](#data-and-privacy).
 
 ---
 
@@ -106,21 +105,17 @@ for a module context, a single approved user, or approved user lists.
 CSV exports are restricted by capability; spreadsheet-formula values are prefixed
 to reduce CSV injection risk.
 
-**Entries visible to trainer** (Site administration → Plugins → Activity modules →
-Insight Journal) is a site-wide setting, enabled by default. When disabled, entries
-become private: only the learner who wrote an entry can see it. The activity report,
-course report, and personal summary pages stay reachable to anyone with
-`mod/insightjournal:viewall`, but show a notice instead of entry content, and CSV
-export is blocked. This applies to every role, including managers and site admins —
-there is no bypass.
-
-Each activity can override this site-wide default via its own **Trainer visibility
-for this activity** setting (*Use site default* / *Visible to trainer* / *Private*),
-so a course teacher — not only the site administrator — can decide per activity.
-New and pre-existing activities default to "Use site default", so nothing changes
-until a teacher deliberately picks an override. Activities in the same course can
-have different visibility; the course report and personal summary reflect this per
-activity rather than hiding the whole page.
+Each activity has its own **Trainer visibility for this activity** setting
+(*Visible to trainer* / *Private*), set by the course teacher who creates or edits
+the activity. It defaults to "Visible to trainer", so existing activities keep
+their current behaviour. With "Private", entries stay visible to the learner who
+wrote them only: the activity report, course report, and personal summary pages
+stay reachable to anyone with `mod/insightjournal:viewall`, but show a notice
+instead of entry content, and CSV export is blocked. This applies to every role,
+including managers and site admins — there is no bypass. Activities in the same
+course can have different visibility; the course report and personal summary
+reflect this per activity rather than hiding the whole page. There is no
+site-wide setting.
 
 ---
 
