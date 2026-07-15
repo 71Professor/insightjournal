@@ -103,7 +103,7 @@ class provider implements
             }
             $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $userid]);
             if ($entry) {
-                $data = (object)[
+                $data = (object) [
                     'activity'       => $diary->name,
                     'response'       => $entry->response,
                     'responseformat' => $entry->responseformat,

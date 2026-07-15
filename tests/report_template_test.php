@@ -61,13 +61,15 @@ final class report_template_test extends advanced_testcase {
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/report', $this->make_context([
             'hasrows' => true,
-            'rows' => [[
-                'summaryurl' => 'https://example.com/summary.php',
-                'fullname' => 'Jane Doe',
-                'email' => 'jane@example.com',
-                'response' => '<p>Today I learned about Mustache templates.</p>',
-                'timemodified' => '1 January 2026, 10:00 AM',
-            ]],
+            'rows' => [
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'Jane Doe',
+                    'email' => 'jane@example.com',
+                    'response' => '<p>Today I learned about Mustache templates.</p>',
+                    'timemodified' => '1 January 2026, 10:00 AM',
+                ],
+            ],
         ]));
 
         $this->assertStringContainsString('Jane Doe', $html);
@@ -87,13 +89,15 @@ final class report_template_test extends advanced_testcase {
         $html = $OUTPUT->render_from_template('mod_insightjournal/report', $this->make_context([
             'entriesprivate' => true,
             'hasrows' => true,
-            'rows' => [[
-                'summaryurl' => 'https://example.com/summary.php',
-                'fullname' => 'Jane Doe',
-                'email' => 'jane@example.com',
-                'response' => '<p>Secret reflection.</p>',
-                'timemodified' => '1 January 2026, 10:00 AM',
-            ]],
+            'rows' => [
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'Jane Doe',
+                    'email' => 'jane@example.com',
+                    'response' => '<p>Secret reflection.</p>',
+                    'timemodified' => '1 January 2026, 10:00 AM',
+                ],
+            ],
         ]));
 
         $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);

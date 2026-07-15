@@ -101,8 +101,8 @@ class mod_insightjournal_mod_form extends moodleform_mod {
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
-        $minchars = (int)($data['minchars'] ?? 0);
-        $maxchars = (int)($data['maxchars'] ?? 0);
+        $minchars = (int) ($data['minchars'] ?? 0);
+        $maxchars = (int) ($data['maxchars'] ?? 0);
         if ($minchars < 0) {
             $errors['minchars'] = get_string('err_numeric', 'form');
         }
@@ -112,7 +112,7 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         if ($maxchars > 0 && $minchars > $maxchars) {
             $errors['minchars'] = get_string('err_mingtmax', 'insightjournal');
         }
-        $promptcolor = trim((string)($data['promptcolor'] ?? ''));
+        $promptcolor = trim((string) ($data['promptcolor'] ?? ''));
         if ($promptcolor !== '' && !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $promptcolor)) {
             $errors['promptcolor'] = get_string('err_invalidcolor', 'insightjournal');
         }

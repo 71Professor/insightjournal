@@ -152,7 +152,7 @@ function insightjournal_get_coursemodule_info($coursemodule) {
     }
     $info = new cached_cm_info();
     $info->name = $diary->name;
-    if ($coursemodule->showdescription && trim((string)$diary->intro) !== '') {
+    if ($coursemodule->showdescription && trim((string) $diary->intro) !== '') {
         $info->content = format_module_intro('insightjournal', $diary, $coursemodule->id, false);
     }
     // Expose the custom completion rule to core completion (Moodle 4.3+ custom_completion).

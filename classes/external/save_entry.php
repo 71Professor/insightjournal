@@ -68,8 +68,8 @@ class save_entry extends external_api {
         $now = time();
         $response = clean_param($params['response'], PARAM_CLEANHTML);
         $visiblelength = \core_text::strlen(insightjournal_html_to_text($response));
-        if (!empty($diary->maxchars) && $visiblelength > (int)$diary->maxchars) {
-            throw new \moodle_exception('maxcharserror', 'mod_insightjournal', '', (int)$diary->maxchars);
+        if (!empty($diary->maxchars) && $visiblelength > (int) $diary->maxchars) {
+            throw new \moodle_exception('maxcharserror', 'mod_insightjournal', '', (int) $diary->maxchars);
         }
         $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
         if ($entry) {
@@ -79,7 +79,7 @@ class save_entry extends external_api {
             $DB->update_record('insightjournal_entries', $entry);
             $id = $entry->id;
         } else {
-            $id = $DB->insert_record('insightjournal_entries', (object)[
+            $id = $DB->insert_record('insightjournal_entries', (object) [
                 'insightjournalid' => $diary->id,
                 'userid' => $USER->id,
                 'response' => $response,

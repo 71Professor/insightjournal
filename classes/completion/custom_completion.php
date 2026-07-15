@@ -72,7 +72,7 @@ class custom_completion extends activity_custom_completion {
             return COMPLETION_INCOMPLETE;
         }
 
-        $meetsminchars = \core_text::strlen($visibletext) >= (int)$diary->minchars;
+        $meetsminchars = \core_text::strlen($visibletext) >= (int) $diary->minchars;
         return $meetsminchars ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
     }
 
