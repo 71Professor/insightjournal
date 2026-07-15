@@ -79,16 +79,14 @@ Feature: Insight journal activity
     And I should see "Saved at" in the "[data-insightjournal-status]" "css_element"
 
   @javascript
-  Scenario: A trainer sees a privacy notice instead of entries when the global toggle is off
+  Scenario: A trainer sees a privacy notice instead of entries when the activity is private
     Given the following "activities" exist:
-      | activity       | course | name       | prompttext           | minchars |
-      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+      | activity       | course | name       | prompttext           | minchars | entriesvisibility |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 2                 |
     And I am on the "My Journal" "insightjournal activity" page logged in as student1
     And I set the field "Response" to "This is my private reflection."
     And I press "Save"
     And I log out
-    And the following config values are set as admin:
-      | entriesvisibletoteacher | 0 | insightjournal |
     When I am on the "My Journal" "insightjournal activity" page logged in as teacher1
     And I follow "Insight report"
     Then I should see "Insight journal entries are currently private. Only the learner who wrote an entry can view it."
@@ -108,8 +106,6 @@ Feature: Insight journal activity
     And I set the field "Response" to "Secret reflection."
     And I press "Save"
     And I log out
-    And the following config values are set as admin:
-      | entriesvisibletoteacher | 0 | insightjournal |
     When I am on the "Open Journal" "insightjournal activity" page logged in as teacher1
     And I follow "Insight report"
     And I follow "Student 1"
