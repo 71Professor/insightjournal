@@ -10,6 +10,18 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ### Added
 
+- **New per-activity setting: Trainer visibility for this activity** (`entriesvisibility`: Visible to trainer / Private), set by the course
+  teacher who creates or edits an Insight Journal activity. Defaults to
+  "Visible to trainer", so existing activities keep today's behaviour. With
+  "Private", learner entries are visible to the learner who wrote them only:
+  the activity report, course report, and personal summary pages remain
+  reachable to trainers with `mod/insightjournal:viewall`, but show a notice
+  instead of entry content, and CSV export is blocked. Applies uniformly to
+  every role, including managers and site admins — there is no bypass. The
+  course report and personal summary reflect this per activity (e.g. one
+  activity's entries can be private while another's stay visible in the same
+  course), instead of a single page-wide notice. There is deliberately no
+  site-wide setting; visibility is a per-activity decision.
 - Help buttons (contextual `_help` strings) for the activity settings
   `Task / Question`, `Enable autosave`, and `Minimum characters for completion`,
   in English and German.
@@ -38,21 +50,7 @@ Versions map to the `$plugin->release` value in `version.php`.
   used as the background of the task/question box, on both the activity
   view and the personal summary page. Never affects the learner's response.
   Blank (the default) keeps today's appearance unchanged.
-- New per-activity setting **Trainer visibility for this activity**
-  (`entriesvisibility`: Visible to trainer / Private), set by the course
-  teacher who creates or edits an Insight Journal activity. Defaults to
-  "Visible to trainer", so existing activities keep today's behaviour. With
-  "Private", learner entries are visible to the learner who wrote them only:
-  the activity report, course report, and personal summary pages remain
-  reachable to trainers with `mod/insightjournal:viewall`, but show a notice
-  instead of entry content, and CSV export is blocked. Applies uniformly to
-  every role, including managers and site admins — there is no bypass. The
-  course report and personal summary reflect this per activity (e.g. one
-  activity's entries can be private while another's stay visible in the same
-  course), instead of a single page-wide notice. There is deliberately no
-  site-wide setting; visibility is a per-activity decision.
-
-### Changed
+- ### Changed
 
 - Renamed the activity setting label from **Insight prompt** to **Task /
   Question** (German: **Aufgabe / Frage**) for clarity, including its help
