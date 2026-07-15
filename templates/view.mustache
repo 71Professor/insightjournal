@@ -88,7 +88,7 @@
                     </div>
                 </div>
                 <div data-insightjournal-edit-panel class="{{#haveentry}}d-none{{/haveentry}}">
-                    <label for="insightjournal-response-{{cmid}}" class="sr-only">{{#str}}response, mod_insightjournal{{/str}}</label>
+                    <label for="insightjournal-response-{{cmid}}" class="visually-hidden">{{#str}}response, mod_insightjournal{{/str}}</label>
                     <textarea id="insightjournal-response-{{cmid}}" name="insightjournalresponse" class="form-control" rows="10" cols="80" spellcheck="true" data-insightjournal-response {{#minchars}}aria-describedby="insightjournal-minchars-{{cmid}}" {{/minchars}}placeholder="{{#str}}responseplaceholder, mod_insightjournal{{/str}}">{{responseraw}}</textarea>
                     <div class="d-flex align-items-center gap-2 mt-2">
                         <button type="button" class="btn btn-primary" data-insightjournal-save>{{#str}}save, mod_insightjournal{{/str}}</button>
