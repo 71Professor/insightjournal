@@ -1,5 +1,7 @@
 # mod_insightjournal – Insight Journal for Moodle
 
+[![Moodle Plugin CI](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml/badge.svg)](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml)
+
 **Version 0.4.0-beta · July 2026 · Moodle 4.5+**
 
 `mod_insightjournal` is a Moodle activity module for focused reflection tasks and

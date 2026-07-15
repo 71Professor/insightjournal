@@ -38,7 +38,8 @@ use stdClass;
 /**
  * Tests that a course backup/restore round-trip preserves instance settings.
  *
- * @covers \mod_insightjournal\backup\backup_insightjournal_stepslib
+ * @covers \backup_insightjournal_activity_structure_step
+ * @covers \restore_insightjournal_activity_structure_step
  */
 final class backup_test extends advanced_testcase {
     /**

@@ -50,7 +50,16 @@ Versions map to the `$plugin->release` value in `version.php`.
   used as the background of the task/question box, on both the activity
   view and the personal summary page. Never affects the learner's response.
   Blank (the default) keeps today's appearance unchanged.
-- ### Changed
+- Continuous integration via GitHub Actions using
+  [moodle-plugin-ci](https://github.com/moodlehq/moodle-plugin-ci)
+  (`.github/workflows/ci.yml`): every push and pull request runs phplint,
+  phpmd, the Moodle Code Checker (phpcs), PHPDoc checks, plugin validation,
+  upgrade-savepoint checks, Mustache lint, Grunt, PHPUnit, and Behat across a
+  matrix of PHP 8.1–8.4, Moodle 4.5 LTS through `main`, and
+  PostgreSQL/MariaDB. Contributed by Jonathan Champ (@jrchamp) — thanks!
+  (PR #9)
+
+### Changed
 
 - Renamed the activity setting label from **Insight prompt** to **Task /
   Question** (German: **Aufgabe / Frage**) for clarity, including its help
@@ -60,10 +69,17 @@ Versions map to the `$plugin->release` value in `version.php`.
 - Accessibility: the autosave status now lives in an ARIA live region
   (`role="status"` / `aria-live="polite"`) so screen readers announce
   save progress, and the response field is associated with the minimum-character
-  hint via `aria-describedby`. Bootstrap 4 utility classes (`sr-only`,
-  `input-group-append`) are kept intentionally because the plugin supports
-  Moodle 4.5 (Bootstrap 4); they remain valid on Moodle 5.0 via its compatibility layer.
-- Code style aligned with the Moodle `phpcs` coding standard across all PHP files.
+  hint via `aria-describedby`. The deprecated Bootstrap 4 class `sr-only` has
+  been replaced with `visually-hidden`, which Moodle 4.5 already supports via
+  its Bootstrap 5 bridge; `input-group-append` is kept intentionally for
+  Moodle 4.5 (Bootstrap 4) and remains valid on Moodle 5.0 via its
+  compatibility layer. (PR #9)
+- Code style aligned with the Moodle `phpcs` coding standard across all PHP
+  files, now enforced by CI: consistent spacing after type casts, multi-line
+  array formatting, and alphabetically sorted language strings (English and
+  German, no wording changes). JavaScript in `amd/src/` now passes Moodle's
+  ESLint rules and the `amd/build/` bundles were rebuilt via Grunt, including
+  a proper source map for `summary.min.js`. (PR #9)
 
 ### Notes
 
@@ -72,6 +88,10 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ### Fixed
 
+- Two Behat scenarios still configured the site-wide `entriesvisibletoteacher`
+  setting that was removed when visibility became a per-activity decision,
+  breaking the acceptance test run. They now set `entriesvisibility` on the
+  activity instead. Found by the new CI. (PR #9)
 - `insightjournal_get_coursemodule_info()` now exposes the `completionentries`
   custom completion rule to core completion via
   `customdata['customcompletionrules']`. Previously the rule was never reported,
