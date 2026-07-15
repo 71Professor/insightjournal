@@ -31,6 +31,8 @@ use advanced_testcase;
 
 /**
  * Tests for the mod_insightjournal/summary template (and the entry_card partial it renders).
+ *
+ * @coversNothing
  */
 final class summary_template_test extends advanced_testcase {
     /**
@@ -57,15 +59,17 @@ final class summary_template_test extends advanced_testcase {
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
             'hasitems' => true,
-            'items' => [[
-                'activityname' => 'Week 1 reflection',
-                'prompt' => '<p>What did you learn today?</p>',
-                'promptstyle' => '',
-                'private' => false,
-                'hasresponse' => true,
-                'response' => '<p>Today I learned about Mustache templates.</p>',
-                'timemodified' => '1 January 2026, 10:00 AM',
-            ]],
+            'items' => [
+                [
+                    'activityname' => 'Week 1 reflection',
+                    'prompt' => '<p>What did you learn today?</p>',
+                    'promptstyle' => '',
+                    'private' => false,
+                    'hasresponse' => true,
+                    'response' => '<p>Today I learned about Mustache templates.</p>',
+                    'timemodified' => '1 January 2026, 10:00 AM',
+                ],
+            ],
         ]));
 
         $this->assertStringContainsString('Today I learned about Mustache templates.', $html);
@@ -82,15 +86,17 @@ final class summary_template_test extends advanced_testcase {
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
             'hasitems' => true,
-            'items' => [[
-                'activityname' => 'Week 2 reflection',
-                'prompt' => '<p>What surprised you this week?</p>',
-                'promptstyle' => '',
-                'private' => true,
-                'hasresponse' => false,
-                'response' => '',
-                'timemodified' => '',
-            ]],
+            'items' => [
+                [
+                    'activityname' => 'Week 2 reflection',
+                    'prompt' => '<p>What surprised you this week?</p>',
+                    'promptstyle' => '',
+                    'private' => true,
+                    'hasresponse' => false,
+                    'response' => '',
+                    'timemodified' => '',
+                ],
+            ],
         ]));
 
         $this->assertStringContainsString('What surprised you this week?', $html);
@@ -146,15 +152,17 @@ final class summary_template_test extends advanced_testcase {
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
             'hasitems' => true,
-            'items' => [[
-                'activityname' => 'Week 2 reflection',
-                'prompt' => '<p>What surprised you this week?</p>',
-                'promptstyle' => '',
-                'private' => true,
-                'hasresponse' => false,
-                'response' => '',
-                'timemodified' => '',
-            ]],
+            'items' => [
+                [
+                    'activityname' => 'Week 2 reflection',
+                    'prompt' => '<p>What surprised you this week?</p>',
+                    'promptstyle' => '',
+                    'private' => true,
+                    'hasresponse' => false,
+                    'response' => '',
+                    'timemodified' => '',
+                ],
+            ],
         ]));
 
         $this->assertStringContainsString(get_string('print', 'mod_insightjournal'), $html);

@@ -44,7 +44,15 @@ require_capability('mod/insightjournal:view', $context);
 $PAGE->set_url('/mod/insightjournal/view.php', ['id' => $id]);
 $PAGE->set_title(format_string($diary->name));
 $PAGE->set_heading(format_string($course->fullname));
-$PAGE->requires->js_call_amd('mod_insightjournal/autosave', 'init', [$cm->id, (int)$diary->autosave, (int)($diary->maxchars ?? 0)]);
+$PAGE->requires->js_call_amd(
+    'mod_insightjournal/autosave',
+    'init',
+    [
+        $cm->id,
+        (int) $diary->autosave,
+        (int) ($diary->maxchars ?? 0),
+    ]
+);
 
 $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
 $canwrite = has_capability('mod/insightjournal:submit', $context);
@@ -80,7 +88,7 @@ $completion->set_module_viewed($cm);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($diary->name));
-if (trim((string)$diary->intro) !== '') {
+if (trim((string) $diary->intro) !== '') {
     echo $OUTPUT->box(format_module_intro('insightjournal', $diary, $cm->id), 'generalbox mod_introbox');
 }
 
@@ -97,9 +105,9 @@ $templatecontext = [
     'responseformatted' => $haveentry
         ? format_text($responseraw, $entry->responseformat, ['context' => $context])
         : '',
-    'autosave' => (bool)$diary->autosave,
-    'minchars' => (int)$diary->minchars,
-    'maxchars' => (int)($diary->maxchars ?? 0),
+    'autosave' => (bool) $diary->autosave,
+    'minchars' => (int) $diary->minchars,
+    'maxchars' => (int) ($diary->maxchars ?? 0),
     'lastsaved' => $entry
         ? get_string(
             'lastsaved',

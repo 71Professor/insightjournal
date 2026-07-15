@@ -74,11 +74,14 @@ if ($download === 'csv') {
     $out = fopen('php://output', 'w');
     fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
     foreach ($entries as $entry) {
-        $user = (object)['firstname' => $entry->firstname, 'lastname' => $entry->lastname,
-                         'firstnamephonetic' => $entry->firstnamephonetic,
-                         'lastnamephonetic' => $entry->lastnamephonetic,
-                         'middlename' => $entry->middlename,
-                         'alternatename' => $entry->alternatename];
+        $user = (object) [
+            'firstname' => $entry->firstname,
+            'lastname' => $entry->lastname,
+            'firstnamephonetic' => $entry->firstnamephonetic,
+            'lastnamephonetic' => $entry->lastnamephonetic,
+            'middlename' => $entry->middlename,
+            'alternatename' => $entry->alternatename,
+        ];
         fputcsv($out, [
             $course->id,
             insightjournal_csv_value($course->fullname),
@@ -102,7 +105,7 @@ $PAGE->set_heading(format_string($course->fullname));
 
 $rows = [];
 foreach ($entries as $entry) {
-    $user = (object)[
+    $user = (object) [
         'firstname' => $entry->firstname,
         'lastname' => $entry->lastname,
         'firstnamephonetic' => $entry->firstnamephonetic,

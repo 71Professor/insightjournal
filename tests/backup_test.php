@@ -37,6 +37,8 @@ use stdClass;
 
 /**
  * Tests that a course backup/restore round-trip preserves instance settings.
+ *
+ * @covers \mod_insightjournal\backup\backup_insightjournal_stepslib
  */
 final class backup_test extends advanced_testcase {
     /**
@@ -46,6 +48,7 @@ final class backup_test extends advanced_testcase {
         global $CFG;
         require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
         require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+        parent::setUpBeforeClass();
     }
 
     /**

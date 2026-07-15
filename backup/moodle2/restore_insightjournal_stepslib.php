@@ -54,7 +54,7 @@ class restore_insightjournal_activity_structure_step extends restore_activity_st
      */
     protected function process_insightjournal($data) {
         global $DB;
-        $data = (object)$data;
+        $data = (object) $data;
         $data->course = $this->get_courseid();
         $oldid = $data->id;
         $data->id = $DB->insert_record('insightjournal', $data);
@@ -70,7 +70,7 @@ class restore_insightjournal_activity_structure_step extends restore_activity_st
      */
     protected function process_insightjournal_entry($data) {
         global $DB;
-        $data = (object)$data;
+        $data = (object) $data;
         unset($data->id);
         $data->insightjournalid = $this->get_new_parentid('insightjournal');
         $data->userid = $this->get_mappingid('user', $data->userid);

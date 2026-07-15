@@ -31,6 +31,8 @@ use advanced_testcase;
 
 /**
  * Tests for the mod_insightjournal/coursereport template.
+ *
+ * @coversNothing
  */
 final class coursereport_template_test extends advanced_testcase {
     /**
@@ -58,15 +60,27 @@ final class coursereport_template_test extends advanced_testcase {
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
             'hasactivities' => true,
-            'activities' => [['name' => 'Week 1 reflection', 'private' => false]],
-            'rows' => [[
-                'summaryurl' => 'https://example.com/summary.php',
-                'fullname' => 'Jane Doe',
-                'cells' => [
-                    ['private' => false, 'completed' => true, 'status' => 'Done', 'timemodified' => '1 January 2026, 10:00 AM'],
+            'activities' => [
+                [
+                    'name' => 'Week 1 reflection',
+                    'private' => false,
                 ],
-                'progress' => '1 / 1',
-            ]],
+            ],
+            'rows' => [
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'Jane Doe',
+                    'cells' => [
+                        [
+                            'private' => false,
+                            'completed' => true,
+                            'status' => 'Done',
+                            'timemodified' => '1 January 2026, 10:00 AM',
+                        ],
+                    ],
+                    'progress' => '1 / 1',
+                ],
+            ],
         ]));
 
         $this->assertStringContainsString('Jane Doe', $html);
@@ -91,15 +105,23 @@ final class coursereport_template_test extends advanced_testcase {
                 ['name' => 'Week 1 reflection', 'private' => false],
                 ['name' => 'Week 2 reflection', 'private' => true],
             ],
-            'rows' => [[
-                'summaryurl' => 'https://example.com/summary.php',
-                'fullname' => 'Jane Doe',
-                'cells' => [
-                    ['private' => false, 'completed' => true, 'status' => 'Done', 'timemodified' => '1 January 2026, 10:00 AM'],
-                    ['private' => true],
+            'rows' => [
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'Jane Doe',
+                    'cells' => [
+                        [
+                            'private' => false,
+                            'completed' => true,
+                            'status' => 'Done',
+                            'timemodified' => '1 January 2026, 10:00 AM',
+
+                        ],
+                        ['private' => true],
+                    ],
+                    'progress' => '1 / 2',
                 ],
-                'progress' => '1 / 2',
-            ]],
+            ],
         ]));
 
         $this->assertStringContainsString('Jane Doe', $html);
@@ -122,12 +144,14 @@ final class coursereport_template_test extends advanced_testcase {
         $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
             'hasactivities' => true,
             'activities' => [['name' => 'Week 1 reflection', 'private' => true]],
-            'rows' => [[
-                'summaryurl' => 'https://example.com/summary.php',
-                'fullname' => 'Jane Doe',
-                'cells' => [['private' => true]],
-                'progress' => '0 / 1',
-            ]],
+            'rows' => [
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'Jane Doe',
+                    'cells' => [['private' => true]],
+                    'progress' => '0 / 1',
+                ],
+            ],
         ]));
 
         $this->assertStringContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);

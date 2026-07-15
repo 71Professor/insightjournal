@@ -30,7 +30,7 @@
  * @return string Sanitised value.
  */
 function insightjournal_csv_value($value): string {
-    $value = (string)$value;
+    $value = (string) $value;
     if ($value !== '' && preg_match('/^[=\+\-@]/', $value)) {
         return "'" . $value;
     }
@@ -67,7 +67,7 @@ function insightjournal_html_to_text(string $html): string {
  * @return string Inline style attribute value, or '' if no valid colour is set.
  */
 function insightjournal_prompt_style(?string $hexcolor): string {
-    $hexcolor = trim((string)$hexcolor);
+    $hexcolor = trim((string) $hexcolor);
     if ($hexcolor === '' || !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $hexcolor)) {
         return '';
     }
