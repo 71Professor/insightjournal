@@ -8,8 +8,20 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+## [0.4.1-beta] - 2026-07-17
+
+First release published as a tagged GitHub Release with an installable ZIP.
+Collects everything since 0.2.0-beta.
+
 ### Added
 
+- **GitHub release workflow** (`.github/workflows/release.yml`): pushing a
+  version tag (`v*`) builds an installable plugin ZIP whose root folder is
+  named `insightjournal` — as the Moodle installer requires — and publishes it
+  as a GitHub Release. The workflow fails if the tag does not match
+  `$plugin->release` in `version.php`. This removes the need to manually
+  rename the folder from GitHub's *Code → Download ZIP* archive
+  (`moodle-mod_insightjournal-main`).
 - **New per-activity setting: Trainer visibility for this activity** (`entriesvisibility`: Visible to trainer / Private), set by the course
   teacher who creates or edits an Insight Journal activity. Defaults to
   "Visible to trainer", so existing activities keep today's behaviour. With
@@ -61,6 +73,17 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ### Changed
 
+- **Repository layout cleaned up for maintainability**: development-only files
+  (`docs/`, `phpstan.neon`, `phpstan-baseline.neon`, `phpstan-bootstrap.php`,
+  `.github/`, Git metadata) are excluded from release ZIPs and GitHub source
+  archives via `export-ignore`, so an installed plugin folder contains only
+  runtime files; internal working documents were removed from the repository;
+  the German user guide moved from the repository root to
+  `docs/Reflexionstagebuch_Plugin_Dokumentation.md`.
+- Installation instructions (README and German guide) now recommend the
+  release ZIP from the GitHub Releases page and document that a folder
+  unpacked from GitHub's *Code → Download ZIP* must be renamed to
+  `insightjournal` before installing.
 - Renamed the activity setting label from **Insight prompt** to **Task /
   Question** (German: **Aufgabe / Frage**) for clarity, including its help
   text and the related **Task / Question background colour** setting

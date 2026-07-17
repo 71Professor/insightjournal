@@ -1,0 +1,46 @@
+name: Release
+
+# Builds an installable plugin ZIP whose root folder is named
+# "insightjournal" (as required by the Moodle plugin installer) and
+# attaches it to a GitHub Release. Triggered by pushing a version tag,
+# e.g. "v0.4.1-beta".
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Check tag matches version.php release
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          release=$(sed -n "s/^\$plugin->release *= *'\(.*\)';.*/\1/p" version.php)
+          echo "Tag: ${tag} / version.php release: ${release}"
+          if [ "${tag}" != "${release}" ]; then
+            echo "::error::Tag v${tag} does not match \$plugin->release '${release}' in version.php."
+            exit 1
+          fi
+
+      - name: Build plugin ZIP
+        run: |
+          git archive --format=zip --prefix=insightjournal/ \
+            -o "mod_insightjournal-${GITHUB_REF_NAME}.zip" HEAD
+          unzip -l "mod_insightjournal-${GITHUB_REF_NAME}.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mod_insightjournal-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}

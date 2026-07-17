@@ -1,2 +1,4 @@
 .claude/
 *.zip
+# Local-only working documents (pitch, feedback notes, design scratch) — never published.
+internal/

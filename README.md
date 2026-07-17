@@ -2,7 +2,7 @@
 
 [![Moodle Plugin CI](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml/badge.svg)](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml)
 
-**Version 0.4.0-beta · July 2026 · Moodle 4.5+**
+**Version 0.4.1-beta · July 2026 · Moodle 4.5+**
 
 `mod_insightjournal` is a Moodle activity module for focused reflection tasks and
 questions. Each activity holds one task or question. Learners write and save their
@@ -13,26 +13,46 @@ course-wide progress, and can export responses to CSV.
 > **This is a beta release** distributed to a small group of educators and Moodle
 > developers for feedback. See the [Feedback](#feedback) section below.
 
+A detailed German user guide is available at
+[`docs/Reflexionstagebuch_Plugin_Dokumentation.md`](docs/Reflexionstagebuch_Plugin_Dokumentation.md).
+
 ---
 
 ## Installation
 
-1. Copy the `insightjournal` folder into the `mod/` directory of your Moodle
-   installation, so the path is `mod/insightjournal/`.
+### Recommended: install the release ZIP
 
-2. Visit **Site administration → Notifications** — Moodle will detect the plugin
-   and run the database installation automatically.
+1. Download the `mod_insightjournal-v…zip` file from the latest
+   [GitHub release](https://github.com/71Professor/moodle-mod_insightjournal/releases).
+   Its root folder is already named `insightjournal`, as the Moodle installer requires.
+2. In Moodle, go to **Site administration → Plugins → Install plugins**, upload the
+   ZIP and follow the installer — the database installation runs automatically.
 
-3. Purge caches after changing language strings, templates, or AMD JavaScript
-   (**Site administration → Development → Purge caches**).
+Alternatively, unzip the release ZIP into the `mod/` directory of your Moodle
+installation (so the path is `mod/insightjournal/`) and visit
+**Site administration → Notifications**.
 
-4. For production JavaScript builds, run Moodle's AMD build from the Moodle root:
-   
-   ```bash
-   npx grunt amd
-   ```
-   
-   In development environments with `$CFG->cachejs = false` this step is not required.
+### From a Git checkout
+
+Clone the repository into `mod/insightjournal/` and visit
+**Site administration → Notifications**.
+
+> **Note:** GitHub's *Code → Download ZIP* button packs the plugin into a folder
+> named `moodle-mod_insightjournal-main`. If you install from that ZIP instead of a
+> release ZIP, rename the unpacked folder to `insightjournal` first — otherwise the
+> Moodle installer rejects it.
+
+### After installing
+
+- Purge caches after changing language strings, templates, or AMD JavaScript
+  (**Site administration → Development → Purge caches**).
+- For production JavaScript builds, run Moodle's AMD build from the Moodle root:
+
+  ```bash
+  npx grunt amd
+  ```
+
+  In development environments with `$CFG->cachejs = false` this step is not required.
 
 **Requirements:** Moodle 4.5+ · PHP 7.4+ · No Composer or Node.js runtime dependencies.
 

@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal für Moodle
 
-## **1 Moodle Activity Module · Version 0.4.0-beta · Juli 2026**
+## **1 Moodle Activity Module · Version 0.4.1-beta · Juli 2026**
 
 > **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einer gezielten Aufgabe oder Frage an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
 
@@ -28,10 +28,20 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 
 ### 3.1  Plugin-Dateien einrichten
 
-1. Den Ordner `insightjournal` (bzw. die entpackte ZIP-Datei) in das Verzeichnis `mod/` der Moodle-Installation kopieren – also nach `mod/insightjournal/`.
+**Empfohlener Weg – Release-ZIP:**
+
+1. Die Datei `mod_insightjournal-v….zip` vom neuesten [GitHub-Release](https://github.com/71Professor/moodle-mod_insightjournal/releases) herunterladen. Ihr Wurzelordner heißt bereits `insightjournal`, wie es der Moodle-Installer verlangt.
+2. In Moodle unter **Website-Administration → Plugins → Plugins installieren** die ZIP-Datei hochladen und dem Installer folgen – die Datenbankinstallation läuft automatisch.
+
+**Alternativ – manuell kopieren:**
+
+1. Den Ordner `insightjournal` (aus dem entpackten Release-ZIP) in das Verzeichnis `mod/` der Moodle-Installation kopieren – also nach `mod/insightjournal/`.
 2. Im Moodle-Adminbereich: **Website-Administration → Benachrichtigungen** aufrufen.
 3. Moodle erkennt das neue Plugin und führt die Datenbankinstallation automatisch durch.
-4. Nach Änderungen an Sprachstrings, Templates oder JavaScript: **Cache bereinigen** (Website-Administration → Entwicklung → Cache löschen).
+
+> **Hinweis:** Der GitHub-Button *Code → Download ZIP* verpackt das Plugin in einen Ordner namens `moodle-mod_insightjournal-main`. Wer dieses ZIP statt eines Release-ZIPs nutzt, muss den entpackten Ordner zuerst in `insightjournal` umbenennen – sonst lehnt der Moodle-Installer es ab.
+
+Nach Änderungen an Sprachstrings, Templates oder JavaScript: **Cache bereinigen** (Website-Administration → Entwicklung → Cache löschen).
 
 > **Hinweis zu JavaScript:** Für Produktionsumgebungen sollte der AMD-Build-Prozess von Moodle ausgeführt werden:
 > 
@@ -173,4 +183,4 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 ---
 
-*Erstellt: Juli 2026 · Plugin: mod_insightjournal v0.4.0-beta*
+*Erstellt: Juli 2026 · Plugin: mod_insightjournal v0.4.1-beta*
