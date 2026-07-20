@@ -43,21 +43,37 @@ class save_entry extends external_api {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module id'),
             'response' => new external_value(PARAM_RAW, 'Learner response (HTML)'),
+            'expectedrevision' => new external_value(
+                PARAM_INT,
+                'Revision the client last saw (0 if it believes no entry exists yet)'
+            ),
         ]);
     }
 
     /**
      * Saves or updates the entry for the current user and updates completion.
      *
+     * Uses expectedrevision as an optimistic-concurrency check: the write is only
+     * applied if it matches the entry's current revision (0 meaning "no entry
+     * yet"). This stops a delayed/reordered request, or a second tab that has not
+     * seen a save made elsewhere, from silently overwriting newer stored text.
+     * A mismatch is reported back as a conflict rather than thrown, since it is
+     * an expected, recoverable outcome rather than a failure.
+     *
      * @param int $cmid Course module id.
      * @param string $response Learner response HTML.
-     * @return array Result with success flag, entry id, timestamps, and rendered HTML.
+     * @param int $expectedrevision Revision the client last saw.
+     * @return array Result with success/conflict flags, entry id, revision, timestamps, and rendered HTML.
      */
-    public static function execute(int $cmid, string $response): array {
+    public static function execute(int $cmid, string $response, int $expectedrevision): array {
         global $DB, $USER, $CFG;
         require_once($CFG->libdir . '/completionlib.php');
         require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
-        $params = self::validate_parameters(self::execute_parameters(), ['cmid' => $cmid, 'response' => $response]);
+        $params = self::validate_parameters(self::execute_parameters(), [
+            'cmid' => $cmid,
+            'response' => $response,
+            'expectedrevision' => $expectedrevision,
+        ]);
         $cm = get_coursemodule_from_id('insightjournal', $params['cmid'], 0, false, MUST_EXIST);
         $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
         $diary = $DB->get_record('insightjournal', ['id' => $cm->instance], '*', MUST_EXIST);
@@ -72,9 +88,29 @@ class save_entry extends external_api {
             throw new \moodle_exception('maxcharserror', 'mod_insightjournal', '', (int) $diary->maxchars);
         }
         $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
+        $currentrevision = $entry ? (int) $entry->revision : 0;
+
+        if ($params['expectedrevision'] !== $currentrevision) {
+            return [
+                'success' => false,
+                'conflict' => true,
+                'id' => $entry->id ?? 0,
+                'revision' => $currentrevision,
+                'timemodified' => $entry->timemodified ?? 0,
+                'timestr' => $entry
+                    ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
+                    : '',
+                'responsehtml' => $entry
+                    ? format_text($entry->response, $entry->responseformat, ['context' => $context])
+                    : '',
+            ];
+        }
+
+        $newrevision = $currentrevision + 1;
         if ($entry) {
             $entry->response = $response;
             $entry->responseformat = FORMAT_HTML;
+            $entry->revision = $newrevision;
             $entry->timemodified = $now;
             $DB->update_record('insightjournal_entries', $entry);
             $id = $entry->id;
@@ -84,6 +120,7 @@ class save_entry extends external_api {
                 'userid' => $USER->id,
                 'response' => $response,
                 'responseformat' => FORMAT_HTML,
+                'revision' => $newrevision,
                 'timecreated' => $now,
                 'timemodified' => $now,
             ]);
@@ -100,7 +137,9 @@ class save_entry extends external_api {
         $timestr = userdate($now, get_string('strftimedatetimeshort', 'langconfig'));
         return [
             'success' => true,
+            'conflict' => false,
             'id' => $id,
+            'revision' => $newrevision,
             'timemodified' => $now,
             'timestr' => $timestr,
             'responsehtml' => format_text($response, FORMAT_HTML, ['context' => $context]),
@@ -115,10 +154,12 @@ class save_entry extends external_api {
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'success' => new external_value(PARAM_BOOL, 'Whether the entry was saved'),
-            'id' => new external_value(PARAM_INT, 'Entry id'),
+            'conflict' => new external_value(PARAM_BOOL, 'Whether the save was rejected due to a stale expectedrevision'),
+            'id' => new external_value(PARAM_INT, 'Entry id (0 if no entry exists yet)'),
+            'revision' => new external_value(PARAM_INT, 'The entry\'s current revision after this call'),
             'timemodified' => new external_value(PARAM_INT, 'Unix timestamp'),
             'timestr' => new external_value(PARAM_TEXT, 'Formatted timestamp'),
-            'responsehtml' => new external_value(PARAM_RAW, 'The saved response, cleaned and rendered for display'),
+            'responsehtml' => new external_value(PARAM_RAW, 'The current response, cleaned and rendered for display'),
         ]);
     }
 }

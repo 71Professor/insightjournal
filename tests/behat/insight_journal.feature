@@ -77,6 +77,17 @@ Feature: Insight journal activity
     Then "[data-insightjournal-edit-panel]" "css_element" should be visible
     And "[data-insightjournal-view]" "css_element" should not be visible
     And I should see "Saved at" in the "[data-insightjournal-status]" "css_element"
+    And "[data-insightjournal-status].text-danger" "css_element" should not exist
+
+  @javascript
+  Scenario: A successful manual save shows the success status, never the error class
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Today I learned about Behat testing."
+    And I press "Save"
+    Then "[data-insightjournal-status].text-danger" "css_element" should not exist
 
   @javascript
   Scenario: A trainer sees a privacy notice instead of entries when the activity is private

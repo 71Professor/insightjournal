@@ -24,6 +24,36 @@
  */
 
 /**
+ * Resolve the retired site-wide "entriesvisibletoteacher" checkbox into the
+ * per-activity visibility value used to migrate legacy SITEDEFAULT (0) rows.
+ *
+ * Fails closed: only an explicitly enabled ('1') old setting resolves to
+ * visible. A missing (get_config() returns false), disabled, or otherwise
+ * unrecognised old value resolves to private, so an ambiguous history never
+ * exposes previously-private reflections to trainers. Literal ints are used
+ * because lib.php is not necessarily loaded during upgrade.
+ *
+ * @param mixed $oldsitedefault The old entriesvisibletoteacher config value (false if never set).
+ * @return int 1 (INSIGHTJOURNAL_VISIBILITY_VISIBLE) or 2 (INSIGHTJOURNAL_VISIBILITY_PRIVATE).
+ */
+function insightjournal_upgrade_resolve_legacy_visibility($oldsitedefault): int {
+    return ((string) $oldsitedefault === '1') ? 1 : 2;
+}
+
+/**
+ * Migrate legacy SITEDEFAULT (0) entriesvisibility rows using whatever the
+ * retired site-wide setting actually was, before it is discarded.
+ *
+ * @param \moodle_database $db
+ * @return void
+ */
+function insightjournal_upgrade_migrate_legacy_visibility(\moodle_database $db): void {
+    $oldsitedefault = get_config('insightjournal', 'entriesvisibletoteacher');
+    $migratedvisibility = insightjournal_upgrade_resolve_legacy_visibility($oldsitedefault);
+    $db->set_field('insightjournal', 'entriesvisibility', $migratedvisibility, ['entriesvisibility' => 0]);
+}
+
+/**
  * Run insight journal database upgrades.
  *
  * @param int $oldversion Previously installed plugin version.
@@ -90,19 +120,38 @@ function xmldb_insightjournal_upgrade($oldversion) {
         // The site-wide "entriesvisibletoteacher" setting is gone; trainer
         // visibility is now decided per activity. Existing rows still carry
         // the retired "follow the site default" value of 0, which no longer
-        // maps to a form option, so resolve them to VISIBLE and make that the
-        // column default for good measure. The literal 1 is
-        // INSIGHTJOURNAL_VISIBILITY_VISIBLE; lib.php is not necessarily loaded
-        // during upgrade, so the constant is not used here.
+        // maps to a form option. Resolve them using whatever the site-wide
+        // setting actually was before it is discarded below (see
+        // insightjournal_upgrade_migrate_legacy_visibility(): fails closed to
+        // private on a missing or unrecognised old value, so previously
+        // private reflections are never exposed to trainers by the upgrade).
+        // New activities still default to visible via mod_form.php, so the
+        // column default itself stays 1 (INSIGHTJOURNAL_VISIBILITY_VISIBLE).
         $table = new xmldb_table('insightjournal');
         $field = new xmldb_field('entriesvisibility', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'completionentries');
 
-        $DB->set_field('insightjournal', 'entriesvisibility', 1, ['entriesvisibility' => 0]);
+        insightjournal_upgrade_migrate_legacy_visibility($DB);
         $dbman->change_field_default($table, $field);
 
         unset_config('entriesvisibletoteacher', 'insightjournal');
 
         upgrade_mod_savepoint(true, 2026070903, 'insightjournal');
+    }
+
+    if ($oldversion < 2026072000) {
+        // Optimistic-concurrency counter for save_entry: lets the server reject a
+        // save whose client-side revision is stale instead of silently
+        // overwriting newer text from a racing autosave/tab. Existing rows have
+        // never been through a checked save, so the NOT NULL default of 1 backfills
+        // them to the same starting point a fresh entry gets on its first insert.
+        $table = new xmldb_table('insightjournal_entries');
+        $field = new xmldb_field('revision', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '1', 'responseformat');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026072000, 'insightjournal');
     }
 
     return true;

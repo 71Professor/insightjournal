@@ -45,6 +45,9 @@ final class save_entry_test extends advanced_testcase {
     /** @var \stdClass The enrolled student. */
     protected $student;
 
+    /** @var int The revision the next save() call will send as expectedrevision, tracked from the last result. */
+    protected int $revision = 0;
+
     /**
      * Creates a completion-enabled journal with a minimum length and an enrolled student.
      */
@@ -68,14 +71,22 @@ final class save_entry_test extends advanced_testcase {
     }
 
     /**
-     * Calls the external function and returns the cleaned result.
+     * Calls the external function with the last known revision and returns the
+     * cleaned result, updating the tracked revision for the next call.
      *
      * @param string $response The learner response to save.
+     * @param int|null $expectedrevision Overrides the tracked revision, e.g. to simulate a stale/racing client.
      * @return array The cleaned external return value.
      */
-    protected function save(string $response): array {
-        $result = save_entry::execute((int) $this->journal->cmid, $response);
-        return external_api::clean_returnvalue(save_entry::execute_returns(), $result);
+    protected function save(string $response, ?int $expectedrevision = null): array {
+        $result = save_entry::execute(
+            (int) $this->journal->cmid,
+            $response,
+            $expectedrevision ?? $this->revision
+        );
+        $result = external_api::clean_returnvalue(save_entry::execute_returns(), $result);
+        $this->revision = $result['revision'];
+        return $result;
     }
 
     /**
@@ -209,12 +220,92 @@ final class save_entry_test extends advanced_testcase {
         ]);
 
         // Heavy markup, but only 5 visible characters: fits within maxchars.
-        $result = save_entry::execute((int) $journal->cmid, '<p><strong><em>hello</em></strong></p>');
+        $result = save_entry::execute((int) $journal->cmid, '<p><strong><em>hello</em></strong></p>', 0);
         $result = external_api::clean_returnvalue(save_entry::execute_returns(), $result);
         $this->assertTrue($result['success']);
 
         // 12 visible characters, no markup at all: exceeds maxchars of 10.
         $this->expectException(\moodle_exception::class);
-        save_entry::execute((int) $journal->cmid, 'twelve chars');
+        save_entry::execute((int) $journal->cmid, 'twelve chars', $result['revision']);
+    }
+
+    /**
+     * A first save against a brand new entry must use expectedrevision 0.
+     */
+    public function test_first_save_requires_expectedrevision_zero(): void {
+        $result = $this->save('first response', 0);
+
+        $this->assertTrue($result['success']);
+        $this->assertFalse($result['conflict']);
+        $this->assertEquals(1, $result['revision']);
+    }
+
+    /**
+     * Each successful save increments the revision by one.
+     */
+    public function test_successful_saves_increment_revision(): void {
+        $first = $this->save('first response');
+        $second = $this->save('second response');
+
+        $this->assertEquals(1, $first['revision']);
+        $this->assertEquals(2, $second['revision']);
+    }
+
+    /**
+     * A save sent with a stale expectedrevision (e.g. a delayed/reordered request,
+     * or a second tab that has not seen a save made elsewhere) is rejected as a
+     * conflict rather than overwriting the newer stored text.
+     *
+     * Regression test for IJ-01: save_entry previously had no concurrency check at
+     * all, so whichever request reached the server last always won.
+     */
+    public function test_stale_expectedrevision_is_rejected_as_conflict(): void {
+        global $DB;
+
+        $this->save('first response');
+        $result = $this->save('stale racing response', 0);
+
+        $this->assertFalse($result['success']);
+        $this->assertTrue($result['conflict']);
+
+        $stored = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertEquals('first response', $stored->response);
+    }
+
+    /**
+     * A rejected conflicting save must not itself advance the stored revision,
+     * so a client that retries with the revision it was told about lines up with
+     * what is actually stored.
+     */
+    public function test_conflict_reports_current_revision_and_does_not_advance_it(): void {
+        $this->save('first response');
+        $conflict = $this->save('stale racing response', 0);
+
+        $this->assertEquals(1, $conflict['revision']);
+
+        $retry = $this->save('retry with correct revision', $conflict['revision']);
+        $this->assertTrue($retry['success']);
+        $this->assertEquals(2, $retry['revision']);
+    }
+
+    /**
+     * A client that (incorrectly) believes an entry already exists, when none
+     * does yet, must not have that assumption silently create one; it is a
+     * conflict like any other stale revision.
+     */
+    public function test_create_with_nonzero_expectedrevision_is_rejected_as_conflict(): void {
+        global $DB;
+
+        $result = $this->save('should not be created', 5);
+
+        $this->assertFalse($result['success']);
+        $this->assertTrue($result['conflict']);
+        $this->assertEquals(0, $DB->count_records('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]));
     }
 }

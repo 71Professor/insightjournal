@@ -91,6 +91,7 @@ $string['response'] = 'Antwort';
 $string['responseplaceholder'] = 'Schreibe deine Insight-Journal-Antwort hier...';
 $string['save'] = 'Speichern';
 $string['savedat'] = 'Gespeichert am {$a}';
+$string['saveconflict'] = 'Nicht gespeichert: An anderer Stelle (z. B. einem weiteren Tab) wurde bereits eine neuere Version gespeichert. Laden Sie die Seite neu, um sie zu sehen.';
 $string['saveerror'] = 'Die Antwort konnte nicht gespeichert werden.';
 $string['saving'] = 'Wird gespeichert...';
 $string['searchparticipants'] = 'Teilnehmende suchen';

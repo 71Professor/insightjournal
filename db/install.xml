@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/insightjournal/db" VERSION="20260709" COMMENT="XMLDB file for mod_insightjournal">
+<XMLDB PATH="mod/insightjournal/db" VERSION="20260720" COMMENT="XMLDB file for mod_insightjournal">
   <TABLES>
     <TABLE NAME="insightjournal" COMMENT="Insight Journal activity instances">
       <FIELDS>
@@ -33,6 +33,7 @@
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="response" TYPE="text" NOTNULL="false"/>
         <FIELD NAME="responseformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
       </FIELDS>

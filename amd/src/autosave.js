@@ -25,6 +25,9 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
     var timer = null;
     var maxChars = 0;
     var lastSeenValue = null;
+    var currentRevision = 0;
+    var saving = false;
+    var pendingSave = null;
 
     // TinyMCE only copies its content into the backing textarea on blur, not on
     // every keystroke, so we always ask the live editor instance for its
@@ -126,6 +129,16 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
 
     var save = function(cmid, manual) {
         clearTimeout(timer);
+        // Only one save may be in flight at a time: an overlapping request (e.g.
+        // the autosave debounce firing again before a slow save has returned)
+        // would otherwise let responses arrive out of order and let a stale one
+        // overwrite newer stored text. Queue it instead; when it eventually
+        // runs it reads the textarea live, so only the latest dirty state is
+        // ever actually sent.
+        if (saving) {
+            pendingSave = {cmid: cmid, manual: manual || Boolean(pendingSave && pendingSave.manual)};
+            return;
+        }
         var textarea = document.querySelector('[data-insightjournal-response]');
         var button = document.querySelector('[data-insightjournal-save]');
         if (!textarea) {
@@ -138,44 +151,59 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
         if (button) {
             button.disabled = true;
         }
+        saving = true;
         Str.get_string('saving', 'mod_insightjournal').then(function(text) {
             setStatus(text, 'text-info');
             return Ajax.call([{
                 methodname: 'mod_insightjournal_save_entry',
-                args: {cmid: cmid, response: value}
+                args: {cmid: cmid, response: value, expectedrevision: currentRevision}
             }])[0];
         }).then(function(result) {
             var current = getCurrentValue(textarea);
             if (button) {
                 button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
             }
-            return Promise.all([result, Str.get_string('savedat', 'mod_insightjournal', result.timestr)]);
-        }).then(function(args) {
-            var saved = args[0];
-            var text = args[1];
-            setStatus(text, 'text-success');
-            if (manual) {
-                showViewPanel(saved.responsehtml, text);
+            currentRevision = result.revision;
+            if (result.conflict) {
+                return Str.get_string('saveconflict', 'mod_insightjournal').then(function(text) {
+                    setStatus(text, 'text-danger');
+                    return text;
+                });
             }
-            return text;
+            return Str.get_string('savedat', 'mod_insightjournal', result.timestr).then(function(text) {
+                setStatus(text, 'text-success');
+                if (manual) {
+                    showViewPanel(result.responsehtml, text);
+                }
+                return text;
+            });
         }).catch(function(error) {
             var current = getCurrentValue(textarea);
             if (button) {
                 button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
             }
             Notification.exception(error);
-            return Str.get_string('saveerror', 'mod_insightjournal');
-        }).then(function(text) {
-            setStatus(text, 'text-danger');
-            return text;
+            return Str.get_string('saveerror', 'mod_insightjournal').then(function(text) {
+                setStatus(text, 'text-danger');
+                return text;
+            });
         }).catch(function() {
             return null;
+        }).then(function(text) {
+            saving = false;
+            if (pendingSave) {
+                var next = pendingSave;
+                pendingSave = null;
+                save(next.cmid, next.manual);
+            }
+            return text;
         });
     };
 
     return {
-        init: function(cmid, autosave, maxchars) {
+        init: function(cmid, autosave, maxchars, initialrevision) {
             maxChars = maxchars || 0;
+            currentRevision = initialrevision || 0;
             var textarea = document.querySelector('[data-insightjournal-response]');
             var button = document.querySelector('[data-insightjournal-save]');
             var editbutton = document.querySelector('[data-insightjournal-edit]');

@@ -47,7 +47,7 @@ class backup_insightjournal_activity_structure_step extends backup_activity_stru
         ]);
         $entries = new backup_nested_element('entries');
         $entry = new backup_nested_element('entry', ['id'], [
-            'userid', 'response', 'responseformat', 'timecreated', 'timemodified',
+            'userid', 'response', 'responseformat', 'revision', 'timecreated', 'timemodified',
         ]);
 
         $diary->add_child($entries);

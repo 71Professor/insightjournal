@@ -144,20 +144,31 @@ final class locallib_test extends advanced_testcase {
 
     /**
      * A diary record with no entriesvisibility property at all (e.g. hand-built
-     * in older test/generator code) is treated as visible.
+     * in older test/generator code) fails closed: entries are hidden unless the
+     * value is explicitly VISIBLE.
      */
-    public function test_missing_property_treated_as_visible(): void {
+    public function test_entries_hidden_when_property_missing(): void {
         $diary = (object) [];
-        $this->assertTrue(\insightjournal_entries_visible_to_teacher($diary));
+        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
     }
 
     /**
      * The retired "use site default" value of 0 predates the per-activity-only
-     * model. The upgrade step rewrites it to VISIBLE, but a stray 0 reaching
-     * this function must not be mistaken for PRIVATE.
+     * model. The upgrade step resolves it to VISIBLE or PRIVATE depending on the
+     * old site setting, but a stray 0 reaching this function directly (e.g. an
+     * unmigrated row) must fail closed rather than be mistaken for VISIBLE.
      */
-    public function test_legacy_sitedefault_value_treated_as_visible(): void {
+    public function test_entries_hidden_when_value_is_legacy_sitedefault(): void {
         $diary = $this->make_diary(0);
-        $this->assertTrue(\insightjournal_entries_visible_to_teacher($diary));
+        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
+    }
+
+    /**
+     * Any unrecognised entriesvisibility value fails closed rather than being
+     * treated as visible.
+     */
+    public function test_entries_hidden_when_value_is_invalid(): void {
+        $diary = $this->make_diary(99);
+        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
     }
 }

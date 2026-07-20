@@ -103,15 +103,16 @@ function insightjournal_send_csv_headers(string $filename): void {
  *
  * When entries are private, the report, course report, and summary pages
  * remain reachable to anyone with the mod/insightjournal:viewall capability,
- * but show a notice instead of entry content. Any unexpected/legacy value
- * (e.g. a pre-migration "site default" of 0) is treated as visible, matching
- * the historical default.
+ * but show a notice instead of entry content. This fails closed: any
+ * unexpected/legacy/missing value (e.g. a pre-migration "site default" of 0)
+ * is treated as not visible, so an ambiguous value never exposes entries the
+ * author may have intended as private.
  *
  * @param stdClass $diary The activity instance record (needs entriesvisibility).
  * @return bool
  */
 function insightjournal_entries_visible_to_teacher(stdClass $diary): bool {
-    $visibility = (int) ($diary->entriesvisibility ?? INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+    $visibility = (int) ($diary->entriesvisibility ?? 0);
 
-    return $visibility !== INSIGHTJOURNAL_VISIBILITY_PRIVATE;
+    return $visibility === INSIGHTJOURNAL_VISIBILITY_VISIBLE;
 }
