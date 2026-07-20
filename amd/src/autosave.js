@@ -127,6 +127,20 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
         }
     };
 
+    // Runs once whichever branch of save()'s promise chain settles, so a
+    // queued save (see the "saving" guard below) always gets its turn. Kept
+    // as its own function, and called from each branch, so the promise chain
+    // can still end in a genuine .catch() as required by eslint's
+    // promise/catch-or-return rule.
+    var finishSave = function() {
+        saving = false;
+        if (pendingSave) {
+            var next = pendingSave;
+            pendingSave = null;
+            save(next.cmid, next.manual);
+        }
+    };
+
     var save = function(cmid, manual) {
         clearTimeout(timer);
         // Only one save may be in flight at a time: an overlapping request (e.g.
@@ -158,45 +172,38 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
                 methodname: 'mod_insightjournal_save_entry',
                 args: {cmid: cmid, response: value, expectedrevision: currentRevision}
             }])[0];
-        }).then(function(result) {
+        }).then(async function(result) {
             var current = getCurrentValue(textarea);
             if (button) {
                 button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
             }
             currentRevision = result.revision;
             if (result.conflict) {
-                return Str.get_string('saveconflict', 'mod_insightjournal').then(function(text) {
-                    setStatus(text, 'text-danger');
-                    return text;
-                });
+                var conflicttext = await Str.get_string('saveconflict', 'mod_insightjournal');
+                setStatus(conflicttext, 'text-danger');
+                finishSave();
+                return conflicttext;
             }
-            return Str.get_string('savedat', 'mod_insightjournal', result.timestr).then(function(text) {
-                setStatus(text, 'text-success');
-                if (manual) {
-                    showViewPanel(result.responsehtml, text);
-                }
-                return text;
-            });
-        }).catch(function(error) {
+            var savedtext = await Str.get_string('savedat', 'mod_insightjournal', result.timestr);
+            setStatus(savedtext, 'text-success');
+            if (manual) {
+                showViewPanel(result.responsehtml, savedtext);
+            }
+            finishSave();
+            return savedtext;
+        }).catch(async function(error) {
             var current = getCurrentValue(textarea);
             if (button) {
                 button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
             }
             Notification.exception(error);
-            return Str.get_string('saveerror', 'mod_insightjournal').then(function(text) {
-                setStatus(text, 'text-danger');
-                return text;
-            });
+            var errortext = await Str.get_string('saveerror', 'mod_insightjournal');
+            setStatus(errortext, 'text-danger');
+            finishSave();
+            return errortext;
         }).catch(function() {
+            finishSave();
             return null;
-        }).then(function(text) {
-            saving = false;
-            if (pendingSave) {
-                var next = pendingSave;
-                pendingSave = null;
-                save(next.cmid, next.manual);
-            }
-            return text;
         });
     };
 
