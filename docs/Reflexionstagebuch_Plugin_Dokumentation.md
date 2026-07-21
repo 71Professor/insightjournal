@@ -30,7 +30,7 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 
 **Empfohlener Weg – Release-ZIP:**
 
-1. Die Datei `mod_insightjournal-v….zip` vom neuesten [GitHub-Release](https://github.com/71Professor/moodle-mod_insightjournal/releases) herunterladen. Ihr Wurzelordner heißt bereits `insightjournal`, wie es der Moodle-Installer verlangt.
+1. Die Datei `mod_insightjournal-v….zip` vom neuesten [GitHub-Release](https://github.com/71Professor/insightjournal/releases) herunterladen. Ihr Wurzelordner heißt bereits `insightjournal`, wie es der Moodle-Installer verlangt.
 2. In Moodle unter **Website-Administration → Plugins → Plugins installieren** die ZIP-Datei hochladen und dem Installer folgen – die Datenbankinstallation läuft automatisch.
 
 **Alternativ – manuell kopieren:**
@@ -39,7 +39,7 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 2. Im Moodle-Adminbereich: **Website-Administration → Benachrichtigungen** aufrufen.
 3. Moodle erkennt das neue Plugin und führt die Datenbankinstallation automatisch durch.
 
-> **Hinweis:** Der GitHub-Button *Code → Download ZIP* verpackt das Plugin in einen Ordner namens `moodle-mod_insightjournal-main`. Wer dieses ZIP statt eines Release-ZIPs nutzt, muss den entpackten Ordner zuerst in `insightjournal` umbenennen – sonst lehnt der Moodle-Installer es ab.
+> **Hinweis:** Der GitHub-Button *Code → Download ZIP* verpackt das Plugin in einen Ordner namens `insightjournal-main`. Wer dieses ZIP statt eines Release-ZIPs nutzt, muss den entpackten Ordner zuerst in `insightjournal` umbenennen – sonst lehnt der Moodle-Installer es ab.
 
 Nach Änderungen an Sprachstrings, Templates oder JavaScript: **Cache bereinigen** (Website-Administration → Entwicklung → Cache löschen).
 
@@ -183,7 +183,7 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 **Kontakt:** Michael Kohl – michaelkohl71@gmail.com
 
-**GitHub:** https://github.com/71Professor/moodle-mod_insightjournal
+**GitHub:** https://github.com/71Professor/insightjournal
 
 ---
 

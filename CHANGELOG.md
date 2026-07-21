@@ -195,5 +195,5 @@ maturity `MATURITY_BETA`.
   included; restore maps user IDs and skips entries for unavailable users.
 - English and German language packs.
 
-[Unreleased]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.2.0-beta...HEAD
-[0.2.0-beta]: https://github.com/71Professor/moodle-mod_insightjournal/releases/tag/v0.2.0-beta
+[Unreleased]: https://github.com/71Professor/insightjournal/compare/v0.5.0-beta...HEAD
+[0.2.0-beta]: https://github.com/71Professor/insightjournal/releases/tag/v0.2.0-beta
