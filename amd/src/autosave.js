@@ -31,7 +31,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     var tinyEditor = null;
     var tinyEditorRequested = false;
 
-    // editor_tiny is an optional editor plugin, not a guaranteed dependency: a
+    // The editor_tiny plugin is optional, not a guaranteed dependency: a
     // site may run Atto or the plain textarea editor instead, in which case
     // this module must not fail to load along with it. Request it lazily and
     // tolerate failure; getCurrentValue() below falls back to the textarea's
@@ -44,7 +44,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         require(['editor_tiny/editor'], function(TinyEditor) {
             tinyEditor = TinyEditor;
         }, function() {
-            // editor_tiny is not installed/enabled on this site; ignore.
+            // The editor_tiny plugin is not installed or enabled on this site; ignore.
         });
     };
 
