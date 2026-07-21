@@ -8,6 +8,43 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+## [0.5.0-beta] - 2026-07-21
+
+### Added
+
+- **Optimistic-concurrency protection when saving an entry.** Every save now
+  carries the revision it was based on; if the entry has since been saved
+  elsewhere (another tab, another device) the save is rejected with a "Not
+  saved: a newer version was saved elsewhere" notice instead of silently
+  overwriting the newer text. Adds a `revision` column to
+  `insightjournal_entries` (upgrade step, existing rows backfilled to `1`)
+  and a new required `expectedrevision` parameter on the `save_entry`
+  external function.
+- Two new Behat scenarios: a successful manual save never shows the error
+  status class, and saving/the character counter/autosave all work with the
+  Atto editor instead of Tiny. Suite is now 8 scenarios (was 6).
+
+### Changed
+
+- `insightjournal_entries_visible_to_teacher()` now **fails closed**: an
+  unexpected, legacy, or missing `entriesvisibility` value is treated as
+  **not** visible to the trainer. Previously such a value was treated as
+  visible. This only affects rows left with an unresolved value.
+- The upgrade step that migrated the retired site-wide "Visible to trainer"
+  setting now resolves each activity from what that old setting actually
+  was, instead of unconditionally marking every legacy row visible; a
+  missing or unrecognised old value now resolves to private.
+
+### Fixed
+
+- Learner responses no longer hard-depend on the Tiny editor: `autosave.js`
+  requests `editor_tiny/editor` lazily and falls back to the plain textarea
+  value when Tiny isn't the active editor, so autosave and the character
+  counter keep working on sites using Atto or the plain text editor.
+- The response editor no longer contradicts itself by enabling file
+  management (`enable_filemanagement`) while `maxfiles` is `0`, which showed
+  a non-functional "manage files" control in Atto.
+
 ## [0.4.1-beta] - 2026-07-17
 
 First release published as a tagged GitHub Release with an installable ZIP.

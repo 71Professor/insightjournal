@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal für Moodle
 
-## **1 Moodle Activity Module · Version 0.4.1-beta · Juli 2026**
+## **1 Moodle Activity Module · Version 0.5.0-beta · Juli 2026**
 
 > **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einer gezielten Aufgabe oder Frage an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
 
@@ -97,6 +97,10 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 2. Aufgabe/Frage lesen, Antwort im Rich-Text-Editor von Moodle eingeben.
 3. Auf **Speichern** klicken – oder bei aktiviertem Autosave einfach einige Sekunden aufhören zu tippen.
 4. Aktivität kann jederzeit wieder geöffnet und die Antwort überarbeitet werden.
+   Jedes Speichern prüft, ob zwischenzeitlich nicht bereits an anderer Stelle
+   (z. B. in einem weiteren Tab) eine neuere Version gespeichert wurde; ist
+   das der Fall, wird das Speichern mit einem Hinweis abgelehnt, statt die
+   neuere Version stillschweigend zu überschreiben.
 5. Am Kursende: **Persönliche Zusammenfassung** öffnen – alle Antworten auf einer Seite, geeignet für den Browser-Druckdialog (inkl. PDF-Export über den Browser).
 
 ---
@@ -161,7 +165,7 @@ globale, website-weite Einstellung gibt es nicht.
 
 - **Keine native Moodle-App-Unterstützung:** Es gibt kein `db/mobile.php`. Die Aktivität ist in der Moodle-App über die responsive Webansicht nutzbar; eine native App-Integration ist für eine spätere Version geplant.
 - **Kein Server-seitiger PDF-Export:** Die Druckfunktion nutzt den Browserdruckdialog. Ein direkter PDF-Download ist für eine spätere Version geplant.
-- **Behat-Testabdeckung ist begrenzt:** Sechs Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den globalen Datenschutz-Schalter und die Aktivitäts-Überschreibung ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
+- **Behat-Testabdeckung ist begrenzt:** Acht Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den Erfolgsstatus beim Speichern, die Sichtbarkeitseinstellung pro Aktivität, den Atto-Editor und die Aktivitäts-Überschreibung ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
 
 ---
 
@@ -183,4 +187,4 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 ---
 
-*Erstellt: Juli 2026 · Plugin: mod_insightjournal v0.4.1-beta*
+*Erstellt: Juli 2026 · Plugin: mod_insightjournal v0.5.0-beta*

@@ -2,7 +2,7 @@
 
 [![Moodle Plugin CI](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml/badge.svg)](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml)
 
-**Version 0.4.1-beta · July 2026 · Moodle 4.5+**
+**Version 0.5.0-beta · July 2026 · Moodle 4.5+**
 
 `mod_insightjournal` is a Moodle activity module for focused reflection tasks and
 questions. Each activity holds one task or question. Learners write and save their
@@ -84,9 +84,12 @@ Clone the repository into `mod/insightjournal/` and visit
 Learners open the activity, read the task/question, write a response using Moodle's
 rich-text editor, and save manually. If autosave is enabled, the response is
 saved after a short pause in typing.
-Learners can reopen and edit their saved response at any time. The personal summary
-page lists all their Insight Journal responses in the course and is suitable for
-browser printing (including save-as-PDF).
+Learners can reopen and edit their saved response at any time. Each save checks
+that no newer version was saved elsewhere in the meantime (e.g. from another
+tab); if one was, the save is rejected with a notice instead of silently
+overwriting it. The personal summary page lists all their Insight Journal
+responses in the course and is suitable for browser printing (including
+save-as-PDF).
 
 ---
 
@@ -178,8 +181,10 @@ to load a real site. Run from the Moodle root:
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover the
 save/reload roundtrip, editing a previously saved response, autosave
 persisting a change without leaving edit mode, the minchars completion
-regression, the trainer-visibility privacy toggle, and a course teacher
-overriding the site-wide default per activity. Run via
+regression, a successful save never showing the error status, the
+trainer-visibility privacy toggle, saving/the character counter/autosave
+with the Atto editor, and a course teacher overriding the site-wide default
+per activity. Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
@@ -192,10 +197,11 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: six scenarios cover the save/reload
+- **Behat coverage is limited**: eight scenarios cover the save/reload
   roundtrip, editing a saved response, autosave, the minchars completion
-  regression, the trainer-visibility privacy toggle, and the per-activity
-  visibility override. Broader coverage (CSV export) is not yet automated.
+  regression, the trainer-visibility privacy toggle, the per-activity
+  visibility override, the Atto editor, and the save-status classes.
+  Broader coverage (CSV export) is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -213,9 +219,10 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (6 scenarios: save/reload roundtrip, editing a saved
-      response, autosave, completion regression, trainer-visibility privacy
-      toggle, per-activity visibility override) — 2026-07-09
+- [x] Add Behat tests (8 scenarios: save/reload roundtrip, editing a saved
+      response, autosave, completion regression, save-status classes,
+      trainer-visibility privacy toggle, Atto editor, per-activity
+      visibility override) — 2026-07-09, extended 2026-07-21
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory
