@@ -65,7 +65,10 @@ $haveentry = insightjournal_html_to_text($responseraw) !== '';
 
 if ($canwrite) {
     // Same restriction options as the prompt field's editor (mod_form.php): no
-    // file/image attachments, content is never trusted.
+    // file/image attachments, content is never trusted. enable_filemanagement
+    // must agree with maxfiles=0: Atto otherwise still shows its "manage
+    // files" button even though no draft area/filepicker options exist behind
+    // it (Tiny does not read this option either way).
     $editoroptions = [
         'subdirs' => false,
         'maxbytes' => 0,
@@ -77,7 +80,7 @@ if ($canwrite) {
         'trusttext' => false,
         'trusted' => false,
         'return_types' => 15,
-        'enable_filemanagement' => true,
+        'enable_filemanagement' => false,
         'removeorphaneddrafts' => false,
         'autosave' => true,
     ];

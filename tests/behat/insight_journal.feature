@@ -105,6 +105,24 @@ Feature: Insight journal activity
     And I should not see "Download CSV"
 
   @javascript
+  Scenario: Saving, the character counter, and autosave all work with Atto instead of Tiny
+    Given the following config values are set as admin:
+      | texteditors | atto,textarea |
+    And the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars | maxchars | autosave |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 200      | 1        |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Written with the Atto editor."
+    And I press "Save"
+    Then I should see "Written with the Atto editor." in the "[data-insightjournal-view]" "css_element"
+    When I press "Edit"
+    And I set the field "Response" to "Drafting with Atto."
+    And I wait "6" seconds
+    Then I should see "Saved at" in the "[data-insightjournal-status]" "css_element"
+    And "[data-insightjournal-status].text-danger" "css_element" should not exist
+    And I should see "19 / 200" in the "[data-insightjournal-charcounter]" "css_element"
+
+  @javascript
   Scenario: A course teacher overrides the site-wide default per activity
     Given the following "activities" exist:
       | activity       | course | name            | prompttext            | minchars | entriesvisibility |

@@ -21,21 +21,40 @@
  * @author     Michael Kohl
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], function(Ajax, Notification, Str, TinyEditor) {
+define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
     var timer = null;
     var maxChars = 0;
     var lastSeenValue = null;
     var currentRevision = 0;
     var saving = false;
     var pendingSave = null;
+    var tinyEditor = null;
+    var tinyEditorRequested = false;
+
+    // editor_tiny is an optional editor plugin, not a guaranteed dependency: a
+    // site may run Atto or the plain textarea editor instead, in which case
+    // this module must not fail to load along with it. Request it lazily and
+    // tolerate failure; getCurrentValue() below falls back to the textarea's
+    // own value when no live Tiny instance is found for it.
+    var requestTinyEditor = function() {
+        if (tinyEditorRequested) {
+            return;
+        }
+        tinyEditorRequested = true;
+        require(['editor_tiny/editor'], function(TinyEditor) {
+            tinyEditor = TinyEditor;
+        }, function() {
+            // editor_tiny is not installed/enabled on this site; ignore.
+        });
+    };
 
     // TinyMCE only copies its content into the backing textarea on blur, not on
-    // every keystroke, so we always ask the live editor instance for its
-    // content directly when one exists, falling back to the textarea's own
-    // value for the plain-textarea editor (or before Tiny has finished
-    // attaching).
+    // every keystroke, so when a live Tiny instance is attached we ask it for
+    // its content directly. Every other editor (Atto, plain textarea) keeps
+    // the textarea's own value continuously in sync as the user types, so
+    // reading it directly is always correct there.
     var getCurrentValue = function(textarea) {
-        var instance = TinyEditor.getInstanceForElementId(textarea.id);
+        var instance = tinyEditor ? tinyEditor.getInstanceForElementId(textarea.id) : null;
         return instance ? instance.getContent() : textarea.value;
     };
 
@@ -98,7 +117,7 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
             // fresh edit and fire a spurious autosave a few seconds after
             // reopening, even though nothing was typed since.
             lastSeenValue = getCurrentValue(textarea);
-            var instance = TinyEditor.getInstanceForElementId(textarea.id);
+            var instance = tinyEditor ? tinyEditor.getInstanceForElementId(textarea.id) : null;
             if (instance) {
                 instance.focus();
             } else {
@@ -217,6 +236,7 @@ define(['core/ajax', 'core/notification', 'core/str', 'editor_tiny/editor'], fun
             if (!textarea) {
                 return;
             }
+            requestTinyEditor();
             lastSeenValue = getCurrentValue(textarea);
             if (maxChars > 0) {
                 updateCounter(lastSeenValue);
