@@ -194,7 +194,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                     cmid: cmid,
                     response: value,
                     expectedrevision: currentRevision,
-                    private: Boolean(privatecheckbox && privatecheckbox.checked)
+                    'private': Boolean(privatecheckbox && privatecheckbox.checked)
                 }
             }])[0];
         }).then(async function(result) {
