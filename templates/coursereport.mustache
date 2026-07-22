@@ -31,16 +31,13 @@
     * hasactivities - Whether there are any activities to display.
     * activities - Column headers, one per activity.
         * name - Activity name.
-        * private - Whether this activity's entries are currently private
-          (site or per-activity setting resolves to off). Shows a short
-          badge next to the name; the column header itself always shows,
-          since the activity's existence isn't private data.
     * rows - One row per participant.
         * summaryurl - URL to the participant's personal summary.
         * fullname - Participant full name.
         * cells - One cell per activity.
-            * private - Whether this cell's activity is private. When true,
-              a muted placeholder is shown instead of completed/status/timemodified.
+            * private - Whether this specific entry is private (decided by
+              its author, not the activity). When true, a muted placeholder
+              is shown instead of completed/status/timemodified.
             * completed - Whether the entry is complete (absent when private).
             * status - Localised status text (absent when private).
             * timemodified - Localised last modified date, or empty (absent when private).
@@ -52,7 +49,7 @@
         "downloadurl": "https://example.com/mod/insightjournal/coursereport.php?courseid=2&download=csv",
         "hasactivities": true,
         "activities": [
-            {"name": "Week 1 reflection", "private": false}
+            {"name": "Week 1 reflection"}
         ],
         "rows": [
             {
@@ -78,7 +75,7 @@
                 <tr>
                     <th scope="col">{{#str}}participant, mod_insightjournal{{/str}}</th>
                     {{#activities}}
-                        <th scope="col">{{name}}{{#private}} <span class="badge badge-secondary">{{#str}}private, mod_insightjournal{{/str}}</span>{{/private}}</th>
+                        <th scope="col">{{name}}</th>
                     {{/activities}}
                     <th scope="col">{{#str}}progress, mod_insightjournal{{/str}}</th>
                 </tr>

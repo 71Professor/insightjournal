@@ -87,8 +87,8 @@ $diaryids = array_keys($querycms);
 [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
 $params['userid'] = $viewuserid;
 $records = $DB->get_records_sql(
-    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor, rd.entriesvisibility,
-            e.response, e.responseformat, e.timemodified
+    "SELECT rd.id, rd.name, rd.prompttext, rd.promptformat, rd.promptcolor,
+            e.response, e.responseformat, e.timemodified, e.visibility
        FROM {insightjournal} rd
   LEFT JOIN {insightjournal_entries} e ON e.insightjournalid = rd.id AND e.userid = :userid
       WHERE rd.id $insql
@@ -105,7 +105,8 @@ $PAGE->requires->js_call_amd('mod_insightjournal/summary', 'init');
 $items = [];
 foreach ($records as $record) {
     $modulecontext = context_module::instance($cms[$record->id]->id);
-    $private = $viewingother && !insightjournal_entries_visible_to_teacher($record);
+    $hasentry = $record->visibility !== null;
+    $private = $viewingother && $hasentry && !insightjournal_entry_visible_to_teacher($record);
     $rawresponse = $record->response ?? '';
     $hasresponse = !$private && insightjournal_html_to_text($rawresponse) !== '';
     $items[] = [

@@ -50,14 +50,13 @@ final class report_template_test extends advanced_testcase {
             'search' => '',
             'hasrows' => false,
             'rows' => [],
-            'entriesprivate' => false,
         ], $overrides);
     }
 
     /**
-     * With entries visible and rows present, the table renders and no privacy notice appears.
+     * A visible row renders its response and no privacy notice.
      */
-    public function test_visible_mode_shows_table(): void {
+    public function test_visible_row_shows_response(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
@@ -68,6 +67,7 @@ final class report_template_test extends advanced_testcase {
                     'summaryurl' => 'https://example.com/summary.php',
                     'fullname' => 'Jane Doe',
                     'email' => 'jane@example.com',
+                    'private' => false,
                     'response' => '<p>Today I learned about Mustache templates.</p>',
                     'timemodified' => '1 January 2026, 10:00 AM',
                 ],
@@ -81,42 +81,81 @@ final class report_template_test extends advanced_testcase {
     }
 
     /**
-     * In private mode, the notice replaces the table, search form, and download link,
-     * and no entry content leaks into the markup even if rows were (mistakenly) supplied.
+     * A private row (the participant's own choice) still shows their name, but the
+     * notice replaces their response and no response content leaks into the markup.
      */
-    public function test_private_mode_shows_notice_and_hides_entries(): void {
+    public function test_private_row_shows_notice_and_hides_response(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/report', $this->make_context([
-            'entriesprivate' => true,
             'hasrows' => true,
             'rows' => [
                 [
                     'summaryurl' => 'https://example.com/summary.php',
                     'fullname' => 'Jane Doe',
                     'email' => 'jane@example.com',
-                    'response' => '<p>Secret reflection.</p>',
-                    'timemodified' => '1 January 2026, 10:00 AM',
+                    'private' => true,
+                    'response' => '',
+                    'timemodified' => '',
                 ],
             ],
         ]));
 
+        $this->assertStringContainsString('Jane Doe', $html);
         $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
-        $this->assertStringNotContainsString('Jane Doe', $html);
-        $this->assertStringNotContainsString('Secret reflection.', $html);
-        $this->assertStringNotContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
+        $this->assertStringNotContainsString('Secret reflection', $html);
+        $this->assertStringContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
     }
 
     /**
-     * The back-to-activity link always remains available, in both modes.
+     * A mix of a visible and a private row in the same report renders both
+     * correctly: both participants' names show, but only the visible row's
+     * response content appears.
      */
-    public function test_back_link_always_present(): void {
+    public function test_mixed_rows_only_hides_the_private_response(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
-        $html = $OUTPUT->render_from_template('mod_insightjournal/report', $this->make_context(['entriesprivate' => true]));
+        $html = $OUTPUT->render_from_template('mod_insightjournal/report', $this->make_context([
+            'hasrows' => true,
+            'rows' => [
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'Jane Doe',
+                    'email' => 'jane@example.com',
+                    'private' => false,
+                    'response' => '<p>Public reflection.</p>',
+                    'timemodified' => '1 January 2026, 10:00 AM',
+                ],
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'John Roe',
+                    'email' => 'john@example.com',
+                    'private' => true,
+                    'response' => '',
+                    'timemodified' => '',
+                ],
+            ],
+        ]));
+
+        $this->assertStringContainsString('Jane Doe', $html);
+        $this->assertStringContainsString('Public reflection.', $html);
+        $this->assertStringContainsString('John Roe', $html);
+        $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
+    }
+
+    /**
+     * The back-to-activity link and download link always remain available,
+     * regardless of any row's privacy.
+     */
+    public function test_back_and_download_links_always_present(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/report', $this->make_context());
 
         $this->assertStringContainsString(get_string('backtoactivity', 'mod_insightjournal'), $html);
+        $this->assertStringContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
     }
 }

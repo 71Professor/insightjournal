@@ -38,11 +38,11 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
  * Tests for {@see \insightjournal_html_to_text()}, {@see \insightjournal_prompt_style()},
- * and {@see \insightjournal_entries_visible_to_teacher()}.
+ * and {@see \insightjournal_entry_visible_to_teacher()}.
  */
 #[CoversFunction('insightjournal_html_to_text')]
 #[CoversFunction('insightjournal_prompt_style')]
-#[CoversFunction('insightjournal_entries_visible_to_teacher')]
+#[CoversFunction('insightjournal_entry_visible_to_teacher')]
 final class locallib_test extends advanced_testcase {
     /**
      * Tags are stripped but visible text survives.
@@ -117,58 +117,59 @@ final class locallib_test extends advanced_testcase {
     }
 
     /**
-     * Builds a minimal diary stdClass with a given trainer visibility.
+     * Builds a minimal entry stdClass with a given trainer visibility.
      *
-     * @param int $entriesvisibility One of the INSIGHTJOURNAL_VISIBILITY_* constants.
+     * @param int $visibility One of the INSIGHTJOURNAL_VISIBILITY_* constants.
      * @return stdClass
      */
-    protected function make_diary(int $entriesvisibility = INSIGHTJOURNAL_VISIBILITY_VISIBLE): \stdClass {
-        return (object) ['entriesvisibility' => $entriesvisibility];
+    protected function make_entry(int $visibility = INSIGHTJOURNAL_VISIBILITY_VISIBLE): \stdClass {
+        return (object) ['visibility' => $visibility];
     }
 
     /**
-     * VISIBLE, the default for new activities, lets trainers read the entries.
+     * VISIBLE, the default for new entries, lets trainers read the entry.
      */
-    public function test_entries_visible_when_activity_set_to_visible(): void {
-        $diary = $this->make_diary(INSIGHTJOURNAL_VISIBILITY_VISIBLE);
-        $this->assertTrue(\insightjournal_entries_visible_to_teacher($diary));
+    public function test_entry_visible_when_set_to_visible(): void {
+        $entry = $this->make_entry(INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+        $this->assertTrue(\insightjournal_entry_visible_to_teacher($entry));
     }
 
     /**
-     * PRIVATE keeps the entries visible to the authoring learner only.
+     * PRIVATE keeps the entry visible to the authoring learner only.
      */
-    public function test_entries_hidden_when_activity_set_to_private(): void {
-        $diary = $this->make_diary(INSIGHTJOURNAL_VISIBILITY_PRIVATE);
-        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
+    public function test_entry_hidden_when_set_to_private(): void {
+        $entry = $this->make_entry(INSIGHTJOURNAL_VISIBILITY_PRIVATE);
+        $this->assertFalse(\insightjournal_entry_visible_to_teacher($entry));
     }
 
     /**
-     * A diary record with no entriesvisibility property at all (e.g. hand-built
-     * in older test/generator code) fails closed: entries are hidden unless the
+     * An entry record with no visibility property at all (e.g. hand-built in
+     * older test/generator code) fails closed: the entry is hidden unless the
      * value is explicitly VISIBLE.
      */
-    public function test_entries_hidden_when_property_missing(): void {
-        $diary = (object) [];
-        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
+    public function test_entry_hidden_when_property_missing(): void {
+        $entry = (object) [];
+        $this->assertFalse(\insightjournal_entry_visible_to_teacher($entry));
     }
 
     /**
-     * The retired "use site default" value of 0 predates the per-activity-only
-     * model. The upgrade step resolves it to VISIBLE or PRIVATE depending on the
-     * old site setting, but a stray 0 reaching this function directly (e.g. an
-     * unmigrated row) must fail closed rather than be mistaken for VISIBLE.
+     * The retired "use site/activity default" sentinel of 0 predates the
+     * per-entry model. The upgrade step resolves it to VISIBLE or PRIVATE
+     * depending on the entry's activity's old setting, but a stray 0 reaching
+     * this function directly (e.g. an unmigrated row) must fail closed rather
+     * than be mistaken for VISIBLE.
      */
-    public function test_entries_hidden_when_value_is_legacy_sitedefault(): void {
-        $diary = $this->make_diary(0);
-        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
+    public function test_entry_hidden_when_value_is_legacy_sentinel(): void {
+        $entry = $this->make_entry(0);
+        $this->assertFalse(\insightjournal_entry_visible_to_teacher($entry));
     }
 
     /**
-     * Any unrecognised entriesvisibility value fails closed rather than being
+     * Any unrecognised visibility value fails closed rather than being
      * treated as visible.
      */
-    public function test_entries_hidden_when_value_is_invalid(): void {
-        $diary = $this->make_diary(99);
-        $this->assertFalse(\insightjournal_entries_visible_to_teacher($diary));
+    public function test_entry_hidden_when_value_is_invalid(): void {
+        $entry = $this->make_entry(99);
+        $this->assertFalse(\insightjournal_entry_visible_to_teacher($entry));
     }
 }

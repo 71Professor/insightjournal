@@ -23,12 +23,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-// Per-activity trainer visibility for a learner's entries. VISIBLE lets
-// trainers/teachers with mod/insightjournal:viewall see the entries; PRIVATE
-// keeps them visible to the authoring learner only. Set per activity by the
-// trainer/manager; there is no site-wide setting. Defined here (not
-// locallib.php) because course/modedit.php always requires this file before
-// instantiating mod_form.php.
+// Per-entry trainer visibility, set by the learner who authored the entry.
+// VISIBLE lets trainers/teachers with mod/insightjournal:viewall see the
+// entry; PRIVATE keeps it visible to the authoring learner only. There is no
+// trainer or site-wide control for this. Defined here (not locallib.php)
+// because classes/external/save_entry.php and other call sites expect these
+// constants to be available as soon as lib.php is loaded.
 define('INSIGHTJOURNAL_VISIBILITY_VISIBLE', 1);
 define('INSIGHTJOURNAL_VISIBILITY_PRIVATE', 2);
 

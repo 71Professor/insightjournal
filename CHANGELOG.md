@@ -8,6 +8,22 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Changed
+
+- **Entry visibility is now decided per entry by the entry's author, not by
+  the trainer.** The former per-activity "Trainer visibility for this
+  activity" setting is removed from the activity settings form entirely —
+  trainers can no longer see or change it. Instead, each learner's response
+  form has a "Keep this entry private (only visible to you)" checkbox,
+  unticked by default (visible to trainer), which they can change at any
+  time; toggling it saves immediately. Adds a `visibility` column to
+  `insightjournal_entries` and a required `private` parameter on the
+  `save_entry` external function; removes the `entriesvisibility` column
+  from `insightjournal` (upgrade steps included). Existing activities that
+  were set to "Private" have their existing entries migrated to private so
+  that guarantee is preserved; everything else defaults to visible, matching
+  a freshly written entry.
+
 ## [0.5.0-beta] - 2026-07-21
 
 ### Added

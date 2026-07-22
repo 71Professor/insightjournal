@@ -92,27 +92,29 @@ function insightjournal_send_csv_headers(string $filename): void {
 }
 
 /**
- * Whether trainers/teachers may currently see this activity's insight journal entries.
+ * Whether trainers/teachers may currently see this specific insight journal entry.
  *
- * Controlled per activity by the trainer/manager via the entriesvisibility
+ * Controlled per entry by the learner who authored it, via the visibility
  * field:
- * - INSIGHTJOURNAL_VISIBILITY_PRIVATE: entries stay visible to the authoring
- *   learner only.
+ * - INSIGHTJOURNAL_VISIBILITY_PRIVATE: the entry stays visible to the
+ *   authoring learner only.
  * - INSIGHTJOURNAL_VISIBILITY_VISIBLE (default): trainers/teachers with the
- *   mod/insightjournal:viewall capability may see the entries.
+ *   mod/insightjournal:viewall capability may see the entry.
  *
- * When entries are private, the report, course report, and summary pages
- * remain reachable to anyone with the mod/insightjournal:viewall capability,
- * but show a notice instead of entry content. This fails closed: any
- * unexpected/legacy/missing value (e.g. a pre-migration "site default" of 0)
- * is treated as not visible, so an ambiguous value never exposes entries the
+ * Trainers cannot override this: unlike the retired per-activity setting,
+ * there is no trainer-facing control for it at all. When an entry is
+ * private, the report, course report, and summary pages remain reachable to
+ * anyone with the mod/insightjournal:viewall capability, but show a notice
+ * instead of that entry's content. This fails closed: any
+ * unexpected/legacy/missing value (e.g. a pre-migration sentinel of 0) is
+ * treated as not visible, so an ambiguous value never exposes an entry the
  * author may have intended as private.
  *
- * @param stdClass $diary The activity instance record (needs entriesvisibility).
+ * @param stdClass $entry The entry record (needs visibility).
  * @return bool
  */
-function insightjournal_entries_visible_to_teacher(stdClass $diary): bool {
-    $visibility = (int) ($diary->entriesvisibility ?? 0);
+function insightjournal_entry_visible_to_teacher(stdClass $entry): bool {
+    $visibility = (int) ($entry->visibility ?? 0);
 
     return $visibility === INSIGHTJOURNAL_VISIBILITY_VISIBLE;
 }
