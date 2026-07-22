@@ -41,6 +41,7 @@ $string['entryprivate'] = 'Keep this entry private (only visible to you)';
 $string['entryprivate_help'] = 'By default your entry is visible to trainers/teachers with the "View all entries" capability. Tick this box to keep it visible to you only — trainers will see a notice instead of your response. You can change this at any time; unlike a previous per-activity setting, trainers cannot override your choice.';
 $string['err_invalidcolor'] = 'Enter a valid hex colour code (e.g. #ffcc00), or leave the field blank.';
 $string['err_mingtmax'] = 'Minimum characters cannot exceed maximum characters.';
+$string['gotoentry'] = 'Go to entry';
 $string['insightjournal:addinstance'] = 'Add a new insight journal activity';
 $string['insightjournal:export'] = 'Export insight journal entries';
 $string['insightjournal:submit'] = 'Submit own insight journal entry';

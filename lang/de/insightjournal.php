@@ -41,6 +41,7 @@ $string['entryprivate'] = 'Diesen Eintrag privat halten (nur für dich sichtbar)
 $string['entryprivate_help'] = 'Standardmäßig ist dein Eintrag für Trainer/innen mit der Fähigkeit „Alle Einträge ansehen" sichtbar. Aktiviere dieses Kästchen, um ihn nur für dich sichtbar zu halten – Trainer/innen sehen dann einen Hinweistext statt deiner Antwort. Du kannst dies jederzeit ändern; anders als bei einer früheren Einstellung pro Aktivität können Trainer/innen deine Wahl nicht überschreiben.';
 $string['err_invalidcolor'] = 'Gib einen gültigen Hex-Farbcode ein (z. B. #ffcc00) oder lasse das Feld leer.';
 $string['err_mingtmax'] = 'Die Mindestzeichenzahl darf die Höchstzeichenzahl nicht überschreiten.';
+$string['gotoentry'] = 'Gehe zum Eintrag';
 $string['insightjournal:addinstance'] = 'Neue Insight-Journal-Aktivität hinzufügen';
 $string['insightjournal:export'] = 'Insight-Journal-Einträge exportieren';
 $string['insightjournal:submit'] = 'Eigenen Insight-Journal-Eintrag speichern';

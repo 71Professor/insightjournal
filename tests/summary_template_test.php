@@ -168,7 +168,7 @@ final class summary_template_test extends advanced_testcase {
         ]));
 
         $this->assertStringContainsString('https://example.com/mod/insightjournal/view.php?id=5', $html);
-        $this->assertStringContainsString(get_string('edit'), $html);
+        $this->assertStringContainsString(get_string('gotoentry', 'mod_insightjournal'), $html);
     }
 
     /**
@@ -196,7 +196,7 @@ final class summary_template_test extends advanced_testcase {
             ],
         ]));
 
-        $this->assertStringNotContainsString(get_string('edit'), $html);
+        $this->assertStringNotContainsString(get_string('gotoentry', 'mod_insightjournal'), $html);
     }
 
     /**

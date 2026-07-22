@@ -123,8 +123,8 @@ Aufruf: Innerhalb der Aktivität auf **Bericht** klicken (nur für Trainer/innen
 Aufruf: In der Aktivität auf **Meine Zusammenfassung** klicken.
 
 - Lernende sehen alle eigenen Antworten im Kurs
-- Jeder eigene, noch bearbeitbare Eintrag zeigt einen **Bearbeiten**-Link, der
-  direkt zur betreffenden Aktivität springt
+- Jeder eigene, noch bearbeitbare Eintrag zeigt einen **Gehe zum Eintrag**-Link,
+  der direkt zur betreffenden Aktivität springt
 - Trainer/innen können einen Teilnehmenden auswählen und deren/dessen Zusammenfassung einsehen
 - Für den Ausdruck geeignet (Browserdruckdialog → als PDF speichern)
 

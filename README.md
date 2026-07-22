@@ -116,8 +116,8 @@ save-as-PDF).
 - **`coursereport.php`** — course-level progress report across all Insight Journal
   activities.
 - **`summary.php`** — personal or trainer-selected learner summary; suitable for
-  browser printing. Each of the viewer's own, still-writable entries shows an
-  Edit link straight back to that activity.
+  browser printing. Each of the viewer's own, still-writable entries shows a
+  "Go to entry" link straight back to that activity.
 
 ---
 
@@ -168,8 +168,8 @@ Recommended local test flow:
 5. As a teacher: open the activity report, search by participant, download CSV.
 6. Open the course report and verify progress counts.
 7. Open a learner summary as the learner and as a teacher with `viewall`;
-   confirm the learner sees an Edit link on their own entries and the teacher
-   sees none.
+   confirm the learner sees a "Go to entry" link on their own entries and the
+   teacher sees none.
 8. Run Moodle backup and restore — once with user data, once without.
 9. Run privacy export and deletion for a test user.
 10. Run PHP lint, Moodle Code Checker, PHPUnit, PHPStan, and Behat where available.
