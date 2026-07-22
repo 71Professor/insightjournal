@@ -8,6 +8,8 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+## [0.6.0-beta] - 2026-07-22
+
 ### Added
 
 - **The personal summary page (`summary.php`) now shows a "Go to entry" link
