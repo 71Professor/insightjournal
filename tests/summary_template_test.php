@@ -143,6 +143,63 @@ final class summary_template_test extends advanced_testcase {
     }
 
     /**
+     * An entry the viewer owns and may still submit to shows an Edit link
+     * back to the activity.
+     */
+    public function test_own_entry_shows_edit_link(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
+            'hasitems' => true,
+            'items' => [
+                [
+                    'activityname' => 'Week 1 reflection',
+                    'prompt' => '<p>What did you learn today?</p>',
+                    'promptstyle' => '',
+                    'private' => false,
+                    'hasresponse' => true,
+                    'response' => '<p>Today I learned about Mustache templates.</p>',
+                    'timemodified' => '1 January 2026, 10:00 AM',
+                    'canedit' => true,
+                    'editurl' => 'https://example.com/mod/insightjournal/view.php?id=5',
+                ],
+            ],
+        ]));
+
+        $this->assertStringContainsString('https://example.com/mod/insightjournal/view.php?id=5', $html);
+        $this->assertStringContainsString(get_string('edit'), $html);
+    }
+
+    /**
+     * Someone else's entry (viewed via a trainer or another learner's
+     * summary) never shows an Edit link, even if it has a response.
+     */
+    public function test_other_users_entry_has_no_edit_link(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/summary', $this->make_context([
+            'hasitems' => true,
+            'items' => [
+                [
+                    'activityname' => 'Week 1 reflection',
+                    'prompt' => '<p>What did you learn today?</p>',
+                    'promptstyle' => '',
+                    'private' => false,
+                    'hasresponse' => true,
+                    'response' => '<p>Today I learned about Mustache templates.</p>',
+                    'timemodified' => '1 January 2026, 10:00 AM',
+                    'canedit' => false,
+                    'editurl' => 'https://example.com/mod/insightjournal/view.php?id=5',
+                ],
+            ],
+        ]));
+
+        $this->assertStringNotContainsString(get_string('edit'), $html);
+    }
+
+    /**
      * The print button and back-to-course link are always shown now (privacy is
      * per-card, not a page-wide gate).
      */

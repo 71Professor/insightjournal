@@ -120,6 +120,8 @@ foreach ($records as $record) {
             : '',
         'timemodified' => (!$private && !empty($record->timemodified)) ?
             userdate($record->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
+        'canedit' => !$viewingother && has_capability('mod/insightjournal:submit', $modulecontext),
+        'editurl' => (new moodle_url('/mod/insightjournal/view.php', ['id' => $cms[$record->id]->id]))->out(false),
     ];
 }
 

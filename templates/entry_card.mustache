@@ -36,6 +36,10 @@
     * hasresponse - Whether the user has entered a response (always false when private).
     * response - The user's pre-formatted response HTML (rendered via triple braces), or empty if none.
     * timemodified - Localised last modified date, or empty if none/private.
+    * canedit - Whether the viewer owns this entry and may still submit to it. When
+      true, an Edit link back to the activity is shown.
+    * editurl - URL to the activity's view page, used by the Edit link. Only
+      meaningful when canedit is true.
 
     Example context (json):
     {
@@ -45,7 +49,9 @@
         "private": false,
         "hasresponse": true,
         "response": "<p>Today I learned about Mustache templates.</p>",
-        "timemodified": "1 January 2026, 10:00 AM"
+        "timemodified": "1 January 2026, 10:00 AM",
+        "canedit": true,
+        "editurl": "https://example.com/mod/insightjournal/view.php?id=5"
     }
 }}
 <div class="card mb-3">
@@ -59,5 +65,6 @@
             {{^hasresponse}}<div class="text-muted font-italic">{{#str}}noresponse, mod_insightjournal{{/str}}</div>{{/hasresponse}}
             {{#timemodified}}<div class="small text-muted mt-2">{{timemodified}}</div>{{/timemodified}}
         {{/private}}
+        {{#canedit}}<a href="{{editurl}}" class="btn btn-secondary btn-sm mt-2">{{#str}}edit{{/str}}</a>{{/canedit}}
     </div>
 </div>

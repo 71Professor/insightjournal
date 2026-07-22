@@ -30,7 +30,8 @@
     * hasitems - Whether there are any entries to display.
     * items - List of entry_card contexts (see mod_insightjournal/entry_card),
       each carrying its own "private" flag since visibility is decided per
-      activity, not for the whole page.
+      activity, not for the whole page, and its own "canedit"/"editurl" since
+      only the viewer's own, still-writable entries get an Edit link.
 
     Example context (json):
     {
@@ -43,7 +44,9 @@
                 "private": false,
                 "hasresponse": true,
                 "response": "Today I learned about Mustache templates.",
-                "timemodified": "1 January 2026, 10:00 AM"
+                "timemodified": "1 January 2026, 10:00 AM",
+                "canedit": true,
+                "editurl": "https://example.com/mod/insightjournal/view.php?id=5"
             }
         ]
     }

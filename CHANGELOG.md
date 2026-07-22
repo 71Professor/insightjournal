@@ -8,6 +8,13 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Added
+
+- **The personal summary page (`summary.php`) now shows an Edit link on each
+  entry the viewer owns and can still submit to**, jumping straight to that
+  activity's page to make changes, instead of requiring a trip back through
+  the course.
+
 ### Changed
 
 - **Entry visibility is now decided per entry by the entry's author, not by
