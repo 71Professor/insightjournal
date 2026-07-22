@@ -37,6 +37,7 @@
     * data-insightjournal-edit
     * data-insightjournal-edit-panel
     * data-insightjournal-response
+    * data-insightjournal-private
     * data-insightjournal-save
     * data-insightjournal-status
 
@@ -48,6 +49,8 @@
     * haveentry - Whether a saved, non-empty response already exists.
     * responseraw - The user's current response, as stored HTML (for the editor).
     * responseformatted - The user's current response, pre-formatted for display.
+    * entryprivate - Whether the entry is currently private (only the checkbox's initial state; the
+      author may change it on this page, and trainers can never override it).
     * lastsaved - Localised "last saved" status text.
     * minchars - Minimum characters required, or 0 if none.
     * maxchars - Maximum characters allowed, or 0 for no limit.
@@ -65,6 +68,7 @@
         "haveentry": true,
         "responseraw": "<p>Today I learned about Mustache templates.</p>",
         "responseformatted": "<p>Today I learned about Mustache templates.</p>",
+        "entryprivate": false,
         "lastsaved": "Saved 2 minutes ago",
         "minchars": 100,
         "maxchars": 500,
@@ -90,6 +94,11 @@
                 <div data-insightjournal-edit-panel class="{{#haveentry}}d-none{{/haveentry}}">
                     <label for="insightjournal-response-{{cmid}}" class="visually-hidden">{{#str}}response, mod_insightjournal{{/str}}</label>
                     <textarea id="insightjournal-response-{{cmid}}" name="insightjournalresponse" class="form-control" rows="10" cols="80" spellcheck="true" data-insightjournal-response {{#minchars}}aria-describedby="insightjournal-minchars-{{cmid}}" {{/minchars}}placeholder="{{#str}}responseplaceholder, mod_insightjournal{{/str}}">{{responseraw}}</textarea>
+                    <div class="form-check mt-2">
+                        <input type="checkbox" class="form-check-input" id="insightjournal-private-{{cmid}}" data-insightjournal-private{{#entryprivate}} checked{{/entryprivate}}>
+                        <label class="form-check-label" for="insightjournal-private-{{cmid}}">{{#str}}entryprivate, mod_insightjournal{{/str}}</label>
+                        <p class="small text-muted mb-0">{{#str}}entryprivate_help, mod_insightjournal{{/str}}</p>
+                    </div>
                     <div class="d-flex align-items-center gap-2 mt-2">
                         <button type="button" class="btn btn-primary" data-insightjournal-save>{{#str}}save, mod_insightjournal{{/str}}</button>
                         <span data-insightjournal-status role="status" aria-live="polite">{{lastsaved}}</span>

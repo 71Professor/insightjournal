@@ -47,6 +47,10 @@ class save_entry extends external_api {
                 PARAM_INT,
                 'Revision the client last saw (0 if it believes no entry exists yet)'
             ),
+            'private' => new external_value(
+                PARAM_BOOL,
+                'Whether to keep this entry private (visible to its author only, never to trainers)'
+            ),
         ]);
     }
 
@@ -63,16 +67,20 @@ class save_entry extends external_api {
      * @param int $cmid Course module id.
      * @param string $response Learner response HTML.
      * @param int $expectedrevision Revision the client last saw.
+     * @param bool $private Whether to keep the entry private. Chosen solely by the
+     *     author; trainers have no way to override it.
      * @return array Result with success/conflict flags, entry id, revision, timestamps, and rendered HTML.
      */
-    public static function execute(int $cmid, string $response, int $expectedrevision): array {
+    public static function execute(int $cmid, string $response, int $expectedrevision, bool $private): array {
         global $DB, $USER, $CFG;
         require_once($CFG->libdir . '/completionlib.php');
+        require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
         require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
         $params = self::validate_parameters(self::execute_parameters(), [
             'cmid' => $cmid,
             'response' => $response,
             'expectedrevision' => $expectedrevision,
+            'private' => $private,
         ]);
         $cm = get_coursemodule_from_id('insightjournal', $params['cmid'], 0, false, MUST_EXIST);
         $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
@@ -89,6 +97,7 @@ class save_entry extends external_api {
         }
         $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
         $currentrevision = $entry ? (int) $entry->revision : 0;
+        $visibility = $params['private'] ? INSIGHTJOURNAL_VISIBILITY_PRIVATE : INSIGHTJOURNAL_VISIBILITY_VISIBLE;
 
         if ($params['expectedrevision'] !== $currentrevision) {
             return [
@@ -103,6 +112,7 @@ class save_entry extends external_api {
                 'responsehtml' => $entry
                     ? format_text($entry->response, $entry->responseformat, ['context' => $context])
                     : '',
+                'private' => $entry ? !insightjournal_entry_visible_to_teacher($entry) : false,
             ];
         }
 
@@ -111,6 +121,7 @@ class save_entry extends external_api {
             $entry->response = $response;
             $entry->responseformat = FORMAT_HTML;
             $entry->revision = $newrevision;
+            $entry->visibility = $visibility;
             $entry->timemodified = $now;
             $DB->update_record('insightjournal_entries', $entry);
             $id = $entry->id;
@@ -121,6 +132,7 @@ class save_entry extends external_api {
                 'response' => $response,
                 'responseformat' => FORMAT_HTML,
                 'revision' => $newrevision,
+                'visibility' => $visibility,
                 'timecreated' => $now,
                 'timemodified' => $now,
             ]);
@@ -143,6 +155,7 @@ class save_entry extends external_api {
             'timemodified' => $now,
             'timestr' => $timestr,
             'responsehtml' => format_text($response, FORMAT_HTML, ['context' => $context]),
+            'private' => $params['private'],
         ];
     }
 
@@ -160,6 +173,7 @@ class save_entry extends external_api {
             'timemodified' => new external_value(PARAM_INT, 'Unix timestamp'),
             'timestr' => new external_value(PARAM_TEXT, 'Formatted timestamp'),
             'responsehtml' => new external_value(PARAM_RAW, 'The current response, cleaned and rendered for display'),
+            'private' => new external_value(PARAM_BOOL, 'Whether the entry is currently private (visible to its author only)'),
         ]);
     }
 }

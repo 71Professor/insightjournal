@@ -174,6 +174,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         }
         var textarea = document.querySelector('[data-insightjournal-response]');
         var button = document.querySelector('[data-insightjournal-save]');
+        var privatecheckbox = document.querySelector('[data-insightjournal-private]');
         if (!textarea) {
             return;
         }
@@ -189,7 +190,12 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             setStatus(text, 'text-info');
             return Ajax.call([{
                 methodname: 'mod_insightjournal_save_entry',
-                args: {cmid: cmid, response: value, expectedrevision: currentRevision}
+                args: {
+                    cmid: cmid,
+                    response: value,
+                    expectedrevision: currentRevision,
+                    private: Boolean(privatecheckbox && privatecheckbox.checked)
+                }
             }])[0];
         }).then(async function(result) {
             var current = getCurrentValue(textarea);
@@ -197,6 +203,9 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                 button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
             }
             currentRevision = result.revision;
+            if (privatecheckbox) {
+                privatecheckbox.checked = result.private;
+            }
             if (result.conflict) {
                 var conflicttext = await Str.get_string('saveconflict', 'mod_insightjournal');
                 setStatus(conflicttext, 'text-danger');
@@ -233,6 +242,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             var textarea = document.querySelector('[data-insightjournal-response]');
             var button = document.querySelector('[data-insightjournal-save]');
             var editbutton = document.querySelector('[data-insightjournal-edit]');
+            var privatecheckbox = document.querySelector('[data-insightjournal-private]');
             if (!textarea) {
                 return;
             }
@@ -251,6 +261,16 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                 editbutton.addEventListener('click', function(e) {
                     e.preventDefault();
                     showEditPanel();
+                });
+            }
+            if (privatecheckbox) {
+                // Saved immediately so a visibility choice is never lost if the
+                // learner navigates away before typing anything else, but as a
+                // non-manual save: manual=true would switch to the read-only
+                // view panel via showViewPanel(), which would yank the learner
+                // out of the editor just for toggling a checkbox.
+                privatecheckbox.addEventListener('change', function() {
+                    save(cmid, false);
                 });
             }
             // Poll rather than bind to a live editor event: Tiny attaches

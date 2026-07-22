@@ -7,8 +7,9 @@
 `mod_insightjournal` is a Moodle activity module for focused reflection tasks and
 questions. Each activity holds one task or question. Learners write and save their
 own response, can return to edit it, and can open a printable personal summary of
-all their journal entries across the course. Trainers see all entries, track
-course-wide progress, and can export responses to CSV.
+all their journal entries across the course. Each learner decides for themselves,
+per entry, whether trainers may see it. Trainers track course-wide progress and
+can export to CSV, but only ever see the entries their authors chose to share.
 
 > **This is a beta release** distributed to a small group of educators and Moodle
 > developers for feedback. See the [Feedback](#feedback) section below.
@@ -70,12 +71,10 @@ Clone the repository into `mod/insightjournal/` and visit
    and/or a **maximum character count**, enforced with a live counter as learners type.
 7. In the **Activity completion** settings, keep *Learner must save an Insight Journal
    response* enabled when saved responses should mark the activity complete.
-8. Optionally set **Trainer visibility for this activity** (*Visible to trainer* /
-   *Private*) — see [Data and Privacy](#data-and-privacy).
-9. After the course runs, open the **activity report** to review entries for one task/question,
-   or the **course report** for progress across all Insight Journal activities. Whether
-   trainers can see learner entries is controlled per activity — see
-   [Data and Privacy](#data-and-privacy).
+8. After the course runs, open the **activity report** to review entries for one task/question,
+   or the **course report** for progress across all Insight Journal activities. Each
+   learner decides for themselves whether their own entry is visible to trainers —
+   see [Data and Privacy](#data-and-privacy).
 
 ---
 
@@ -84,7 +83,11 @@ Clone the repository into `mod/insightjournal/` and visit
 Learners open the activity, read the task/question, write a response using Moodle's
 rich-text editor, and save manually. If autosave is enabled, the response is
 saved after a short pause in typing.
-Learners can reopen and edit their saved response at any time. Each save checks
+Learners can reopen and edit their saved response at any time. Next to the
+response is a **"Keep this entry private (only visible to you)"** checkbox,
+unticked by default, so trainers can read the entry unless the learner opts
+out. Toggling it saves immediately, and it can be changed again at any time —
+see [Data and Privacy](#data-and-privacy). Each save checks
 that no newer version was saved elsewhere in the meantime (e.g. from another
 tab); if one was, the save is rejected with a notice instead of silently
 overwriting it. The personal summary page lists all their Insight Journal
@@ -123,24 +126,24 @@ Insight Journal responses can contain sensitive personal content. The plugin sto
 
 - activity configuration in `insightjournal`;
 - learner responses in `insightjournal_entries`:
-  `userid`, response text, response format, creation time, and modification time.
+  `userid`, response text, response format, visibility, creation time, and modification time.
 
 The Privacy API declares stored data, exports user responses, and deletes all data
 for a module context, a single approved user, or approved user lists.
 CSV exports are restricted by capability; spreadsheet-formula values are prefixed
 to reduce CSV injection risk.
 
-Each activity has its own **Trainer visibility for this activity** setting
-(*Visible to trainer* / *Private*), set by the course teacher who creates or edits
-the activity. It defaults to "Visible to trainer", so existing activities keep
-their current behaviour. With "Private", entries stay visible to the learner who
-wrote them only: the activity report, course report, and personal summary pages
-stay reachable to anyone with `mod/insightjournal:viewall`, but show a notice
-instead of entry content, and CSV export is blocked. This applies to every role,
-including managers and site admins — there is no bypass. Activities in the same
-course can have different visibility; the course report and personal summary
-reflect this per activity rather than hiding the whole page. There is no
-site-wide setting.
+Each entry has its own visibility choice, made **only by the learner who wrote
+it** — a **"Keep this entry private (only visible to you)"** checkbox on the
+response form, unticked by default (visible to trainer). The learner can change
+it at any time, and trainers have no setting anywhere that can override it. With
+an entry marked private, the activity report, course report, and personal
+summary pages stay reachable to anyone with `mod/insightjournal:viewall`, but
+show a notice instead of that entry's content; CSV export replaces only that
+row with the notice rather than blocking the whole export. This applies to
+every role, including managers and site admins — there is no bypass. Different
+learners in the same activity can choose differently; the reports and summary
+reflect this per entry rather than hiding a whole page or column.
 
 ---
 
@@ -181,10 +184,10 @@ to load a real site. Run from the Moodle root:
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover the
 save/reload roundtrip, editing a previously saved response, autosave
 persisting a change without leaving edit mode, the minchars completion
-regression, a successful save never showing the error status, the
-trainer-visibility privacy toggle, saving/the character counter/autosave
-with the Atto editor, and a course teacher overriding the site-wide default
-per activity. Run via
+regression, a successful save never showing the error status, a learner
+marking their own entry private, saving/the character counter/autosave
+with the Atto editor, and a learner choosing differently across two
+activities in the same course. Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
@@ -199,9 +202,10 @@ after `php admin/tool/behat/cli/init.php`.
   A direct PDF download is planned for a later version.
 - **Behat coverage is limited**: eight scenarios cover the save/reload
   roundtrip, editing a saved response, autosave, the minchars completion
-  regression, the trainer-visibility privacy toggle, the per-activity
-  visibility override, the Atto editor, and the save-status classes.
-  Broader coverage (CSV export) is not yet automated.
+  regression, a learner marking their own entry private, choosing
+  differently across two activities in the same course, the Atto editor,
+  and the save-status classes. Broader coverage (CSV export) is not yet
+  automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -220,9 +224,10 @@ Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
 - [x] Add Behat tests (8 scenarios: save/reload roundtrip, editing a saved
-      response, autosave, completion regression, save-status classes,
-      trainer-visibility privacy toggle, Atto editor, per-activity
-      visibility override) — 2026-07-09, extended 2026-07-21
+      response, autosave, completion regression, save-status classes, a
+      learner marking their own entry private, Atto editor, choosing
+      differently across activities) — 2026-07-09, extended 2026-07-21,
+      2026-07-22
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory

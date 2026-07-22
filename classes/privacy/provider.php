@@ -55,6 +55,7 @@ class provider implements
             'userid' => 'privacy:metadata:insightjournal_entries:userid',
             'response' => 'privacy:metadata:insightjournal_entries:response',
             'responseformat' => 'privacy:metadata:insightjournal_entries:responseformat',
+            'visibility' => 'privacy:metadata:insightjournal_entries:visibility',
             'timecreated' => 'privacy:metadata:insightjournal_entries:timecreated',
             'timemodified' => 'privacy:metadata:insightjournal_entries:timemodified',
         ], 'privacy:metadata:insightjournal_entries');
@@ -87,7 +88,8 @@ class provider implements
      * @return void
      */
     public static function export_user_data(approved_contextlist $contextlist): void {
-        global $DB;
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
         $userid = $contextlist->get_user()->id;
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel != CONTEXT_MODULE) {
@@ -107,6 +109,7 @@ class provider implements
                     'activity'       => $diary->name,
                     'response'       => $entry->response,
                     'responseformat' => $entry->responseformat,
+                    'private'        => !insightjournal_entry_visible_to_teacher($entry),
                     'timecreated'    => \core_privacy\local\request\transform::datetime($entry->timecreated),
                     'timemodified'   => \core_privacy\local\request\transform::datetime($entry->timemodified),
                 ];

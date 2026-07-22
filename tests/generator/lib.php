@@ -60,9 +60,12 @@ class mod_insightjournal_generator extends testing_module_generator {
      * @param stdClass $instance The insight journal instance.
      * @param int $userid The user the entry belongs to.
      * @param string $response The response text.
+     * @param int $visibility One of the INSIGHTJOURNAL_VISIBILITY_* constants (1 = visible to
+     *     trainer, the same as a freshly written entry defaults to). A literal default is used
+     *     because lib.php is not guaranteed to be loaded before this generator.
      * @return stdClass The created entry record.
      */
-    public function create_entry(stdClass $instance, int $userid, string $response): stdClass {
+    public function create_entry(stdClass $instance, int $userid, string $response, int $visibility = 1): stdClass {
         global $DB;
 
         $now = time();
@@ -71,6 +74,7 @@ class mod_insightjournal_generator extends testing_module_generator {
             'userid' => $userid,
             'response' => $response,
             'responseformat' => FORMAT_PLAIN,
+            'visibility' => $visibility,
             'timecreated' => $now,
             'timemodified' => $now,
         ];

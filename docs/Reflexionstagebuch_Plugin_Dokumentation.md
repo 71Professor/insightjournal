@@ -2,7 +2,7 @@
 
 ## **1 Moodle Activity Module · Version 0.5.0-beta · Juli 2026**
 
-> **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einer gezielten Aufgabe oder Frage an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Trainer/innen sehen alle Einträge und können sie als CSV exportieren.
+> **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einer gezielten Aufgabe oder Frage an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Jede/r Lernende entscheidet selbst, pro Eintrag, ob Trainer/innen ihn sehen dürfen. Trainer/innen behalten den kursweiten Fortschritt im Blick und können exportieren, sehen dabei aber nur die Einträge, die die Verfassenden freigegeben haben.
 
 ---
 
@@ -86,8 +86,7 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 5. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
 6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird.
 7. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
-8. Optional: **Sichtbarkeit der Einträge für Trainer/innen** setzen (*Für Trainer/innen sichtbar* / *Privat*) – siehe Abschnitt 7 „Datenschutz".
-9. Nach dem Kurs: **Aktivitätsbericht** öffnen, um alle Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Ob Trainer/innen die Einträge sehen dürfen, wird pro Aktivität festgelegt – siehe Abschnitt 7 „Datenschutz".
+8. Nach dem Kurs: **Aktivitätsbericht** öffnen, um die freigegebenen Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Jede/r Lernende entscheidet selbst für den eigenen Eintrag, ob Trainer/innen ihn sehen dürfen – siehe Abschnitt 7 „Datenschutz".
 
 ---
 
@@ -97,10 +96,14 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 2. Aufgabe/Frage lesen, Antwort im Rich-Text-Editor von Moodle eingeben.
 3. Auf **Speichern** klicken – oder bei aktiviertem Autosave einfach einige Sekunden aufhören zu tippen.
 4. Aktivität kann jederzeit wieder geöffnet und die Antwort überarbeitet werden.
-   Jedes Speichern prüft, ob zwischenzeitlich nicht bereits an anderer Stelle
-   (z. B. in einem weiteren Tab) eine neuere Version gespeichert wurde; ist
-   das der Fall, wird das Speichern mit einem Hinweis abgelehnt, statt die
-   neuere Version stillschweigend zu überschreiben.
+   Neben der Antwort befindet sich das Kästchen **„Diesen Eintrag privat
+   halten (nur für dich sichtbar)"**, standardmäßig nicht angehakt – Trainer/innen
+   können den Eintrag also lesen, sofern die/der Lernende nicht widerspricht.
+   Das Umschalten speichert sofort und kann jederzeit wieder geändert werden –
+   siehe Abschnitt 7 „Datenschutz". Jedes Speichern prüft, ob zwischenzeitlich
+   nicht bereits an anderer Stelle (z. B. in einem weiteren Tab) eine neuere
+   Version gespeichert wurde; ist das der Fall, wird das Speichern mit einem
+   Hinweis abgelehnt, statt die neuere Version stillschweigend zu überschreiben.
 5. Am Kursende: **Persönliche Zusammenfassung** öffnen – alle Antworten auf einer Seite, geeignet für den Browser-Druckdialog (inkl. PDF-Export über den Browser).
 
 ---
@@ -137,19 +140,24 @@ Die Capability `mod/insightjournal:viewall` ist mit `RISK_PERSONAL` markiert, da
 
 CSV-Exporte werden durch die Capability `mod/insightjournal:export` abgesichert. Tabellenformeln in Antworten werden automatisch mit einem Präfix versehen, um CSV-Injection-Risiken zu reduzieren.
 
-Jede Aktivität hat ihre eigene Einstellung **Sichtbarkeit der Einträge für
-Trainer/innen** (*Für Trainer/innen sichtbar* / *Privat*), die der Kurstrainer/die
-Kurstrainerin beim Anlegen oder Bearbeiten der Aktivität festlegt. Standardmäßig
-steht sie auf „Für Trainer/innen sichtbar", sodass bestehende Aktivitäten ihr
-bisheriges Verhalten behalten. Bei „Privat" bleiben Einträge nur für die
-verfassende Person sichtbar: Aktivitätsbericht, Kursbericht und persönliche
+Jeder Eintrag hat eine eigene Sichtbarkeits-Entscheidung, die **ausschließlich
+die verfassende Person** trifft – über das Kästchen **„Diesen Eintrag privat
+halten (nur für dich sichtbar)"** direkt beim Schreiben der Antwort.
+Standardmäßig ist ein Eintrag „Für Trainer/innen sichtbar"; die Person kann
+ihn jederzeit auf privat umstellen und die Entscheidung auch wieder
+rückgängig machen. Bei „Privat" bleibt der Eintrag nur für die verfassende
+Person sichtbar: Aktivitätsbericht, Kursbericht und persönliche
 Zusammenfassung bleiben für alle mit `mod/insightjournal:viewall` erreichbar,
-zeigen dann aber einen Hinweistext statt der Einträge; der CSV-Export ist
-gesperrt. Das gilt einheitlich für alle Rollen, auch Manager/innen und
-Site-Admins – es gibt keine Ausnahme. Aktivitäten im selben Kurs können
-unterschiedlich eingestellt sein; Kursbericht und persönliche Zusammenfassung
-berücksichtigen das pro Aktivität, statt die ganze Seite auszublenden. Eine
-globale, website-weite Einstellung gibt es nicht.
+zeigen für diesen einen Eintrag dann aber einen Hinweistext statt des
+Inhalts; der CSV-Export ersetzt nur diese eine Zeile durch den Hinweistext,
+statt den ganzen Export zu sperren. Das gilt einheitlich für alle Rollen,
+auch Manager/innen und Site-Admins – es gibt keine Ausnahme, und **Trainer/innen
+können diese Entscheidung nicht überschreiben**: Anders als bei einer früheren,
+inzwischen entfernten Aktivitätseinstellung liegt die Kontrolle vollständig bei
+der verfassenden Person. Innerhalb einer Aktivität können verschiedene
+Lernende unterschiedlich eingestellt sein; Aktivitätsbericht, Kursbericht und
+persönliche Zusammenfassung berücksichtigen das pro Eintrag, statt die ganze
+Seite oder Spalte auszublenden.
 
 ---
 
@@ -165,7 +173,7 @@ globale, website-weite Einstellung gibt es nicht.
 
 - **Keine native Moodle-App-Unterstützung:** Es gibt kein `db/mobile.php`. Die Aktivität ist in der Moodle-App über die responsive Webansicht nutzbar; eine native App-Integration ist für eine spätere Version geplant.
 - **Kein Server-seitiger PDF-Export:** Die Druckfunktion nutzt den Browserdruckdialog. Ein direkter PDF-Download ist für eine spätere Version geplant.
-- **Behat-Testabdeckung ist begrenzt:** Acht Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den Erfolgsstatus beim Speichern, die Sichtbarkeitseinstellung pro Aktivität, den Atto-Editor und die Aktivitäts-Überschreibung ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
+- **Behat-Testabdeckung ist begrenzt:** Acht Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den Erfolgsstatus beim Speichern, das private Markieren eines einzelnen Eintrags durch die/den Lernende/n, den Atto-Editor sowie unterschiedliche Sichtbarkeits-Entscheidungen über mehrere Aktivitäten hinweg ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
 
 ---
 

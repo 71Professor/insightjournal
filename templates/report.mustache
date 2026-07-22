@@ -36,11 +36,11 @@
         * summaryurl - URL to the participant's personal summary.
         * fullname - Participant full name.
         * email - Participant email.
-        * response - Pre-formatted response HTML (rendered via triple braces).
-        * timemodified - Localised last modified date.
-    * entriesprivate - Whether entries are currently private (this activity's
-      "entriesvisibility" setting is PRIVATE). When true, a notice is shown
-      instead of the search form, download link, and table.
+        * private - Whether this participant's own entry is private (decided
+          by them, not this activity). When true, a notice is shown instead
+          of their response, and timemodified is blank.
+        * response - Pre-formatted response HTML (rendered via triple braces), empty when private.
+        * timemodified - Localised last modified date, empty when private.
 
     Example context (json):
     {
@@ -55,61 +55,57 @@
                 "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2&userid=3",
                 "fullname": "Jane Doe",
                 "email": "jane@example.com",
+                "private": false,
                 "response": "<p>Today I learned about Mustache templates.</p>",
                 "timemodified": "1 January 2026, 10:00 AM"
             }
-        ],
-        "entriesprivate": false
+        ]
     }
 }}
 <div class="insightjournal-report">
     <div class="mb-3">
         <a href="{{backurl}}" class="btn btn-secondary">{{#str}}backtoactivity, mod_insightjournal{{/str}}</a>
-        {{^entriesprivate}}
-            <a href="{{downloadurl}}" class="btn btn-primary">{{#str}}downloadcsv, mod_insightjournal{{/str}}</a>
-        {{/entriesprivate}}
+        <a href="{{downloadurl}}" class="btn btn-primary">{{#str}}downloadcsv, mod_insightjournal{{/str}}</a>
     </div>
 
-    {{#entriesprivate}}
-        <div class="alert alert-info">{{#str}}entriesprivatenotice, mod_insightjournal{{/str}}</div>
-    {{/entriesprivate}}
-    {{^entriesprivate}}
-        <form method="get" action="{{actionurl}}" class="mb-3">
-            <input type="hidden" name="id" value="{{cmid}}">
-            <label for="insightjournal-search" class="visually-hidden">{{#str}}searchparticipants, mod_insightjournal{{/str}}</label>
-            <div class="input-group">
-                <input id="insightjournal-search" type="text" name="search" value="{{search}}" class="form-control" placeholder="{{#str}}searchparticipants, mod_insightjournal{{/str}}">
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-outline-secondary">{{#str}}search{{/str}}</button>
-                </div>
+    <form method="get" action="{{actionurl}}" class="mb-3">
+        <input type="hidden" name="id" value="{{cmid}}">
+        <label for="insightjournal-search" class="visually-hidden">{{#str}}searchparticipants, mod_insightjournal{{/str}}</label>
+        <div class="input-group">
+            <input id="insightjournal-search" type="text" name="search" value="{{search}}" class="form-control" placeholder="{{#str}}searchparticipants, mod_insightjournal{{/str}}">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-outline-secondary">{{#str}}search{{/str}}</button>
             </div>
-        </form>
+        </div>
+    </form>
 
-        {{#hasrows}}
-            <table class="generaltable">
-                <thead>
+    {{#hasrows}}
+        <table class="generaltable">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}}participant, mod_insightjournal{{/str}}</th>
+                    <th scope="col">{{#str}}response, mod_insightjournal{{/str}}</th>
+                    <th scope="col">{{#str}}timemodified, mod_insightjournal{{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
                     <tr>
-                        <th scope="col">{{#str}}participant, mod_insightjournal{{/str}}</th>
-                        <th scope="col">{{#str}}response, mod_insightjournal{{/str}}</th>
-                        <th scope="col">{{#str}}timemodified, mod_insightjournal{{/str}}</th>
+                        <td>
+                            <a href="{{summaryurl}}">{{fullname}}</a>
+                            <div class="small text-muted">{{email}}</div>
+                        </td>
+                        <td>
+                            {{#private}}<span class="text-muted font-italic">{{#str}}entriesprivatenotice, mod_insightjournal{{/str}}</span>{{/private}}
+                            {{^private}}<div class="insightjournal-response-text">{{{response}}}</div>{{/private}}
+                        </td>
+                        <td>{{timemodified}}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    {{#rows}}
-                        <tr>
-                            <td>
-                                <a href="{{summaryurl}}">{{fullname}}</a>
-                                <div class="small text-muted">{{email}}</div>
-                            </td>
-                            <td><div class="insightjournal-response-text">{{{response}}}</div></td>
-                            <td>{{timemodified}}</td>
-                        </tr>
-                    {{/rows}}
-                </tbody>
-            </table>
-        {{/hasrows}}
-        {{^hasrows}}
-            <div class="alert alert-info">{{#str}}noentries, mod_insightjournal{{/str}}</div>
-        {{/hasrows}}
-    {{/entriesprivate}}
+                {{/rows}}
+            </tbody>
+        </table>
+    {{/hasrows}}
+    {{^hasrows}}
+        <div class="alert alert-info">{{#str}}noentries, mod_insightjournal{{/str}}</div>
+    {{/hasrows}}
 </div>

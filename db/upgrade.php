@@ -54,6 +54,39 @@ function insightjournal_upgrade_migrate_legacy_visibility(\moodle_database $db):
 }
 
 /**
+ * Migrate legacy sentinel (0) insightjournal_entries.visibility rows using
+ * the trainer-visibility value their now-retired parent activity setting
+ * (insightjournal.entriesvisibility) had, before that column is dropped.
+ *
+ * Unlike {@see insightjournal_upgrade_migrate_legacy_visibility()}, this does
+ * NOT fail closed to private for an ambiguous/missing parent value: the
+ * per-activity trainer-visibility control is being removed entirely in this
+ * same upgrade, and the approved replacement policy is that only entries
+ * belonging to an activity that was explicitly PRIVATE (2) keep that
+ * guarantee; every other entry (activity was VISIBLE, or carried an
+ * unrecognised/legacy value) adopts the new default of visible to trainer,
+ * matching what a freshly written entry gets from this point on. Literal
+ * ints are used because lib.php is not necessarily loaded during upgrade.
+ *
+ * @param \moodle_database $db
+ * @return void
+ */
+function insightjournal_upgrade_migrate_entry_visibility(\moodle_database $db): void {
+    $privatediaryids = $db->get_fieldset_select('insightjournal', 'id', 'entriesvisibility = ?', [2]);
+    if (!empty($privatediaryids)) {
+        [$insql, $params] = $db->get_in_or_equal($privatediaryids, SQL_PARAMS_QM);
+        $params[] = 0;
+        $db->execute(
+            "UPDATE {insightjournal_entries}
+                SET visibility = 2
+              WHERE insightjournalid $insql AND visibility = ?",
+            $params
+        );
+    }
+    $db->set_field_select('insightjournal_entries', 'visibility', 1, 'visibility = ?', [0]);
+}
+
+/**
  * Run insight journal database upgrades.
  *
  * @param int $oldversion Previously installed plugin version.
@@ -152,6 +185,55 @@ function xmldb_insightjournal_upgrade($oldversion) {
         }
 
         upgrade_mod_savepoint(true, 2026072000, 'insightjournal');
+    }
+
+    if ($oldversion < 2026072200) {
+        // Trainer visibility moves from a per-activity setting to a
+        // per-entry choice made by the entry's author, who is the only one
+        // able to change it. Sentinel default of 0 marks not-yet-migrated
+        // rows, same two-step pattern as the entriesvisibility field itself
+        // (see 2026070901/2026070903 above).
+        $table = new xmldb_table('insightjournal_entries');
+        $field = new xmldb_field('visibility', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'revision');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026072200, 'insightjournal');
+    }
+
+    if ($oldversion < 2026072201) {
+        // Resolve sentinel-0 rows using their parent activity's about-to-be-
+        // retired entriesvisibility value (see
+        // insightjournal_upgrade_migrate_entry_visibility(): only an
+        // explicitly PRIVATE activity keeps its entries private; everything
+        // else defaults to visible). New rows going forward get visibility
+        // explicitly from classes/external/save_entry.php, but the column
+        // default is still flipped to 1 (VISIBLE) for consistency with how
+        // entriesvisibility itself was handled.
+        $table = new xmldb_table('insightjournal_entries');
+        $field = new xmldb_field('visibility', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'revision');
+
+        insightjournal_upgrade_migrate_entry_visibility($DB);
+        $dbman->change_field_default($table, $field);
+
+        upgrade_mod_savepoint(true, 2026072201, 'insightjournal');
+    }
+
+    if ($oldversion < 2026072202) {
+        // The per-activity trainer-visibility setting is retired: it is now
+        // decided per entry by the entry's author only (see
+        // insightjournal_entries.visibility, migrated above), with no
+        // trainer or site-wide override.
+        $table = new xmldb_table('insightjournal');
+        $field = new xmldb_field('entriesvisibility');
+
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026072202, 'insightjournal');
     }
 
     return true;

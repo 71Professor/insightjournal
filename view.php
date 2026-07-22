@@ -62,6 +62,7 @@ $canviewall = has_capability('mod/insightjournal:viewall', $context);
 
 $responseraw = $entry ? $entry->response : '';
 $haveentry = insightjournal_html_to_text($responseraw) !== '';
+$entryprivate = $entry ? !insightjournal_entry_visible_to_teacher($entry) : false;
 
 if ($canwrite) {
     // Same restriction options as the prompt field's editor (mod_form.php): no
@@ -110,6 +111,7 @@ $templatecontext = [
     'responseformatted' => $haveentry
         ? format_text($responseraw, $entry->responseformat, ['context' => $context])
         : '',
+    'entryprivate' => $entryprivate,
     'autosave' => (bool) $diary->autosave,
     'minchars' => (int) $diary->minchars,
     'maxchars' => (int) ($diary->maxchars ?? 0),

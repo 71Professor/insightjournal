@@ -39,36 +39,28 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
-$entriesvisible = insightjournal_entries_visible_to_teacher($diary);
-
-$entries = [];
-if ($entriesvisible) {
-    $sqlparams = ['diaryid' => $diary->id];
-    $where = 'e.insightjournalid = :diaryid';
-    if ($search !== '') {
-        $needle = '%' . $DB->sql_like_escape($search) . '%';
-        $where .= ' AND (' . $DB->sql_like('u.firstname', ':sfn', false) .
-                  ' OR ' . $DB->sql_like('u.lastname', ':sln', false) .
-                  ' OR ' . $DB->sql_like('u.email', ':sem', false) . ')';
-        $sqlparams['sfn'] = $needle;
-        $sqlparams['sln'] = $needle;
-        $sqlparams['sem'] = $needle;
-    }
-    $sql = "SELECT e.*, u.firstname, u.lastname,
-                   u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename,
-                   u.email
-              FROM {insightjournal_entries} e
-              JOIN {user} u ON u.id = e.userid
-             WHERE $where
-          ORDER BY u.lastname, u.firstname";
-    $entries = $DB->get_records_sql($sql, $sqlparams);
+$sqlparams = ['diaryid' => $diary->id];
+$where = 'e.insightjournalid = :diaryid';
+if ($search !== '') {
+    $needle = '%' . $DB->sql_like_escape($search) . '%';
+    $where .= ' AND (' . $DB->sql_like('u.firstname', ':sfn', false) .
+              ' OR ' . $DB->sql_like('u.lastname', ':sln', false) .
+              ' OR ' . $DB->sql_like('u.email', ':sem', false) . ')';
+    $sqlparams['sfn'] = $needle;
+    $sqlparams['sln'] = $needle;
+    $sqlparams['sem'] = $needle;
 }
+$sql = "SELECT e.*, u.firstname, u.lastname,
+               u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename,
+               u.email
+          FROM {insightjournal_entries} e
+          JOIN {user} u ON u.id = e.userid
+         WHERE $where
+      ORDER BY u.lastname, u.firstname";
+$entries = $DB->get_records_sql($sql, $sqlparams);
 
 if ($download === 'csv') {
     require_capability('mod/insightjournal:export', $context);
-    if (!$entriesvisible) {
-        throw new moodle_exception('entriesprivatenotice', 'insightjournal');
-    }
     confirm_sesskey();
     insightjournal_send_csv_headers('insightjournal-' . $course->shortname . '-' . $diary->id . '.csv');
     $out = fopen('php://output', 'w');
@@ -82,6 +74,7 @@ if ($download === 'csv') {
             'middlename' => $entry->middlename,
             'alternatename' => $entry->alternatename,
         ];
+        $private = !insightjournal_entry_visible_to_teacher($entry);
         fputcsv($out, [
             $course->id,
             insightjournal_csv_value($course->fullname),
@@ -90,8 +83,10 @@ if ($download === 'csv') {
             $entry->userid,
             insightjournal_csv_value(fullname($user)),
             insightjournal_csv_value($entry->email),
-            insightjournal_csv_value(insightjournal_html_to_text($entry->response)),
-            userdate($entry->timemodified),
+            $private
+                ? insightjournal_csv_value(get_string('entriesprivatenotice', 'insightjournal'))
+                : insightjournal_csv_value(insightjournal_html_to_text($entry->response)),
+            $private ? '' : userdate($entry->timemodified),
         ]);
     }
     fclose($out);
@@ -113,6 +108,7 @@ foreach ($entries as $entry) {
         'middlename' => $entry->middlename,
         'alternatename' => $entry->alternatename,
     ];
+    $private = !insightjournal_entry_visible_to_teacher($entry);
     $rows[] = [
         'fullname' => fullname($user),
         'email' => $entry->email,
@@ -124,8 +120,9 @@ foreach ($entries as $entry) {
                 'returnurl' => (new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id]))->out_as_local_url(false),
             ]
         ))->out(false),
-        'response' => format_text($entry->response, $entry->responseformat, ['context' => $context]),
-        'timemodified' => userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')),
+        'private' => $private,
+        'response' => $private ? '' : format_text($entry->response, $entry->responseformat, ['context' => $context]),
+        'timemodified' => $private ? '' : userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')),
     ];
 }
 
@@ -142,6 +139,5 @@ echo $OUTPUT->render_from_template('mod_insightjournal/report', [
     'search' => $search,
     'rows' => $rows,
     'hasrows' => !empty($rows),
-    'entriesprivate' => !$entriesvisible,
 ]);
 echo $OUTPUT->footer();

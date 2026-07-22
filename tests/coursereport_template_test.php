@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Unit tests for the mod_insightjournal/coursereport template's per-activity privacy rendering.
+ * Unit tests for the mod_insightjournal/coursereport template's per-entry privacy rendering.
  *
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
@@ -63,7 +63,6 @@ final class coursereport_template_test extends advanced_testcase {
             'activities' => [
                 [
                     'name' => 'Week 1 reflection',
-                    'private' => false,
                 ],
             ],
             'rows' => [
@@ -90,20 +89,20 @@ final class coursereport_template_test extends advanced_testcase {
     }
 
     /**
-     * A mix of a visible and a private activity in the same course renders both
-     * correctly: the private column gets a badge and a muted placeholder cell
-     * (no status/timemodified leak), while the visible column's data and the
-     * participant name still show normally.
+     * A mix of a visible and a private entry for the same activity renders both
+     * correctly: the private participant's cell gets a muted placeholder (no
+     * status/timemodified leak), while the visible participant's cell and both
+     * participants' names still show normally. There is no longer a
+     * column-level private badge, since visibility is decided per entry.
      */
-    public function test_mixed_visibility_only_hides_the_private_column(): void {
+    public function test_mixed_visibility_only_hides_the_private_cell(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
             'hasactivities' => true,
             'activities' => [
-                ['name' => 'Week 1 reflection', 'private' => false],
-                ['name' => 'Week 2 reflection', 'private' => true],
+                ['name' => 'Week 1 reflection'],
             ],
             'rows' => [
                 [
@@ -115,27 +114,33 @@ final class coursereport_template_test extends advanced_testcase {
                             'completed' => true,
                             'status' => 'Done',
                             'timemodified' => '1 January 2026, 10:00 AM',
-
                         ],
+                    ],
+                    'progress' => '1 / 1',
+                ],
+                [
+                    'summaryurl' => 'https://example.com/summary.php',
+                    'fullname' => 'John Roe',
+                    'cells' => [
                         ['private' => true],
                     ],
-                    'progress' => '1 / 2',
+                    'progress' => '0 / 1',
                 ],
             ],
         ]));
 
         $this->assertStringContainsString('Jane Doe', $html);
         $this->assertStringContainsString('Week 1 reflection', $html);
-        $this->assertStringContainsString('Week 2 reflection', $html);
         $this->assertStringContainsString('Done', $html);
-        $this->assertStringContainsString(get_string('private', 'mod_insightjournal'), $html);
+        $this->assertStringContainsString('John Roe', $html);
+        $this->assertStringNotContainsString(get_string('private', 'mod_insightjournal'), $html);
         $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $html);
         $this->assertStringContainsString(get_string('downloadcsv', 'mod_insightjournal'), $html);
     }
 
     /**
-     * The download link is always shown now, even when some/all activities are private
-     * (private rows are substituted, not the whole export blocked).
+     * The download link is always shown, even when some/all entries are private
+     * (private cells are substituted, not the whole export blocked).
      */
     public function test_download_link_always_present(): void {
         global $OUTPUT;
@@ -143,7 +148,7 @@ final class coursereport_template_test extends advanced_testcase {
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
             'hasactivities' => true,
-            'activities' => [['name' => 'Week 1 reflection', 'private' => true]],
+            'activities' => [['name' => 'Week 1 reflection']],
             'rows' => [
                 [
                     'summaryurl' => 'https://example.com/summary.php',

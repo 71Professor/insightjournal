@@ -49,6 +49,7 @@ final class view_template_test extends advanced_testcase {
             'haveentry' => false,
             'responseraw' => '',
             'responseformatted' => '',
+            'entryprivate' => false,
             'autosave' => true,
             'minchars' => 0,
             'maxchars' => 0,
@@ -102,6 +103,32 @@ final class view_template_test extends advanced_testcase {
         $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context(['canwrite' => false]));
 
         $this->assertStringNotContainsString('data-insightjournal-response', $html);
+    }
+
+    /**
+     * The private checkbox is unchecked by default (visible to trainer).
+     */
+    public function test_private_checkbox_unchecked_by_default(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context());
+
+        $this->assertMatchesRegularExpression('/data-insightjournal-private(?!\s*checked)[^>]*>/', $html);
+    }
+
+    /**
+     * With entryprivate true, the checkbox is pre-checked.
+     */
+    public function test_private_checkbox_checked_when_entry_is_private(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context([
+            'entryprivate' => true,
+        ]));
+
+        $this->assertMatchesRegularExpression('/data-insightjournal-private\s+checked/', $html);
     }
 
     /**

@@ -76,13 +76,15 @@ final class save_entry_test extends advanced_testcase {
      *
      * @param string $response The learner response to save.
      * @param int|null $expectedrevision Overrides the tracked revision, e.g. to simulate a stale/racing client.
+     * @param bool $private Whether to keep the entry private.
      * @return array The cleaned external return value.
      */
-    protected function save(string $response, ?int $expectedrevision = null): array {
+    protected function save(string $response, ?int $expectedrevision = null, bool $private = false): array {
         $result = save_entry::execute(
             (int) $this->journal->cmid,
             $response,
-            $expectedrevision ?? $this->revision
+            $expectedrevision ?? $this->revision,
+            $private
         );
         $result = external_api::clean_returnvalue(save_entry::execute_returns(), $result);
         $this->revision = $result['revision'];
@@ -220,13 +222,13 @@ final class save_entry_test extends advanced_testcase {
         ]);
 
         // Heavy markup, but only 5 visible characters: fits within maxchars.
-        $result = save_entry::execute((int) $journal->cmid, '<p><strong><em>hello</em></strong></p>', 0);
+        $result = save_entry::execute((int) $journal->cmid, '<p><strong><em>hello</em></strong></p>', 0, false);
         $result = external_api::clean_returnvalue(save_entry::execute_returns(), $result);
         $this->assertTrue($result['success']);
 
         // 12 visible characters, no markup at all: exceeds maxchars of 10.
         $this->expectException(\moodle_exception::class);
-        save_entry::execute((int) $journal->cmid, 'twelve chars', $result['revision']);
+        save_entry::execute((int) $journal->cmid, 'twelve chars', $result['revision'], false);
     }
 
     /**
@@ -307,5 +309,73 @@ final class save_entry_test extends advanced_testcase {
             'insightjournalid' => $this->journal->id,
             'userid' => $this->student->id,
         ]));
+    }
+
+    /**
+     * A new entry defaults to visible to trainer when private is not requested.
+     */
+    public function test_new_entry_defaults_to_visible(): void {
+        global $DB;
+
+        $this->save('first response');
+
+        $entry = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_VISIBLE, (int) $entry->visibility);
+    }
+
+    /**
+     * A learner can mark their entry private on first save; only they authored
+     * this choice, there is no activity-level override.
+     */
+    public function test_entry_can_be_saved_private(): void {
+        global $DB;
+
+        $result = $this->save('secret reflection', null, true);
+
+        $this->assertTrue($result['success']);
+        $this->assertTrue($result['private']);
+        $entry = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_PRIVATE, (int) $entry->visibility);
+    }
+
+    /**
+     * The author can change visibility on a later save of the same entry, at
+     * any time, in either direction.
+     */
+    public function test_visibility_can_be_changed_on_later_save(): void {
+        global $DB;
+
+        $this->save('first response', null, false);
+        $this->save('first response, now private', null, true);
+
+        $entry = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_PRIVATE, (int) $entry->visibility);
+
+        $result = $this->save('first response, visible again', null, false);
+        $this->assertFalse($result['private']);
+        $entry = $DB->get_record('insightjournal_entries', ['id' => $entry->id]);
+        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_VISIBLE, (int) $entry->visibility);
+    }
+
+    /**
+     * A rejected conflicting save reports the entry's actual stored privacy
+     * state, not the client's attempted one, so the client can reconcile its
+     * checkbox after a stale write is rejected.
+     */
+    public function test_conflict_reports_actual_stored_privacy(): void {
+        $this->save('first response', null, true);
+        $conflict = $this->save('stale racing response', 0, false);
+
+        $this->assertTrue($conflict['conflict']);
+        $this->assertTrue($conflict['private']);
     }
 }

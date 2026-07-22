@@ -53,29 +53,37 @@ final class backup_test extends advanced_testcase {
     }
 
     /**
-     * The entriesvisibility setting round-trips through a course
-     * backup/restore, the same as the other per-activity settings.
+     * An entry's visibility, decided by its author, round-trips through a
+     * course backup/restore, the same as the other per-entry fields.
      *
      * Regression coverage: backup_insightjournal_stepslib.php enumerates its
      * backed-up fields explicitly, so a new DB column silently vanishes on
      * restore unless it is added to that list.
      */
-    public function test_entriesvisibility_survives_backup_and_restore(): void {
+    public function test_entry_visibility_survives_backup_and_restore(): void {
         global $DB;
         $this->resetAfterTest();
         $this->setAdminUser();
 
         $course = $this->getDataGenerator()->create_course();
-        $journal = $this->getDataGenerator()->create_module('insightjournal', [
-            'course' => $course->id,
-            'entriesvisibility' => INSIGHTJOURNAL_VISIBILITY_PRIVATE,
-        ]);
+        $journal = $this->getDataGenerator()->create_module('insightjournal', ['course' => $course->id]);
+        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        /** @var \mod_insightjournal_generator $plugingenerator */
+        $plugingenerator = $this->getDataGenerator()->get_plugin_generator('mod_insightjournal');
+        $plugingenerator->create_entry($journal, (int) $user->id, 'Private reflection.', INSIGHTJOURNAL_VISIBILITY_PRIVATE);
 
         $newcourseid = $this->backup_and_restore($course);
 
-        $restored = $DB->get_record('insightjournal', ['course' => $newcourseid], '*', MUST_EXIST);
-        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_PRIVATE, (int) $restored->entriesvisibility);
-        $this->assertEquals($journal->name, $restored->name);
+        $restoredjournal = $DB->get_record('insightjournal', ['course' => $newcourseid], '*', MUST_EXIST);
+        $restoredentry = $DB->get_record(
+            'insightjournal_entries',
+            ['insightjournalid' => $restoredjournal->id],
+            '*',
+            MUST_EXIST
+        );
+        $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_PRIVATE, (int) $restoredentry->visibility);
+        $this->assertEquals($journal->name, $restoredjournal->name);
     }
 
     /**

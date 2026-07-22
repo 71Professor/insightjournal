@@ -60,16 +60,9 @@ $participants = get_enrolled_users(
     'u.lastname,u.firstname'
 );
 
-$visiblediaryids = [];
-foreach ($diaries as $diary) {
-    if (insightjournal_entries_visible_to_teacher($diary)) {
-        $visiblediaryids[] = $diary->id;
-    }
-}
-
 $entries = [];
-if (!empty($visiblediaryids)) {
-    [$insql, $params] = $DB->get_in_or_equal($visiblediaryids, SQL_PARAMS_NAMED);
+if (!empty($diaryids)) {
+    [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
     $records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
     foreach ($records as $entry) {
         $entries[$entry->userid][$entry->insightjournalid] = $entry;
@@ -86,8 +79,8 @@ if ($download === 'csv') {
     fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
     foreach ($participants as $user) {
         foreach ($diaries as $diary) {
-            $private = !in_array($diary->id, $visiblediaryids, true);
-            $entry = $private ? null : ($entries[$user->id][$diary->id] ?? null);
+            $entry = $entries[$user->id][$diary->id] ?? null;
+            $private = $entry && !insightjournal_entry_visible_to_teacher($entry);
             fputcsv($out, [
                 $course->id,
                 insightjournal_csv_value($course->fullname),
@@ -116,7 +109,6 @@ $activityheaders = [];
 foreach ($diaries as $diary) {
     $activityheaders[] = [
         'name' => format_string($diary->name),
-        'private' => !in_array($diary->id, $visiblediaryids, true),
     ];
 }
 
@@ -125,11 +117,11 @@ foreach ($participants as $user) {
     $done = 0;
     $cells = [];
     foreach ($diaries as $diary) {
-        if (!in_array($diary->id, $visiblediaryids, true)) {
+        $entry = $entries[$user->id][$diary->id] ?? null;
+        if ($entry && !insightjournal_entry_visible_to_teacher($entry)) {
             $cells[] = ['private' => true];
             continue;
         }
-        $entry = $entries[$user->id][$diary->id] ?? null;
         $completed = $entry && insightjournal_html_to_text($entry->response) !== '';
         if ($completed) {
             $done++;
