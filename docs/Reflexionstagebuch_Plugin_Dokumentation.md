@@ -193,7 +193,7 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 **Kontakt:** Michael Kohl – michaelkohl71@gmail.com
 
-**GitHub:** https://github.com/71Professor/insightjournal
+**GitHub:** https://github.com/71Professor/insightjournal/issues
 
 ---
 
