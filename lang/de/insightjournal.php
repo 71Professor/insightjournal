@@ -75,6 +75,7 @@ $string['privacy:metadata:insightjournal_entries'] = 'Speichert Insight-Journal-
 $string['privacy:metadata:insightjournal_entries:insightjournalid'] = 'Die Aktivitätsinstanz, zu der die Antwort gehört.';
 $string['privacy:metadata:insightjournal_entries:response'] = 'Der Antworttext.';
 $string['privacy:metadata:insightjournal_entries:responseformat'] = 'Das Antwortformat.';
+$string['privacy:metadata:insightjournal_entries:revision'] = 'Ein bei jeder Speicherung erhöhter Zähler, der genutzt wird, um gleichzeitige, einander widersprechende Änderungen zu erkennen.';
 $string['privacy:metadata:insightjournal_entries:timecreated'] = 'Zeitpunkt der Erstellung.';
 $string['privacy:metadata:insightjournal_entries:timemodified'] = 'Zeitpunkt der letzten Änderung.';
 $string['privacy:metadata:insightjournal_entries:userid'] = 'Die Nutzerin oder der Nutzer, die/der die Antwort geschrieben hat.';

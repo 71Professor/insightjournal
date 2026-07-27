@@ -24,6 +24,11 @@ Versions map to the `$plugin->release` value in `version.php`.
   overwrite the other writer's newer text with the same stale local content that
   had just been rejected.
 
+- **Declared the `revision` column in the Privacy API metadata**, with an
+  English/German description, and included it in the user's data export
+  alongside the other stored fields. It was added to `insightjournal_entries`
+  for optimistic-concurrency saves but never documented as personal data.
+
 ## [0.6.0-beta] - 2026-07-22
 
 ### Added

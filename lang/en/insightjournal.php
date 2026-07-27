@@ -75,6 +75,7 @@ $string['privacy:metadata:insightjournal_entries'] = 'Stores users\' insight jou
 $string['privacy:metadata:insightjournal_entries:insightjournalid'] = 'The activity instance the response belongs to.';
 $string['privacy:metadata:insightjournal_entries:response'] = 'The response text.';
 $string['privacy:metadata:insightjournal_entries:responseformat'] = 'The response format.';
+$string['privacy:metadata:insightjournal_entries:revision'] = 'A counter incremented on every save, used to detect conflicting simultaneous edits.';
 $string['privacy:metadata:insightjournal_entries:timecreated'] = 'The time when the response was created.';
 $string['privacy:metadata:insightjournal_entries:timemodified'] = 'The time when the response was last modified.';
 $string['privacy:metadata:insightjournal_entries:userid'] = 'The user who wrote the response.';

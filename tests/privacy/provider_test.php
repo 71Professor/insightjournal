@@ -87,6 +87,39 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
     }
 
     /**
+     * The entries table's field list names every column the table actually
+     * has, so a new column can't silently fall out of the privacy
+     * declaration.
+     */
+    public function test_get_metadata_entries_table_field_list(): void {
+        $collection = new collection('mod_insightjournal');
+        $collection = provider::get_metadata($collection);
+
+        $table = null;
+        foreach ($collection->get_collection() as $item) {
+            if (method_exists($item, 'get_name') && $item->get_name() === 'insightjournal_entries') {
+                $table = $item;
+                break;
+            }
+        }
+        $this->assertNotNull($table, 'insightjournal_entries table not declared in privacy metadata.');
+
+        $this->assertEqualsCanonicalizing(
+            [
+                'insightjournalid',
+                'userid',
+                'response',
+                'responseformat',
+                'revision',
+                'visibility',
+                'timecreated',
+                'timemodified',
+            ],
+            array_keys($table->get_privacy_fields())
+        );
+    }
+
+    /**
      * A user with an entry is reported against the module context.
      */
     public function test_get_contexts_for_userid(): void {
@@ -102,6 +135,24 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $this->export_context_data_for_user((int) $this->user1->id, $this->context, 'mod_insightjournal');
         $writer = writer::with_context($this->context);
         $this->assertTrue($writer->has_any_data());
+    }
+
+    /**
+     * The exported entry includes its revision, so a user can see the
+     * counter their own data actually stores, matching the metadata
+     * declaration.
+     */
+    public function test_export_user_data_includes_revision(): void {
+        global $DB;
+        $entry = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->user1->id,
+        ]);
+
+        $this->export_context_data_for_user((int) $this->user1->id, $this->context, 'mod_insightjournal');
+        $data = writer::with_context($this->context)->get_data([get_string('pluginname', 'insightjournal')]);
+
+        $this->assertSame((int) $entry->revision, $data->revision);
     }
 
     /**
