@@ -38,7 +38,7 @@ class behat_mod_insightjournal extends behat_base {
      * from another tab/session/device that the currently open browser session
      * has not seen, without touching the currently loaded page's own state.
      *
-     * @Given /^insight journal entry for "(?P<user_string>(?:[^"]|\\")*)" in "(?P<activity_string>(?:[^"]|\\")*)" was saved elsewhere as "(?P<response_string>(?:[^"]|\\")*)"$/
+     * @Given /^insight journal entry for "((?:[^"]|\\")*)" in "((?:[^"]|\\")*)" was saved elsewhere as "((?:[^"]|\\")*)"$/
      * @param string $username
      * @param string $activityname
      * @param string $response
