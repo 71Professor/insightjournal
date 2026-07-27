@@ -21,7 +21,7 @@
  * @author     Michael Kohl
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notification, Str) {
+define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
     var timer = null;
     var maxChars = 0;
     var lastSeenValue = null;
@@ -37,14 +37,14 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
     // this module must not fail to load along with it. Request it lazily and
     // tolerate failure; getCurrentValue() below falls back to the textarea's
     // own value when no live Tiny instance is found for it.
-    var requestTinyEditor = function () {
+    var requestTinyEditor = function() {
         if (tinyEditorRequested) {
             return;
         }
         tinyEditorRequested = true;
-        require(['editor_tiny/editor'], function (TinyEditor) {
+        require(['editor_tiny/editor'], function(TinyEditor) {
             tinyEditor = TinyEditor;
-        }, function () {
+        }, function() {
             // The editor_tiny plugin is not installed or enabled on this site; ignore.
         });
     };
@@ -54,12 +54,12 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
     // its content directly. Every other editor (Atto, plain textarea) keeps
     // the textarea's own value continuously in sync as the user types, so
     // reading it directly is always correct there.
-    var getCurrentValue = function (textarea) {
+    var getCurrentValue = function(textarea) {
         var instance = tinyEditor ? tinyEditor.getInstanceForElementId(textarea.id) : null;
         return instance ? instance.getContent() : textarea.value;
     };
 
-    var setStatus = function (text, cssclass) {
+    var setStatus = function(text, cssclass) {
         var status = document.querySelector('[data-insightjournal-status]');
         if (!status) {
             return;
@@ -68,23 +68,23 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
         status.className = cssclass || '';
     };
 
-    var setViewStatus = function (text) {
+    var setViewStatus = function(text) {
         var status = document.querySelector('[data-insightjournal-view-status]');
         if (status) {
             status.textContent = text;
         }
     };
 
-    var stripHtml = function (html) {
+    var stripHtml = function(html) {
         var doc = new DOMParser().parseFromString(html, 'text/html');
         return doc.body.textContent || '';
     };
 
-    var charCount = function (str) {
+    var charCount = function(str) {
         return [...str].length;
     };
 
-    var updateCounter = function (value) {
+    var updateCounter = function(value) {
         var counter = document.querySelector('[data-insightjournal-charcounter]');
         var button = document.querySelector('[data-insightjournal-save]');
         if (!counter) {
@@ -99,7 +99,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
         }
     };
 
-    var showEditPanel = function () {
+    var showEditPanel = function() {
         var view = document.querySelector('[data-insightjournal-view]');
         var panel = document.querySelector('[data-insightjournal-edit-panel]');
         var textarea = document.querySelector('[data-insightjournal-response]');
@@ -127,7 +127,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
         }
     };
 
-    var showViewPanel = function (responsehtml, timestr) {
+    var showViewPanel = function(responsehtml, timestr) {
         var view = document.querySelector('[data-insightjournal-view]');
         var panel = document.querySelector('[data-insightjournal-edit-panel]');
         var display = document.querySelector('[data-insightjournal-response-display]');
@@ -151,7 +151,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
     // server's actual current content (already returned by save_entry on a
     // conflict) so the learner can compare it against their own local draft,
     // which is deliberately left untouched in the textarea beside it.
-    var showConflictBanner = function (result, message) {
+    var showConflictBanner = function(result, message) {
         var banner = document.querySelector('[data-insightjournal-conflict-banner]');
         var messageEl = document.querySelector('[data-insightjournal-conflict-message]');
         var content = document.querySelector('[data-insightjournal-conflict-content]');
@@ -171,7 +171,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
     // as its own function, and called from each branch, so the promise chain
     // can still end in a genuine .catch() as required by eslint's
     // promise/catch-or-return rule.
-    var finishSave = function () {
+    var finishSave = function() {
         saving = false;
         if (pendingSave) {
             var next = pendingSave;
@@ -180,7 +180,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
         }
     };
 
-    var save = function (cmid, manual) {
+    var save = function(cmid, manual) {
         clearTimeout(timer);
         if (conflicted) {
             return;
@@ -209,7 +209,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
             button.disabled = true;
         }
         saving = true;
-        Str.get_string('saving', 'mod_insightjournal').then(function (text) {
+        Str.get_string('saving', 'mod_insightjournal').then(function(text) {
             setStatus(text, 'text-info');
             return Ajax.call([{
                 methodname: 'mod_insightjournal_save_entry',
@@ -220,7 +220,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
                     'private': Boolean(privatecheckbox && privatecheckbox.checked)
                 }
             }])[0];
-        }).then(async function (result) {
+        }).then(async function(result) {
             if (result.conflict) {
                 conflicted = true;
                 pendingSave = null;
@@ -252,7 +252,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
             }
             finishSave();
             return savedtext;
-        }).catch(async function (error) {
+        }).catch(async function(error) {
             var current = getCurrentValue(textarea);
             if (button) {
                 button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
@@ -262,14 +262,14 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
             setStatus(errortext, 'text-danger');
             finishSave();
             return errortext;
-        }).catch(function () {
+        }).catch(function() {
             finishSave();
             return null;
         });
     };
 
     return {
-        init: function (cmid, autosave, maxchars, initialrevision) {
+        init: function(cmid, autosave, maxchars, initialrevision) {
             maxChars = maxchars || 0;
             currentRevision = initialrevision || 0;
             var textarea = document.querySelector('[data-insightjournal-response]');
@@ -285,13 +285,13 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
                 updateCounter(lastSeenValue);
             }
             if (button) {
-                button.addEventListener('click', function (e) {
+                button.addEventListener('click', function(e) {
                     e.preventDefault();
                     save(cmid, true);
                 });
             }
             if (editbutton) {
-                editbutton.addEventListener('click', function (e) {
+                editbutton.addEventListener('click', function(e) {
                     e.preventDefault();
                     showEditPanel();
                 });
@@ -302,7 +302,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
                 // non-manual save: manual=true would switch to the read-only
                 // view panel via showViewPanel(), which would yank the learner
                 // out of the editor just for toggling a checkbox.
-                privatecheckbox.addEventListener('change', function () {
+                privatecheckbox.addEventListener('change', function() {
                     save(cmid, false);
                 });
             }
@@ -313,7 +313,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
                 // response itself) from the server's actual current record via
                 // the normal page render, rather than trying to reconcile it
                 // in place.
-                conflictreload.addEventListener('click', function (e) {
+                conflictreload.addEventListener('click', function(e) {
                     e.preventDefault();
                     window.location.reload();
                 });
@@ -324,7 +324,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
             // textarea on blur, not per keystroke. One second is frequent
             // enough for a responsive character counter/autosave trigger
             // without meaningfully loading the page.
-            setInterval(function () {
+            setInterval(function() {
                 var panel = document.querySelector('[data-insightjournal-edit-panel]');
                 if (!panel || panel.classList.contains('d-none') || conflicted) {
                     return;
@@ -339,7 +339,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function (Ajax, Notificat
                 }
                 if (autosave) {
                     clearTimeout(timer);
-                    timer = setTimeout(function () {
+                    timer = setTimeout(function() {
                         save(cmid, false);
                     }, 3000);
                 }

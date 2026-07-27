@@ -94,7 +94,14 @@ jobs:
 
       - name: Moodle Code Checker
         if: ${{ !cancelled() && matrix.php >= '8.2' }}
-        run: moodle-plugin-ci phpcs --max-warnings 0
+        # Squiz.Functions.MultiLineFunctionDeclaration.SpaceAfterFunction is excluded:
+        # it demands a space after `function` in AMD JS, which directly
+        # contradicts ESLint's space-before-function-paren rule (enforced by
+        # the Grunt step below with --max-lint-warnings 0), which forbids
+        # that same space. Excluding it here keeps both gates satisfiable.
+        # --exclude only accepts Standard.Category.Sniff (3-part) codes, not the
+        # full 4-part message code, so this drops the whole sniff.
+        run: moodle-plugin-ci phpcs --max-warnings 0 --exclude=Squiz.Functions.MultiLineFunctionDeclaration
 
       - name: Moodle PHPDoc Checker
         if: ${{ !cancelled() }}
