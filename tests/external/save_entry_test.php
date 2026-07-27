@@ -378,4 +378,104 @@ final class save_entry_test extends advanced_testcase {
         $this->assertTrue($conflict['conflict']);
         $this->assertTrue($conflict['private']);
     }
+
+    /**
+     * Regression test for R2-02: PHPUnit cannot fork a true concurrent request,
+     * so this proves serialisation indirectly. It holds the exact lock resource
+     * save_entry::execute() must acquire for this insightjournalid+userid, then
+     * asserts execute() cannot proceed while it is held: it must fail rather
+     * than silently reading/writing unsynchronised, and it must not have
+     * written anything.
+     *
+     * Runs for close to LOCK_TIMEOUT_SECONDS (a few real wall-clock seconds):
+     * file_lock_factory polls until it gives up, so this is expected, not a
+     * hang.
+     */
+    public function test_concurrent_save_for_same_entry_is_serialised_by_the_lock(): void {
+        global $CFG, $DB;
+
+        // Force the file-based lock factory: Moodle's default here (MariaDB) is
+        // mysql_lock_factory, which uses GET_LOCK() scoped to the DB connection.
+        // This whole PHPUnit process shares a single connection, so a lock
+        // "held" by this test and a lock "attempted" by execute() below would
+        // be the same session and never actually contend. file_lock_factory
+        // uses a real flock() per opened file handle, which does contend even
+        // within one process, so it is the only way to observe genuine
+        // serialisation here. resetAfterTest() reverts this $CFG change.
+        $CFG->lock_factory = '\core\lock\file_lock_factory';
+
+        $this->save('first response');
+
+        $lockfactory = \core\lock\lock_config::get_lock_factory('mod_insightjournal_save_entry');
+        $resource = 'insightjournalid:' . $this->journal->id . ':userid:' . $this->student->id;
+        $lock = $lockfactory->get_lock($resource, 1);
+        $this->assertNotFalse($lock, 'Precondition: the test itself must be able to acquire the lock.');
+
+        $threw = false;
+        try {
+            $this->save('second response, racing');
+        } catch (\moodle_exception $e) {
+            $threw = true;
+        } finally {
+            $lock->release();
+        }
+
+        $this->assertTrue(
+            $threw,
+            'save_entry::execute() must fail to acquire an already-held lock rather than proceed unsynchronised.'
+        );
+
+        $stored = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertEquals('first response', $stored->response);
+        $this->assertEquals(1, (int) $stored->revision);
+    }
+
+    /**
+     * Different insightjournalid+userid pairs must not block each other: the
+     * lock resource key is scoped per entry, not global or per-activity-only.
+     */
+    public function test_locks_for_different_entries_do_not_block_each_other(): void {
+        $otherstudent = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+
+        $lockfactory = \core\lock\lock_config::get_lock_factory('mod_insightjournal_save_entry');
+        $resource = 'insightjournalid:' . $this->journal->id . ':userid:' . $this->student->id;
+        $lock = $lockfactory->get_lock($resource, 1);
+        $this->assertNotFalse($lock, 'Precondition: the test itself must be able to acquire the lock.');
+
+        try {
+            $this->setUser($otherstudent);
+            $result = save_entry::execute((int) $this->journal->cmid, 'other learner response', 0, false);
+            $result = external_api::clean_returnvalue(save_entry::execute_returns(), $result);
+            $this->assertTrue($result['success']);
+        } finally {
+            $lock->release();
+            $this->setUser($this->student);
+        }
+    }
+
+    /**
+     * Schema-level regression guard: the unique index on (insightjournalid,
+     * userid) remains a working backstop even outside the lock, in case it is
+     * ever accidentally dropped from db/install.xml.
+     */
+    public function test_unique_index_still_rejects_duplicate_insightjournalid_userid_rows(): void {
+        global $DB;
+
+        $this->save('first response');
+
+        $this->expectException(\dml_write_exception::class);
+        $DB->insert_record('insightjournal_entries', (object) [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+            'response' => 'duplicate row attempt',
+            'responseformat' => FORMAT_HTML,
+            'revision' => 99,
+            'visibility' => INSIGHTJOURNAL_VISIBILITY_VISIBLE,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+    }
 }

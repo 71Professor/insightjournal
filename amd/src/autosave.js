@@ -28,6 +28,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     var currentRevision = 0;
     var saving = false;
     var pendingSave = null;
+    var conflicted = false;
     var tinyEditor = null;
     var tinyEditorRequested = false;
 
@@ -94,7 +95,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         counter.textContent = current + ' / ' + maxChars;
         counter.className = 'small ms-auto ' + (over ? 'text-danger fw-bold' : 'text-muted');
         if (button) {
-            button.disabled = over;
+            button.disabled = over || conflicted;
         }
     };
 
@@ -146,6 +147,25 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         }
     };
 
+    // Shown on a save conflict instead of silently retrying: displays the
+    // server's actual current content (already returned by save_entry on a
+    // conflict) so the learner can compare it against their own local draft,
+    // which is deliberately left untouched in the textarea beside it.
+    var showConflictBanner = function(result, message) {
+        var banner = document.querySelector('[data-insightjournal-conflict-banner]');
+        var messageEl = document.querySelector('[data-insightjournal-conflict-message]');
+        var content = document.querySelector('[data-insightjournal-conflict-content]');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+        if (content) {
+            content.innerHTML = result.responsehtml;
+        }
+        if (banner) {
+            banner.classList.remove('d-none');
+        }
+    };
+
     // Runs once whichever branch of save()'s promise chain settles, so a
     // queued save (see the "saving" guard below) always gets its turn. Kept
     // as its own function, and called from each branch, so the promise chain
@@ -162,6 +182,9 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
 
     var save = function(cmid, manual) {
         clearTimeout(timer);
+        if (conflicted) {
+            return;
+        }
         // Only one save may be in flight at a time: an overlapping request (e.g.
         // the autosave debounce firing again before a slow save has returned)
         // would otherwise let responses arrive out of order and let a stale one
@@ -198,6 +221,22 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                 }
             }])[0];
         }).then(async function(result) {
+            if (result.conflict) {
+                conflicted = true;
+                pendingSave = null;
+                saving = false;
+                clearTimeout(timer);
+                if (button) {
+                    button.disabled = true;
+                }
+                if (privatecheckbox) {
+                    privatecheckbox.disabled = true;
+                }
+                var conflicttext = await Str.get_string('saveconflict', 'mod_insightjournal');
+                setStatus(conflicttext, 'text-danger');
+                showConflictBanner(result, conflicttext);
+                return conflicttext;
+            }
             var current = getCurrentValue(textarea);
             if (button) {
                 button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
@@ -205,12 +244,6 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             currentRevision = result.revision;
             if (privatecheckbox) {
                 privatecheckbox.checked = result.private;
-            }
-            if (result.conflict) {
-                var conflicttext = await Str.get_string('saveconflict', 'mod_insightjournal');
-                setStatus(conflicttext, 'text-danger');
-                finishSave();
-                return conflicttext;
             }
             var savedtext = await Str.get_string('savedat', 'mod_insightjournal', result.timestr);
             setStatus(savedtext, 'text-success');
@@ -273,6 +306,18 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                     save(cmid, false);
                 });
             }
+            var conflictreload = document.querySelector('[data-insightjournal-conflict-reload]');
+            if (conflictreload) {
+                // A full reload is the only way out of a conflict: it re-derives
+                // every bit of client state (currentRevision, lastSeenValue, the
+                // response itself) from the server's actual current record via
+                // the normal page render, rather than trying to reconcile it
+                // in place.
+                conflictreload.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.reload();
+                });
+            }
             // Poll rather than bind to a live editor event: Tiny attaches
             // asynchronously (there is no synchronous "ready" signal available
             // to this module), and once attached it only syncs its backing
@@ -281,7 +326,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             // without meaningfully loading the page.
             setInterval(function() {
                 var panel = document.querySelector('[data-insightjournal-edit-panel]');
-                if (!panel || panel.classList.contains('d-none')) {
+                if (!panel || panel.classList.contains('d-none') || conflicted) {
                     return;
                 }
                 var value = getCurrentValue(textarea);

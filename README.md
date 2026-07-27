@@ -89,8 +89,10 @@ unticked by default, so trainers can read the entry unless the learner opts
 out. Toggling it saves immediately, and it can be changed again at any time —
 see [Data and Privacy](#data-and-privacy). Each save checks
 that no newer version was saved elsewhere in the meantime (e.g. from another
-tab); if one was, the save is rejected with a notice instead of silently
-overwriting it. The personal summary page lists all their Insight Journal
+tab); if one was, the save is rejected with a notice, further saving is
+locked, and the learner's own draft stays visible next to the current saved
+version so they can compare before reloading to continue. The personal
+summary page lists all their Insight Journal
 responses in the course and is suitable for browser printing (including
 save-as-PDF).
 
@@ -193,8 +195,9 @@ save/reload roundtrip, editing a previously saved response, autosave
 persisting a change without leaving edit mode, the minchars completion
 regression, a successful save never showing the error status, a learner
 marking their own entry private, saving/the character counter/autosave
-with the Atto editor, and a learner choosing differently across two
-activities in the same course. Run via
+with the Atto editor, a learner choosing differently across two
+activities in the same course, and a stale save being rejected as a
+conflict that locks further saves until the learner reloads. Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
@@ -207,12 +210,12 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: eight scenarios cover the save/reload
+- **Behat coverage is limited**: nine scenarios cover the save/reload
   roundtrip, editing a saved response, autosave, the minchars completion
   regression, a learner marking their own entry private, choosing
   differently across two activities in the same course, the Atto editor,
-  and the save-status classes. Broader coverage (CSV export) is not yet
-  automated.
+  the save-status classes, and a save conflict locking further saves until
+  reload. Broader coverage (CSV export) is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -230,11 +233,11 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (8 scenarios: save/reload roundtrip, editing a saved
+- [x] Add Behat tests (9 scenarios: save/reload roundtrip, editing a saved
       response, autosave, completion regression, save-status classes, a
       learner marking their own entry private, Atto editor, choosing
-      differently across activities) — 2026-07-09, extended 2026-07-21,
-      2026-07-22
+      differently across activities, save conflict locking) — 2026-07-09,
+      extended 2026-07-21, 2026-07-22, 2026-07-27
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory

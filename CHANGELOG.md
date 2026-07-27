@@ -8,6 +8,22 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Closed a lost-update race in autosave that the previous optimistic-concurrency
+  check alone did not prevent.** Server: `save_entry`'s read-compare-write is now
+  serialised per entry (activity + user) via the Moodle Lock API, so two genuinely
+  concurrent saves can no longer both read the same revision and both write; the
+  loser is now reliably told about the conflict instead of occasionally winning a
+  race. Client: on a rejected save, `autosave.js` now enters an explicit conflicted
+  state instead of quietly adopting the server's revision as its new write base —
+  it discards any queued save, disables further auto/manual saves, and shows the
+  server's actual current content next to the still-editable, still-copyable local
+  draft, with a "Reload page" action as the only way to resume saving. Previously,
+  the very next autosave tick or manual click after a conflict could silently
+  overwrite the other writer's newer text with the same stale local content that
+  had just been rejected.
+
 ## [0.6.0-beta] - 2026-07-22
 
 ### Added
