@@ -142,3 +142,26 @@ Feature: Insight journal activity
     Then I should see "Visible reflection."
     And I should not see "Secret reflection."
     And I should see "Insight journal entries are currently private. Only the learner who wrote an entry can view it."
+
+  @javascript
+  Scenario: A stale save is rejected as a conflict and locks further saves until reload
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "My original draft."
+    And I press "Save"
+    And I press "Edit"
+    And I set the field "Response" to "My edited draft, about to conflict."
+    And insight journal entry for "student1" in "My Journal" was saved elsewhere as "Saved from another tab."
+    When I press "Save"
+    Then I should see "Not saved: a newer version was saved elsewhere" in the "[data-insightjournal-status]" "css_element"
+    And "[data-insightjournal-conflict-banner]" "css_element" should be visible
+    And I should see "Saved from another tab." in the "[data-insightjournal-conflict-content]" "css_element"
+    And the field "Response" matches value "My edited draft, about to conflict."
+    And the "[data-insightjournal-save]" "css_element" should be disabled
+    And I set the field "Response" to "Still editing after the conflict."
+    And I wait "4" seconds
+    And "[data-insightjournal-status].text-success" "css_element" should not exist
+    When I reload the page
+    Then the field "Response" matches value "Saved from another tab."

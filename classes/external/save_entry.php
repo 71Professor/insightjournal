@@ -25,6 +25,7 @@
 
 namespace mod_insightjournal\external;
 
+use core\lock\lock_config;
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_value;
@@ -34,6 +35,15 @@ use core_external\external_single_structure;
  * External function to save or update a learner's insight journal entry.
  */
 class save_entry extends external_api {
+    /** @var string Lock type/namespace for save_entry, serialising the read-compare-write per entry. */
+    private const LOCK_TYPE = 'mod_insightjournal_save_entry';
+
+    /** @var int Seconds to wait for the per-entry lock before giving up. */
+    private const LOCK_TIMEOUT_SECONDS = 3;
+
+    /** @var int Seconds after which a factory lacking auto-release may reclaim a stale lock. */
+    private const LOCK_MAXLIFETIME_SECONDS = 60;
+
     /**
      * Describes the parameters for the save_entry function.
      *
@@ -63,6 +73,12 @@ class save_entry extends external_api {
      * seen a save made elsewhere, from silently overwriting newer stored text.
      * A mismatch is reported back as a conflict rather than thrown, since it is
      * an expected, recoverable outcome rather than a failure.
+     *
+     * The read-compare-write itself is serialised per insightjournalid+userid via
+     * the Moodle Lock API, so two genuinely concurrent requests can no longer
+     * both read the same revision and both write (a lost update): whichever
+     * acquires the lock first wins, and the other sees the now-current revision
+     * as a conflict.
      *
      * @param int $cmid Course module id.
      * @param string $response Learner response HTML.
@@ -95,52 +111,74 @@ class save_entry extends external_api {
         if (!empty($diary->maxchars) && $visiblelength > (int) $diary->maxchars) {
             throw new \moodle_exception('maxcharserror', 'mod_insightjournal', '', (int) $diary->maxchars);
         }
-        $entry = $DB->get_record('insightjournal_entries', ['insightjournalid' => $diary->id, 'userid' => $USER->id]);
-        $currentrevision = $entry ? (int) $entry->revision : 0;
         $visibility = $params['private'] ? INSIGHTJOURNAL_VISIBILITY_PRIVATE : INSIGHTJOURNAL_VISIBILITY_VISIBLE;
 
-        if ($params['expectedrevision'] !== $currentrevision) {
-            return [
-                'success' => false,
-                'conflict' => true,
-                'id' => $entry->id ?? 0,
-                'revision' => $currentrevision,
-                'timemodified' => $entry->timemodified ?? 0,
-                'timestr' => $entry
-                    ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
-                    : '',
-                'responsehtml' => $entry
-                    ? format_text($entry->response, $entry->responseformat, ['context' => $context])
-                    : '',
-                'private' => $entry ? !insightjournal_entry_visible_to_teacher($entry) : false,
-            ];
+        $resource = 'insightjournalid:' . $diary->id . ':userid:' . $USER->id;
+        $lockfactory = lock_config::get_lock_factory(self::LOCK_TYPE);
+        $lock = $lockfactory->get_lock($resource, self::LOCK_TIMEOUT_SECONDS, self::LOCK_MAXLIFETIME_SECONDS);
+        if (!$lock) {
+            throw new \moodle_exception('savelockerror', 'mod_insightjournal');
         }
+        try {
+            $entry = $DB->get_record(
+                'insightjournal_entries',
+                ['insightjournalid' => $diary->id, 'userid' => $USER->id]
+            );
+            $currentrevision = $entry ? (int) $entry->revision : 0;
 
-        $newrevision = $currentrevision + 1;
-        if ($entry) {
-            $entry->response = $response;
-            $entry->responseformat = FORMAT_HTML;
-            $entry->revision = $newrevision;
-            $entry->visibility = $visibility;
-            $entry->timemodified = $now;
-            $DB->update_record('insightjournal_entries', $entry);
-            $id = $entry->id;
-        } else {
-            $id = $DB->insert_record('insightjournal_entries', (object) [
-                'insightjournalid' => $diary->id,
-                'userid' => $USER->id,
-                'response' => $response,
-                'responseformat' => FORMAT_HTML,
-                'revision' => $newrevision,
-                'visibility' => $visibility,
-                'timecreated' => $now,
-                'timemodified' => $now,
-            ]);
+            if ($params['expectedrevision'] !== $currentrevision) {
+                return self::build_conflict_response($entry, $context);
+            }
+
+            $newrevision = $currentrevision + 1;
+            try {
+                if ($entry) {
+                    $entry->response = $response;
+                    $entry->responseformat = FORMAT_HTML;
+                    $entry->revision = $newrevision;
+                    $entry->visibility = $visibility;
+                    $entry->timemodified = $now;
+                    $DB->update_record('insightjournal_entries', $entry);
+                    $id = $entry->id;
+                } else {
+                    $id = $DB->insert_record('insightjournal_entries', (object) [
+                        'insightjournalid' => $diary->id,
+                        'userid' => $USER->id,
+                        'response' => $response,
+                        'responseformat' => FORMAT_HTML,
+                        'revision' => $newrevision,
+                        'visibility' => $visibility,
+                        'timecreated' => $now,
+                        'timemodified' => $now,
+                    ]);
+                }
+            } catch (\dml_write_exception $e) {
+                // A dml_write_exception here covers any failed write, not just
+                // the unique-index violation this backstop targets, so log it:
+                // this stays reachable only via a write to this table from outside
+                // save_entry (see restore_insightjournal_stepslib.php, which
+                // inserts entries during a course restore) landing between our
+                // locked read and write, but an unrelated DB failure (deadlock,
+                // connection loss) would hit the same catch and must not be
+                // silently relabelled as an ordinary conflict without a trace.
+                debugging(
+                    'save_entry: write failed inside the lock, reporting as a conflict: ' . $e->getMessage(),
+                    DEBUG_DEVELOPER
+                );
+                $entry = $DB->get_record(
+                    'insightjournal_entries',
+                    ['insightjournalid' => $diary->id, 'userid' => $USER->id]
+                );
+                return self::build_conflict_response($entry, $context);
+            }
+        } finally {
+            $lock->release();
         }
 
         // Let core recalculate the state via custom_completion::get_state() so the
         // minchars rule is honoured and completion reverts when the response no
         // longer qualifies. Forcing COMPLETION_COMPLETE here would bypass minchars.
+        // This does not touch insightjournal_entries, so it stays outside the lock.
         $completion = new \completion_info($course);
         if ($completion->is_enabled($cm)) {
             $completion->update_state($cm, COMPLETION_UNKNOWN, $USER->id);
@@ -156,6 +194,31 @@ class save_entry extends external_api {
             'timestr' => $timestr,
             'responsehtml' => format_text($response, FORMAT_HTML, ['context' => $context]),
             'private' => $params['private'],
+        ];
+    }
+
+    /**
+     * Builds the conflict response shape, reporting the entry's actual stored
+     * state so the client can reconcile rather than blindly retry.
+     *
+     * @param \stdClass|false $entry The current stored entry, or false if none exists.
+     * @param \context $context Module context, for rendering responsehtml.
+     * @return array
+     */
+    private static function build_conflict_response($entry, \context $context): array {
+        return [
+            'success' => false,
+            'conflict' => true,
+            'id' => $entry->id ?? 0,
+            'revision' => $entry ? (int) $entry->revision : 0,
+            'timemodified' => $entry->timemodified ?? 0,
+            'timestr' => $entry
+                ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
+                : '',
+            'responsehtml' => $entry
+                ? format_text($entry->response, $entry->responseformat, ['context' => $context])
+                : '',
+            'private' => $entry ? !insightjournal_entry_visible_to_teacher($entry) : false,
         ];
     }
 

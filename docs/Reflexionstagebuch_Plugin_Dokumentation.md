@@ -104,6 +104,9 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
    nicht bereits an anderer Stelle (z. B. in einem weiteren Tab) eine neuere
    Version gespeichert wurde; ist das der Fall, wird das Speichern mit einem
    Hinweis abgelehnt, statt die neuere Version stillschweigend zu überschreiben.
+   Weiteres Speichern wird dann gesperrt, der eigene Entwurf bleibt sichtbar
+   und kopierbar neben der aktuell gespeicherten Version, und erst ein
+   bewusstes Neuladen der Seite hebt die Sperre wieder auf.
 5. Am Kursende: **Persönliche Zusammenfassung** öffnen – alle Antworten auf einer Seite, geeignet für den Browser-Druckdialog (inkl. PDF-Export über den Browser).
 
 ---
@@ -191,7 +194,7 @@ Seite oder Spalte auszublenden.
 
 - **Keine native Moodle-App-Unterstützung:** Es gibt kein `db/mobile.php`. Die Aktivität ist in der Moodle-App über die responsive Webansicht nutzbar; eine native App-Integration ist für eine spätere Version geplant.
 - **Kein Server-seitiger PDF-Export:** Die Druckfunktion nutzt den Browserdruckdialog. Ein direkter PDF-Download ist für eine spätere Version geplant.
-- **Behat-Testabdeckung ist begrenzt:** Acht Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den Erfolgsstatus beim Speichern, das private Markieren eines einzelnen Eintrags durch die/den Lernende/n, den Atto-Editor sowie unterschiedliche Sichtbarkeits-Entscheidungen über mehrere Aktivitäten hinweg ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
+- **Behat-Testabdeckung ist begrenzt:** Neun Szenarien decken den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den Erfolgsstatus beim Speichern, das private Markieren eines einzelnen Eintrags durch die/den Lernende/n, den Atto-Editor, unterschiedliche Sichtbarkeits-Entscheidungen über mehrere Aktivitäten hinweg sowie einen abgelehnten Speicherkonflikt mit anschließender Sperre bis zum Neuladen ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
 
 ---
 
