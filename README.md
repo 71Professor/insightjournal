@@ -188,7 +188,11 @@ PHPStan (level 5) is configured via `phpstan.neon` and requires the
 extension installed in the Moodle checkout being analysed
 (`composer require --dev micaherne/phpstan-moodle`), plus `phpstan-bootstrap.php`
 to load a real site. Run from the Moodle root:
-`vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon`.
+`vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon`. CI runs this
+automatically on one representative branch (`MOODLE_500_STABLE`); a new type
+error there fails the build. `phpstan-baseline.neon` currently holds one
+documented suppression (a known false positive on `format_text()`'s `$format`
+parameter when passed the `FORMAT_HTML` constant).
 
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover a
 plain form submit with no JavaScript, the save/reload roundtrip, editing a

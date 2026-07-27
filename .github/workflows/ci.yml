@@ -107,6 +107,21 @@ jobs:
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci phpdoc --max-warnings 0
 
+      - name: PHPStan
+        if: ${{ !cancelled() && matrix.moodle-branch == 'MOODLE_500_STABLE' }}
+        # Not a moodle-plugin-ci command (it has none for PHPStan): runs
+        # directly against the Moodle checkout moodle-plugin-ci's install
+        # step already set up, using micaherne/phpstan-moodle to bridge in
+        # the frankenstyle autoloader/core globals. One representative
+        # branch only (not the full matrix), per R2-07 - it needs its own
+        # composer install, and the plugin's own code doesn't vary by
+        # Moodle branch in a way that would change its analysis result.
+        # Baseline (phpstan-baseline.neon) is never regenerated in CI.
+        run: |
+          cd moodle
+          composer require --dev --no-interaction micaherne/phpstan-moodle
+          vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon --memory-limit=1G --no-progress
+
       - name: Validating
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci validate
