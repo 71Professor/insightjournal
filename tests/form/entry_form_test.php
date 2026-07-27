@@ -52,6 +52,13 @@ final class entry_form_test extends advanced_testcase {
         $this->course = $generator->create_course();
         $journal = $generator->create_module('insightjournal', ['course' => $this->course->id]);
         $this->context = \context_module::instance($journal->cmid);
+
+        // Rendering the editor element (render()/display(), used by several
+        // tests below) needs a page URL, the same way view.php always calls
+        // set_url() before displaying entry_form: without it, some editor
+        // subplugins fail trying to resolve $PAGE->url.
+        global $PAGE;
+        $PAGE->set_url('/mod/insightjournal/view.php', ['id' => $journal->cmid]);
     }
 
     /**
