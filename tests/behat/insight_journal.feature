@@ -17,6 +17,17 @@ Feature: Insight journal activity
       | teacher1 | C1     | editingteacher |
       | student1 | C1     | student        |
 
+  Scenario: A learner saves a response via a normal form submit, no JavaScript required
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Saved without JavaScript."
+    And I press "Save"
+    Then I should see "Saved without JavaScript."
+    When I reload the page
+    Then I should see "Saved without JavaScript."
+
   @javascript
   Scenario: A learner writes and saves a response, then sees it again after reload
     Given the following "activities" exist:

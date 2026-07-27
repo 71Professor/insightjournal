@@ -22,6 +22,13 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
+    // The PHP entry_form renders the response field via Moodle's standard
+    // 'editor' mform element, whose fixed core template
+    // (core_form/editor_textarea) only ever emits id/name/rows/cols/onblur/
+    // onchange onto the actual <textarea> - not arbitrary attributes - so it
+    // is located by its standard Moodle-generated id rather than a data
+    // attribute like the other controls below.
+    var RESPONSE_ID = 'id_response';
     var timer = null;
     var maxChars = 0;
     var lastSeenValue = null;
@@ -102,7 +109,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     var showEditPanel = function() {
         var view = document.querySelector('[data-insightjournal-view]');
         var panel = document.querySelector('[data-insightjournal-edit-panel]');
-        var textarea = document.querySelector('[data-insightjournal-response]');
+        var textarea = document.getElementById(RESPONSE_ID);
         if (view) {
             view.classList.add('d-none');
         }
@@ -195,7 +202,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             pendingSave = {cmid: cmid, manual: manual || Boolean(pendingSave && pendingSave.manual)};
             return;
         }
-        var textarea = document.querySelector('[data-insightjournal-response]');
+        var textarea = document.getElementById(RESPONSE_ID);
         var button = document.querySelector('[data-insightjournal-save]');
         var privatecheckbox = document.querySelector('[data-insightjournal-private]');
         if (!textarea) {
@@ -272,12 +279,20 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         init: function(cmid, autosave, maxchars, initialrevision) {
             maxChars = maxchars || 0;
             currentRevision = initialrevision || 0;
-            var textarea = document.querySelector('[data-insightjournal-response]');
+            var textarea = document.getElementById(RESPONSE_ID);
             var button = document.querySelector('[data-insightjournal-save]');
             var editbutton = document.querySelector('[data-insightjournal-edit]');
             var privatecheckbox = document.querySelector('[data-insightjournal-private]');
             if (!textarea) {
                 return;
+            }
+            // The minchars hint below the editor is only linked here, not via
+            // a static aria-describedby in the markup: the mform-rendered
+            // textarea's id is only known once entry_form has actually
+            // rendered, and its fixed core template does not accept an
+            // aria-describedby option to set this itself.
+            if (document.getElementById('insightjournal-minchars-note')) {
+                textarea.setAttribute('aria-describedby', 'insightjournal-minchars-note');
             }
             requestTinyEditor();
             lastSeenValue = getCurrentValue(textarea);
