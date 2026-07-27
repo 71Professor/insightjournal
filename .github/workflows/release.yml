@@ -2,12 +2,24 @@ name: Release
 
 # Builds an installable plugin ZIP whose root folder is named
 # "insightjournal" (as required by the Moodle plugin installer) and
-# attaches it to a GitHub Release. Triggered by pushing a version tag,
-# e.g. "v0.4.1-beta".
+# attaches it to a GitHub Release.
+#
+# Triggered once the "Moodle Plugin CI" workflow *completes* for a tag push
+# (ci.yml's `on: [push, pull_request]` already runs for tag pushes too),
+# not directly by the tag push itself - so a red CI run can never produce
+# a release (R2-08; see the v0.5.0-beta incident this fixes: a tag was
+# published ~7 minutes before its own CI run had finished, and had to be
+# deleted and recreated after CI went red on a lint gate).
+#
+# For a workflow_run triggered by a tag-push run of the upstream workflow,
+# head_branch holds the tag name itself (not a branch name) and head_sha is
+# the exact commit that was tagged - both confirmed against this repo's own
+# past tag runs (e.g. v0.6.0-beta's CI run has head_branch "v0.6.0-beta",
+# head_sha matching the tagged commit exactly).
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["Moodle Plugin CI"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -15,32 +27,41 @@ permissions:
 jobs:
   release:
     runs-on: 'ubuntu-latest'
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
 
     steps:
       - name: Check out repository code
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
 
       - name: Check tag matches version.php release
         run: |
-          tag="${GITHUB_REF_NAME#v}"
+          tag="${TAG#v}"
           release=$(sed -n "s/^\$plugin->release *= *'\(.*\)';.*/\1/p" version.php)
           echo "Tag: ${tag} / version.php release: ${release}"
           if [ "${tag}" != "${release}" ]; then
             echo "::error::Tag v${tag} does not match \$plugin->release '${release}' in version.php."
             exit 1
           fi
+        env:
+          TAG: ${{ github.event.workflow_run.head_branch }}
 
       - name: Build plugin ZIP
         run: |
           git archive --format=zip --prefix=insightjournal/ \
-            -o "mod_insightjournal-${GITHUB_REF_NAME}.zip" HEAD
-          unzip -l "mod_insightjournal-${GITHUB_REF_NAME}.zip"
+            -o "mod_insightjournal-${TAG}.zip" HEAD
+          unzip -l "mod_insightjournal-${TAG}.zip"
+        env:
+          TAG: ${{ github.event.workflow_run.head_branch }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: mod_insightjournal-${{ github.ref_name }}.zip
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          files: mod_insightjournal-${{ github.event.workflow_run.head_branch }}.zip
           generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(github.event.workflow_run.head_branch, '-') }}
