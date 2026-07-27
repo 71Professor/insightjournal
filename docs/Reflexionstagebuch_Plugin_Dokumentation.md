@@ -120,13 +120,29 @@ Aufruf: Innerhalb der Aktivität auf **Bericht** klicken (nur für Trainer/innen
 
 ### 6.2  Persönliche Zusammenfassung
 
-Aufruf: In der Aktivität auf **Meine Zusammenfassung** klicken.
+Aufruf: In der Aktivität auf **Mein Insight Journal** klicken.
 
 - Lernende sehen alle eigenen Antworten im Kurs
 - Jeder eigene, noch bearbeitbare Eintrag zeigt einen **Gehe zum Eintrag**-Link,
   der direkt zur betreffenden Aktivität springt
 - Trainer/innen können einen Teilnehmenden auswählen und deren/dessen Zusammenfassung einsehen
 - Für den Ausdruck geeignet (Browserdruckdialog → als PDF speichern)
+
+> **Tipp – Direkter Link im Kurs:** Trainer/innen können die Zusammenfassungsseite
+> auch direkt als Kurs-Ressource verlinken, ohne den Umweg über eine einzelne
+> Aktivität:
+>
+> 1. Kurs-ID ermitteln (in der Browser-Adressleiste beim Betrachten des Kurses,
+>    z. B. `course/view.php?id=42` → Kurs-ID `42`, oder in den Kurseinstellungen).
+> 2. Im gewünschten Abschnitt **Aktivität oder Material anlegen** → **URL** wählen.
+> 3. Externe URL eintragen: `https://<moodle-domain>/mod/insightjournal/summary.php?courseid=<Kurs-ID>`.
+> 4. Speichern.
+>
+> Der Link funktioniert für Lernende wie Trainer/innen gleichermaßen und zeigt
+> automatisch die jeweils eigene Zusammenfassung – es sind keine zusätzlichen
+> Berechtigungen nötig, da `summary.php` die Zugriffsprüfung selbst übernimmt.
+> Bei mehreren Insight-Journal-Aktivitäten im Kurs fasst ein einziger Link alle
+> zusammen.
 
 ---
 

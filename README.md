@@ -117,7 +117,11 @@ save-as-PDF).
   activities.
 - **`summary.php`** — personal or trainer-selected learner summary; suitable for
   browser printing. Each of the viewer's own, still-writable entries shows a
-  "Go to entry" link straight back to that activity.
+  "Go to entry" link straight back to that activity. A trainer can also link
+  this page directly from a course section (e.g. a URL resource pointing at
+  `summary.php?courseid=<id>`) instead of routing learners through an activity
+  first — no extra configuration needed, since `summary.php` handles its own
+  access checks.
 
 ---
 
