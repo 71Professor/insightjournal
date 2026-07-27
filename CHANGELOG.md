@@ -29,6 +29,25 @@ Versions map to the `$plugin->release` value in `version.php`.
   alongside the other stored fields. It was added to `insightjournal_entries`
   for optimistic-concurrency saves but never documented as personal data.
 
+### Changed
+
+- **The response field is now a standard Moodle form (`classes/form/entry_form.php`)
+  instead of a hand-wired rich-text editor.** `view.php` no longer calls
+  `editors_head_setup()`/`use_editor()` directly, no longer requires
+  `repository/lib.php` itself, and no longer needs the `return_types` option
+  (dead in practice, since file/image attachments were already disabled via
+  `maxfiles => 0`) — the standard `editor` form element handles all of that
+  internally. A plain form submit now works with JavaScript disabled entirely,
+  saving via the same code path as autosave: the actual save logic (the
+  per-entry lock, the revision check, the completion update) moved out of
+  `save_entry` into a shared `entry_manager` service that both the AJAX
+  external function and the new form submission call. No change for
+  JavaScript-enabled sessions: autosave, the character counter, the conflict
+  banner, and the view/edit toggle all work exactly as before. The response
+  field itself is now rendered by Moodle's standard form markup (label above
+  the field, in the usual Moodle form styling) rather than the previous
+  compact custom layout.
+
 ## [0.6.0-beta] - 2026-07-22
 
 ### Added

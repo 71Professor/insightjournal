@@ -26,11 +26,6 @@
 require_once('../../config.php');
 require_once($CFG->libdir . '/completionlib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
-// Needed by editors_get_preferred_editor()->use_editor() below: unlike the mform
-// 'editor' element (see mod_form.php), which pulls this in itself via
-// lib/form/editor.php, calling use_editor() directly does not. Without it,
-// FILE_EXTERNAL is undefined and TinyMCE's media plugin fatals.
-require_once($CFG->dirroot . '/repository/lib.php');
 
 $id = required_param('id', PARAM_INT);
 $cm = get_coursemodule_from_id('insightjournal', $id, 0, false, MUST_EXIST);
@@ -64,29 +59,41 @@ $responseraw = $entry ? $entry->response : '';
 $haveentry = insightjournal_html_to_text($responseraw) !== '';
 $entryprivate = $entry ? !insightjournal_entry_visible_to_teacher($entry) : false;
 
+$entryformhtml = '';
 if ($canwrite) {
-    // Same restriction options as the prompt field's editor (mod_form.php): no
-    // file/image attachments, content is never trusted. enable_filemanagement
-    // must agree with maxfiles=0: Atto otherwise still shows its "manage
-    // files" button even though no draft area/filepicker options exist behind
-    // it (Tiny does not read this option either way).
-    $editoroptions = [
-        'subdirs' => false,
-        'maxbytes' => 0,
-        'maxfiles' => 0,
-        'changeformat' => 0,
-        'areamaxbytes' => FILE_AREA_MAX_BYTES_UNLIMITED,
-        'context' => $context,
-        'noclean' => 0,
-        'trusttext' => false,
-        'trusted' => false,
-        'return_types' => 15,
-        'enable_filemanagement' => false,
-        'removeorphaneddrafts' => false,
-        'autosave' => true,
-    ];
-    editors_head_setup();
-    editors_get_preferred_editor(FORMAT_HTML)->use_editor('insightjournal-response-' . $cm->id, $editoroptions, []);
+    $mform = new \mod_insightjournal\form\entry_form(
+        new moodle_url('/mod/insightjournal/view.php', ['id' => $id]),
+        ['context' => $context, 'maxchars' => (int) ($diary->maxchars ?? 0)]
+    );
+
+    // Standard POST submit (no JavaScript required): the same entry_manager
+    // service the AJAX external function (classes/external/save_entry.php)
+    // calls. Handled before any output, per the usual Moodle
+    // process-then-redirect pattern.
+    if ($data = $mform->get_data()) {
+        $result = \mod_insightjournal\local\entry_manager::save(
+            $diary,
+            $course,
+            $cm,
+            (int) $USER->id,
+            $data->response['text'],
+            (int) $data->expectedrevision,
+            (bool) $data->private
+        );
+        if ($result['conflict']) {
+            \core\notification::error(get_string('saveconflict', 'insightjournal'));
+        } else {
+            \core\notification::success(get_string('savedat', 'insightjournal', $result['timestr']));
+        }
+        redirect(new moodle_url('/mod/insightjournal/view.php', ['id' => $id]));
+    }
+
+    $mform->set_data([
+        'response' => ['text' => $responseraw, 'format' => $entry ? $entry->responseformat : FORMAT_HTML],
+        'expectedrevision' => $entry ? (int) $entry->revision : 0,
+        'private' => $entryprivate ? 1 : 0,
+    ]);
+    $entryformhtml = $mform->render();
 }
 
 $completion = new completion_info($course);
@@ -107,11 +114,10 @@ $templatecontext = [
     'promptstyle' => insightjournal_prompt_style($diary->promptcolor ?? ''),
     'canwrite' => $canwrite,
     'haveentry' => $haveentry,
-    'responseraw' => $responseraw,
+    'entryformhtml' => $entryformhtml,
     'responseformatted' => $haveentry
         ? format_text($responseraw, $entry->responseformat, ['context' => $context])
         : '',
-    'entryprivate' => $entryprivate,
     'autosave' => (bool) $diary->autosave,
     'minchars' => (int) $diary->minchars,
     'maxchars' => (int) ($diary->maxchars ?? 0),

@@ -190,14 +190,15 @@ extension installed in the Moodle checkout being analysed
 to load a real site. Run from the Moodle root:
 `vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon`.
 
-Behat scenarios are in `tests/behat/insight_journal.feature` and cover the
-save/reload roundtrip, editing a previously saved response, autosave
-persisting a change without leaving edit mode, the minchars completion
-regression, a successful save never showing the error status, a learner
-marking their own entry private, saving/the character counter/autosave
-with the Atto editor, a learner choosing differently across two
-activities in the same course, and a stale save being rejected as a
-conflict that locks further saves until the learner reloads. Run via
+Behat scenarios are in `tests/behat/insight_journal.feature` and cover a
+plain form submit with no JavaScript, the save/reload roundtrip, editing a
+previously saved response, autosave persisting a change without leaving
+edit mode, the minchars completion regression, a successful save never
+showing the error status, a learner marking their own entry private,
+saving/the character counter/autosave with the Atto editor, a learner
+choosing differently across two activities in the same course, and a
+stale save being rejected as a conflict that locks further saves until
+the learner reloads. Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
@@ -210,12 +211,13 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: nine scenarios cover the save/reload
-  roundtrip, editing a saved response, autosave, the minchars completion
-  regression, a learner marking their own entry private, choosing
-  differently across two activities in the same course, the Atto editor,
-  the save-status classes, and a save conflict locking further saves until
-  reload. Broader coverage (CSV export) is not yet automated.
+- **Behat coverage is limited**: ten scenarios cover a plain no-JavaScript
+  form submit, the save/reload roundtrip, editing a saved response,
+  autosave, the minchars completion regression, a learner marking their
+  own entry private, choosing differently across two activities in the
+  same course, the Atto editor, the save-status classes, and a save
+  conflict locking further saves until reload. Broader coverage (CSV
+  export) is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -233,10 +235,11 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (9 scenarios: save/reload roundtrip, editing a saved
+- [x] Add Behat tests (10 scenarios: save/reload roundtrip, editing a saved
       response, autosave, completion regression, save-status classes, a
       learner marking their own entry private, Atto editor, choosing
-      differently across activities, save conflict locking) — 2026-07-09,
+      differently across activities, save conflict locking, a plain
+      no-JavaScript form submit) — 2026-07-09,
       extended 2026-07-21, 2026-07-22, 2026-07-27
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)

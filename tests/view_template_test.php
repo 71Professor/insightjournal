@@ -47,14 +47,12 @@ final class view_template_test extends advanced_testcase {
             'prompt' => '<p>What did you learn?</p>',
             'canwrite' => true,
             'haveentry' => false,
-            'responseraw' => '',
+            'entryformhtml' => '',
             'responseformatted' => '',
-            'entryprivate' => false,
             'autosave' => true,
             'minchars' => 0,
             'maxchars' => 0,
             'lastsaved' => '',
-            'sesskey' => 'abc',
             'reporturl' => 'https://example.com/report.php',
             'summaryurl' => 'https://example.com/summary.php',
             'sectionurl' => 'https://example.com/course.php',
@@ -106,29 +104,22 @@ final class view_template_test extends advanced_testcase {
     }
 
     /**
-     * The private checkbox is unchecked by default (visible to trainer).
+     * entryformhtml (the rendered entry_form, see classes/form/entry_form.php)
+     * is echoed unescaped: using double braces here by mistake would HTML-escape
+     * the entire form and break it.
      */
-    public function test_private_checkbox_unchecked_by_default(): void {
-        global $OUTPUT;
-        $this->resetAfterTest();
-
-        $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context());
-
-        $this->assertMatchesRegularExpression('/data-insightjournal-private(?!\s*checked)[^>]*>/', $html);
-    }
-
-    /**
-     * With entryprivate true, the checkbox is pre-checked.
-     */
-    public function test_private_checkbox_checked_when_entry_is_private(): void {
+    public function test_entryformhtml_is_rendered_unescaped(): void {
         global $OUTPUT;
         $this->resetAfterTest();
 
         $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context([
-            'entryprivate' => true,
+            'entryformhtml' => '<form data-marker="1"><input data-insightjournal-private checked></form>',
         ]));
 
-        $this->assertMatchesRegularExpression('/data-insightjournal-private\s+checked/', $html);
+        $this->assertStringContainsString(
+            '<form data-marker="1"><input data-insightjournal-private checked></form>',
+            $html
+        );
     }
 
     /**
