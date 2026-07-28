@@ -60,8 +60,19 @@ if (empty($activities)) {
 // which check it with a bare "if ($groupids)" - an empty array is falsy there, meaning
 // "no filter at all." $blockallparticipants explicitly catches "restricted, but the
 // viewer's own group list is empty" before that ambiguity can matter, so a viewer in
-// zero groups sees zero participants rather than everyone.
-$restrictgroupids = $restricted ? array_keys(groups_get_all_groups($course->id, $USER->id)) : 0;
+// zero groups sees zero participants rather than everyone. A falsy $USER->id gets the
+// same treatment as zero groups, not passed to groups_get_all_groups() at all: that
+// function only applies its own userid filter "if (!empty($userid))", so a falsy id
+// there would otherwise return every group in the course instead of "this user's
+// groups" - the same footgun insightjournal_current_user_group_userids() already
+// guards against in locallib.php.
+if (!$restricted) {
+    $restrictgroupids = 0;
+} else if (empty($USER->id)) {
+    $restrictgroupids = [];
+} else {
+    $restrictgroupids = array_keys(groups_get_all_groups($course->id, $USER->id));
+}
 $blockallparticipants = $restricted && empty($restrictgroupids);
 
 $diaryids = array_keys($activities);
