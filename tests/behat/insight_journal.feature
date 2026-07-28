@@ -176,3 +176,36 @@ Feature: Insight journal activity
     And "[data-insightjournal-status].text-success" "css_element" should not exist
     When I reload the page
     Then the field "Response" matches value "Saved from another tab."
+
+  Scenario: The activity report paginates through many participants
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    And the following "users" exist:
+      | username | firstname | lastname |
+      | student2 | Student   | 2        |
+      | student3 | Student   | 3        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | student2 | C1     | student |
+      | student3 | C1     | student |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Response from student 1."
+    And I press "Save"
+    And I log out
+    And I am on the "My Journal" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "Response from student 2."
+    And I press "Save"
+    And I log out
+    And I am on the "My Journal" "insightjournal activity" page logged in as student3
+    And I set the field "Response" to "Response from student 3."
+    And I press "Save"
+    And I log out
+    And I log in as "teacher1"
+    And I am on the report page for "My Journal" with "2" per page
+    Then I should see "Student 1"
+    And I should see "Student 2"
+    And I should not see "Student 3"
+    When I click on "2" "link"
+    Then I should see "Student 3"
+    And I should not see "Student 1"

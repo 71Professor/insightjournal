@@ -73,4 +73,24 @@ class behat_mod_insightjournal extends behat_base {
             ]);
         }
     }
+
+    /**
+     * Navigates directly to the activity report page for a named insight
+     * journal activity, with a specific page size, so pagination is
+     * reachable in tests without needing dozens of real participants.
+     *
+     * @Given /^I am on the report page for "((?:[^"]|\\")*)" with "(\d+)" per page$/
+     * @param string $activityname
+     * @param string $perpage
+     */
+    public function i_am_on_the_report_page_with_perpage($activityname, $perpage) {
+        global $DB;
+
+        $instance = $DB->get_record('insightjournal', ['name' => $activityname], '*', MUST_EXIST);
+        $cm = get_coursemodule_from_instance('insightjournal', $instance->id, 0, false, MUST_EXIST);
+
+        $this->execute('behat_general::i_visit', [
+            '/mod/insightjournal/report.php?id=' . $cm->id . '&perpage=' . $perpage,
+        ]);
+    }
 }
