@@ -230,3 +230,124 @@ Feature: Insight journal activity
     When I click on "2" "link" in the "nav[aria-label='Page']" "css_element"
     Then I should see "Student 3"
     And I should not see "Student 1"
+
+  @javascript
+  Scenario: A teacher restricted to Separate Groups only sees their own group's entries in the activity report
+    Given the following "users" exist:
+      | username | firstname | lastname |
+      | teacher2 | Teacher   | 2        |
+      | student2 | Student   | 2        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | teacher2 | C1     | teacher |
+      | student2 | C1     | student |
+    And the following "groups" exist:
+      | name    | course | idnumber |
+      | Group A | C1     | GA       |
+      | Group B | C1     | GB       |
+    And the following "group members" exist:
+      | user     | group |
+      | teacher2 | GA    |
+      | student1 | GA    |
+      | student2 | GB    |
+    And the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars | groupmode |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 1         |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "From group A."
+    And I press "Save"
+    And I log out
+    And I am on the "My Journal" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "From group B."
+    And I press "Save"
+    And I log out
+    And I am on the "My Journal" "insightjournal activity" page logged in as teacher2
+    And I follow "Insight report"
+    Then I should see "Student 1"
+    And I should see "From group A."
+    And I should not see "Student 2"
+    And I should not see "From group B."
+
+  @javascript
+  Scenario: A teacher restricted to Separate Groups only sees their own group's participants in the course-wide report
+    Given the following "users" exist:
+      | username | firstname | lastname |
+      | teacher2 | Teacher   | 2        |
+      | student2 | Student   | 2        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | teacher2 | C1     | teacher |
+      | student2 | C1     | student |
+    And the following "groups" exist:
+      | name    | course | idnumber |
+      | Group A | C1     | GA       |
+      | Group B | C1     | GB       |
+    And the following "group members" exist:
+      | user     | group |
+      | teacher2 | GA    |
+      | student1 | GA    |
+      | student2 | GB    |
+    And the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars | groupmode |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 1         |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "From group A."
+    And I press "Save"
+    And I log out
+    And I am on the "My Journal" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "From group B."
+    And I press "Save"
+    And I log out
+    And I log in as "teacher2"
+    And I am on the course insight report for "Course 1" with "20" per page
+    Then I should see "Student 1"
+    And I should not see "Student 2"
+
+  # No negative/denial half to this scenario - only the "can view my own
+  # group's summary while restricted" case. Moodle's Behat harness runs
+  # look_for_exceptions() (behat_session_trait.php) as an automatic
+  # post-step hook on every step; it scans the resulting page for a
+  # data-rel="fatalerror" marker and throws if found, failing that step
+  # immediately - before any subsequent "Then" step in the same scenario
+  # ever runs. summary.php's denial path throws required_capability_exception,
+  # which renders exactly that marker, so a scenario cannot navigate there
+  # and then assert on the resulting error text: the navigation step itself
+  # is auto-failed by the harness first. Confirmed empirically (reproduced
+  # the failure) and by grepping the entire Moodle core test suite for any
+  # precedent of asserting text on an expected-exception page via Behat -
+  # there is none. The denial path itself is still covered: Task 1's
+  # PHPUnit tests exercise insightjournal_current_user_group_userids()'s
+  # exact "is this userid in the set" semantics directly, summary.php's own
+  # three-line wiring was verified line-by-line in Task 4's code review,
+  # and the equivalent "restricted teacher cannot see the other group's
+  # participant" property is proven end-to-end for coursereport.php in the
+  # scenario immediately above this one.
+  @javascript
+  Scenario: A teacher restricted to Separate Groups can still view their own group's learner summary
+    Given the following "users" exist:
+      | username | firstname | lastname |
+      | teacher2 | Teacher   | 2        |
+      | student2 | Student   | 2        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | teacher2 | C1     | teacher |
+      | student2 | C1     | student |
+    And the following "groups" exist:
+      | name    | course | idnumber |
+      | Group A | C1     | GA       |
+      | Group B | C1     | GB       |
+    And the following "group members" exist:
+      | user     | group |
+      | teacher2 | GA    |
+      | student1 | GA    |
+      | student2 | GB    |
+    And the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars | groupmode |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 1         |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "From group A."
+    And I press "Save"
+    And I log out
+    And I log in as "teacher2"
+    And I am on the insight journal summary for "student1" in "Course 1"
+    Then I should see "From group A."

@@ -112,4 +112,24 @@ class behat_mod_insightjournal extends behat_base {
             '/mod/insightjournal/coursereport.php?courseid=' . $course->id . '&perpage=' . $perpage,
         ]);
     }
+
+    /**
+     * Navigates directly to a named user's insight journal summary in a
+     * named course, so group-restriction denial (or success) is reachable
+     * without clicking through report/course-report row links.
+     *
+     * @Given /^I am on the insight journal summary for "((?:[^"]|\\")*)" in "((?:[^"]|\\")*)"$/
+     * @param string $username
+     * @param string $coursename
+     */
+    public function i_am_on_the_summary_page_for($username, $coursename) {
+        global $DB;
+
+        $user = $DB->get_record('user', ['username' => $username], '*', MUST_EXIST);
+        $course = $DB->get_record('course', ['fullname' => $coursename], '*', MUST_EXIST);
+
+        $this->execute('behat_general::i_visit', [
+            '/mod/insightjournal/summary.php?courseid=' . $course->id . '&userid=' . $user->id,
+        ]);
+    }
 }
