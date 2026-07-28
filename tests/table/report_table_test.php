@@ -31,7 +31,6 @@ use advanced_testcase;
 use context_module;
 use moodle_url;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use stdClass;
 
 /**
@@ -218,53 +217,85 @@ final class report_table_test extends advanced_testcase {
     }
 
     /**
-     * The CSV download preserves the exact legacy 9-column format. This runs
-     * in a separate process because finish_document() calls exit() once the
-     * CSV body has been streamed — that would otherwise kill the whole
-     * PHPUnit run, not just this test.
+     * The CSV download preserves the exact legacy 9-column format.
+     *
+     * This tests column rendering directly via query_db()/format_row()
+     * rather than the full out() pipeline, because out() ends in Moodle
+     * core's finish_document(), which calls exit() once is_downloading() is
+     * true - that terminates the PHP process outright (not a catchable
+     * exception). Even under #[RunInSeparateProcess], PHPUnit cannot
+     * recover a test result from that: the child process dies before
+     * PHPUnit's own result-serialisation code runs, so the parent always
+     * reports "Test was run in child process and ended unexpectedly",
+     * regardless of whether the assertions inside would have passed -
+     * confirmed empirically, not just theorised.
      */
-    #[RunInSeparateProcess]
     public function test_csv_export_matches_legacy_column_format(): void {
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'CSV entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
 
         $table = new report_table('report_table_test_csv', $this->course, $this->cm, $this->diary, $this->context);
+        // is_downloading('csv', ...) constructs Moodle's CSV export writer as
+        // a side effect, which immediately echoes a UTF-8 BOM for Excel
+        // compatibility - wrap it so PHPUnit doesn't flag the test as risky
+        // for unexpected output; we only care about format_row()'s return
+        // values below, not this raw byte stream.
+        ob_start();
         $table->is_downloading('csv', 'insightjournal-test');
         $table->setup_columns();
         $table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $this->cm->id]));
+        $table->setup();
+        $table->query_db(20, false);
+        ob_end_clean();
 
-        ob_start();
-        $table->out(20, false);
-        $csv = ob_get_clean();
+        $this->assertSame(
+            ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified'],
+            $table->headers
+        );
 
-        $this->assertStringContainsString('courseid', $csv);
-        $this->assertStringContainsString('coursename', $csv);
-        $this->assertStringContainsString('activityname', $csv);
-        $this->assertStringContainsString('fullname', $csv);
-        $this->assertStringContainsString((string) $this->course->id, $csv);
-        $this->assertStringContainsString($this->diary->name, $csv);
-        $this->assertStringContainsString(fullname($student), $csv);
-        $this->assertStringContainsString('CSV entry.', $csv);
+        $rows = [];
+        foreach ($table->rawdata as $row) {
+            $rows[] = $table->format_row($row);
+        }
+        $this->assertCount(1, $rows);
+        $row = reset($rows);
+
+        $this->assertEquals($this->course->id, $row['courseid']);
+        $this->assertSame($this->course->fullname, $row['coursename']);
+        $this->assertEquals($this->cm->id, $row['cmid']);
+        $this->assertSame($this->diary->name, $row['activityname']);
+        $this->assertEquals($student->id, $row['userid']);
+        $this->assertSame(fullname($student), $row['participantname']);
+        $this->assertSame($student->email, $row['email']);
+        $this->assertStringContainsString('CSV entry.', $row['response']);
     }
 
     /**
-     * A private entry's CSV row uses the privacy notice text, not the response.
+     * A private entry's CSV row uses the privacy notice text, not the
+     * response. See test_csv_export_matches_legacy_column_format() for why
+     * this tests via query_db()/format_row() rather than out().
      */
-    #[RunInSeparateProcess]
     public function test_csv_export_hides_private_response(): void {
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'Secret reflection.', INSIGHTJOURNAL_VISIBILITY_PRIVATE);
 
         $table = new report_table('report_table_test_csv_private', $this->course, $this->cm, $this->diary, $this->context);
+        ob_start();
         $table->is_downloading('csv', 'insightjournal-test');
         $table->setup_columns();
         $table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $this->cm->id]));
+        $table->setup();
+        $table->query_db(20, false);
+        ob_end_clean();
 
-        ob_start();
-        $table->out(20, false);
-        $csv = ob_get_clean();
+        $rows = [];
+        foreach ($table->rawdata as $row) {
+            $rows[] = $table->format_row($row);
+        }
+        $this->assertCount(1, $rows);
+        $row = reset($rows);
 
-        $this->assertStringContainsString(get_string('entriesprivatenotice', 'mod_insightjournal'), $csv);
-        $this->assertStringNotContainsString('Secret reflection.', $csv);
+        $this->assertSame(get_string('entriesprivatenotice', 'mod_insightjournal'), $row['response']);
+        $this->assertSame('', $row['timemodified']);
     }
 }
