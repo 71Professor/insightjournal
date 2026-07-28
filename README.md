@@ -113,10 +113,11 @@ save-as-PDF).
 
 ## Reports
 
-- **`report.php`** — activity-level report with participant search and CSV export
-  (requires `mod/insightjournal:export`).
-- **`coursereport.php`** — course-level progress report across all Insight Journal
-  activities.
+- **`report.php`** — activity-level report with participant search, CSV
+  export (requires `mod/insightjournal:export`), and pagination (20 per
+  page by default, adjustable via a `perpage` URL parameter).
+- **`coursereport.php`** — course-level progress report across all Insight
+  Journal activities, paginated the same way as the activity report.
 - **`summary.php`** — personal or trainer-selected learner summary; suitable for
   browser printing. Each of the viewer's own, still-writable entries shows a
   "Go to entry" link straight back to that activity. A trainer can also link
@@ -171,8 +172,10 @@ Recommended local test flow:
 3. Add two Insight Journal activities: one with autosave enabled, one disabled.
 4. As a student: save a response, reload the activity, edit it, confirm completion
    updates (check the completion condition with minimum characters, if set).
-5. As a teacher: open the activity report, search by participant, download CSV.
-6. Open the course report and verify progress counts.
+5. As a teacher: open the activity report, search by participant, page
+   through results, download CSV.
+6. Open the course report, page through participants, and verify progress
+   counts.
 7. Open a learner summary as the learner and as a teacher with `viewall`;
    confirm the learner sees a "Go to entry" link on their own entries and the
    teacher sees none.
@@ -180,8 +183,9 @@ Recommended local test flow:
 9. Run privacy export and deletion for a test user.
 10. Run PHP lint, Moodle Code Checker, PHPUnit, PHPStan, and Behat where available.
 
-PHPUnit tests are in `tests/` and cover the custom completion rule, lib callbacks,
-the `save_entry` external function, and the Privacy API provider.
+PHPUnit tests are in `tests/` and cover the custom completion rule, lib
+callbacks, the `save_entry` external function, the paginated activity
+report table, and the Privacy API provider.
 
 PHPStan (level 5) is configured via `phpstan.neon` and requires the
 [`micaherne/phpstan-moodle`](https://packagist.org/packages/micaherne/phpstan-moodle)
@@ -200,9 +204,9 @@ previously saved response, autosave persisting a change without leaving
 edit mode, the minchars completion regression, a successful save never
 showing the error status, a learner marking their own entry private,
 saving/the character counter/autosave with the Atto editor, a learner
-choosing differently across two activities in the same course, and a
-stale save being rejected as a conflict that locks further saves until
-the learner reloads. Run via
+choosing differently across two activities in the same course, a stale
+save being rejected as a conflict that locks further saves until the
+learner reloads, and both reports' pagination. Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
@@ -215,13 +219,13 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: ten scenarios cover a plain no-JavaScript
-  form submit, the save/reload roundtrip, editing a saved response,
-  autosave, the minchars completion regression, a learner marking their
-  own entry private, choosing differently across two activities in the
-  same course, the Atto editor, the save-status classes, and a save
-  conflict locking further saves until reload. Broader coverage (CSV
-  export) is not yet automated.
+- **Behat coverage is limited**: twelve scenarios cover a plain
+  no-JavaScript form submit, the save/reload roundtrip, editing a saved
+  response, autosave, the minchars completion regression, a learner
+  marking their own entry private, choosing differently across two
+  activities in the same course, the Atto editor, the save-status
+  classes, a save conflict locking further saves until reload, and both
+  reports' pagination. Broader coverage (CSV export) is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -239,12 +243,13 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (10 scenarios: save/reload roundtrip, editing a saved
+- [x] Add Behat tests (12 scenarios: save/reload roundtrip, editing a saved
       response, autosave, completion regression, save-status classes, a
       learner marking their own entry private, Atto editor, choosing
       differently across activities, save conflict locking, a plain
-      no-JavaScript form submit) — 2026-07-09,
-      extended 2026-07-21, 2026-07-22, 2026-07-27
+      no-JavaScript form submit, activity report pagination,
+      course-wide report pagination) — 2026-07-09,
+      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory

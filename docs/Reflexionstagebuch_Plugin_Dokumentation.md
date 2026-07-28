@@ -14,9 +14,9 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 
 **Aktivitätsansicht (`view.php`)** – Lernende sehen die Aufgabe/Frage und ihr persönliches Eingabefeld. Manuelles Speichern oder optionales Autosave nach einer Tippause.
 
-**Aktivitätsbericht (`report.php`)** – Trainer/innen sehen alle Antworten der Kursteilnehmenden für eine Aufgabe/Frage; Volltextsuche nach Teilnehmenden; CSV-Export.
+**Aktivitätsbericht (`report.php`)** – Trainer/innen sehen alle Antworten der Kursteilnehmenden für eine Aufgabe/Frage; Volltextsuche nach Teilnehmenden; CSV-Export; paginiert (Standard: 20 pro Seite, über den URL-Parameter `perpage` anpassbar).
 
-**Kursgesamtbericht (`coursereport.php`)** – Übersicht über alle Insight-Journal-Aktivitäten im Kurs mit Fortschrittsanzeige je Teilnehmende/r.
+**Kursgesamtbericht (`coursereport.php`)** – Übersicht über alle Insight-Journal-Aktivitäten im Kurs mit Fortschrittsanzeige je Teilnehmende/r; paginiert wie der Aktivitätsbericht.
 
 **Persönliche Zusammenfassung (`summary.php`)** – Lernende sehen alle ihre Antworten auf einer druckbaren Seite. Trainer/innen können die Zusammenfassung eines bestimmten Teilnehmenden aufrufen.
 
@@ -120,6 +120,7 @@ Aufruf: Innerhalb der Aktivität auf **Bericht** klicken (nur für Trainer/innen
 - Zeigt alle Einträge der Kursteilnehmenden für diese Aufgabe/Frage
 - Detailansicht bei Kiick auf Teilnehmernamen
 - CSV-Export (erfordert Capability `mod/insightjournal:export`)
+- Paginiert (Standard: 20 Teilnehmende pro Seite, über `perpage` anpassbar)
 
 ### 6.2  Persönliche Zusammenfassung
 
@@ -194,7 +195,7 @@ Seite oder Spalte auszublenden.
 
 - **Keine native Moodle-App-Unterstützung:** Es gibt kein `db/mobile.php`. Die Aktivität ist in der Moodle-App über die responsive Webansicht nutzbar; eine native App-Integration ist für eine spätere Version geplant.
 - **Kein Server-seitiger PDF-Export:** Die Druckfunktion nutzt den Browserdruckdialog. Ein direkter PDF-Download ist für eine spätere Version geplant.
-- **Behat-Testabdeckung ist begrenzt:** Zehn Szenarien decken ein normales Formular-Absenden ganz ohne JavaScript, den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den Erfolgsstatus beim Speichern, das private Markieren eines einzelnen Eintrags durch die/den Lernende/n, den Atto-Editor, unterschiedliche Sichtbarkeits-Entscheidungen über mehrere Aktivitäten hinweg sowie einen abgelehnten Speicherkonflikt mit anschließender Sperre bis zum Neuladen ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
+- **Behat-Testabdeckung ist begrenzt:** Zwölf Szenarien decken ein normales Formular-Absenden ganz ohne JavaScript, den Speicher-/Neuladen-Ablauf, das Bearbeiten einer gespeicherten Antwort, Autosave, die Mindestzeichenzahl-Abschlussregel, den Erfolgsstatus beim Speichern, das private Markieren eines einzelnen Eintrags durch die/den Lernende/n, den Atto-Editor, unterschiedliche Sichtbarkeits-Entscheidungen über mehrere Aktivitäten hinweg, einen abgelehnten Speicherkonflikt mit anschließender Sperre bis zum Neuladen sowie die Pagination beider Berichte ab. Umfassendere Abdeckung (CSV-Export) ist noch nicht automatisiert.
 
 ---
 

@@ -60,8 +60,8 @@ $table->define_baseurl(new moodle_url(
 
 if ($table->is_downloading()) {
     $table->out($perpage, false);
-    // out() exits internally once the CSV has been streamed
-    // (finish_document() calls exit()) - nothing below this runs for a download.
+    // This exits internally once the CSV has been streamed (out() calls
+    // finish_document(), which calls exit()) - nothing below runs for a download.
 }
 
 $PAGE->set_url('/mod/insightjournal/report.php', ['id' => $id, 'search' => $search]);

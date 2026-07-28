@@ -58,6 +58,8 @@ class report_table extends table_sql {
     protected context_module $context;
 
     /**
+     * Builds the table for one activity's entries, optionally filtered by a search term.
+     *
      * @param string $uniqueid Unique id for this table instance.
      * @param stdClass $course The course the activity belongs to.
      * @param stdClass $cm The activity's course-module record.

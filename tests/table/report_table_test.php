@@ -68,6 +68,8 @@ final class report_table_test extends advanced_testcase {
     }
 
     /**
+     * Returns the plugin's own test data generator, for create_entry().
+     *
      * @return \mod_insightjournal_generator
      */
     protected function ij_generator() {
@@ -139,8 +141,18 @@ final class report_table_test extends advanced_testcase {
     public function test_mixed_rows_only_hides_the_private_response(): void {
         $visible = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $private = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
-        $this->ij_generator()->create_entry($this->diary, (int) $visible->id, 'Public reflection.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
-        $this->ij_generator()->create_entry($this->diary, (int) $private->id, 'Secret reflection.', INSIGHTJOURNAL_VISIBILITY_PRIVATE);
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $visible->id,
+            'Public reflection.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $private->id,
+            'Secret reflection.',
+            INSIGHTJOURNAL_VISIBILITY_PRIVATE
+        );
 
         $html = $this->render_table();
 
@@ -235,11 +247,11 @@ final class report_table_test extends advanced_testcase {
         $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'CSV entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
 
         $table = new report_table('report_table_test_csv', $this->course, $this->cm, $this->diary, $this->context);
-        // is_downloading('csv', ...) constructs Moodle's CSV export writer as
-        // a side effect, which immediately echoes a UTF-8 BOM for Excel
-        // compatibility - wrap it so PHPUnit doesn't flag the test as risky
-        // for unexpected output; we only care about format_row()'s return
-        // values below, not this raw byte stream.
+        // Calling is_downloading('csv', ...) constructs Moodle's CSV export
+        // writer as a side effect, which immediately echoes a UTF-8 BOM for
+        // Excel compatibility - wrap it so PHPUnit doesn't flag the test as
+        // risky for unexpected output; we only care about format_row()'s
+        // return values below, not this raw byte stream.
         ob_start();
         $table->is_downloading('csv', 'insightjournal-test');
         $table->setup_columns();
@@ -277,7 +289,12 @@ final class report_table_test extends advanced_testcase {
      */
     public function test_csv_export_hides_private_response(): void {
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
-        $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'Secret reflection.', INSIGHTJOURNAL_VISIBILITY_PRIVATE);
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $student->id,
+            'Secret reflection.',
+            INSIGHTJOURNAL_VISIBILITY_PRIVATE
+        );
 
         $table = new report_table('report_table_test_csv_private', $this->course, $this->cm, $this->diary, $this->context);
         ob_start();

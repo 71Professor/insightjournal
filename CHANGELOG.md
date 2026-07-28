@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Versions map to the `$plugin->release` value in `version.php`.
 
+## [Unreleased]
+
+### Changed
+
+- **The activity report (`report.php`) and course-wide report
+  (`coursereport.php`) now paginate** instead of loading every matching row
+  in one request (20 per page by default, adjustable via a `perpage` URL
+  parameter), addressing the R2-04 review finding. The activity report is
+  now built on Moodle's `table_sql` API
+  (`classes/table/report_table.php`), which also brings its CSV export
+  in-house (previously a hand-written loop) — the exported CSV's 9-column
+  format is unchanged. Both reports' CSV exports are unaffected by
+  pagination and continue to export every matching row.
+
 ## [0.7.0-beta] - 2026-07-27
 
 ### Fixed
