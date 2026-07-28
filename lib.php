@@ -45,6 +45,7 @@ function insightjournal_supports($feature) {
         case FEATURE_BACKUP_MOODLE2:
         case FEATURE_COMPLETION_TRACKS_VIEWS:
         case FEATURE_COMPLETION_HAS_RULES:
+        case FEATURE_GROUPS:
             return true;
         case FEATURE_GRADE_HAS_GRADE:
             return false;

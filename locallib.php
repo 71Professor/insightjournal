@@ -118,3 +118,50 @@ function insightjournal_entry_visible_to_teacher(stdClass $entry): bool {
 
     return $visibility === INSIGHTJOURNAL_VISIBILITY_VISIBLE;
 }
+
+/**
+ * Whether the current user is restricted to their own group's members for
+ * this activity, per Moodle's Separate Groups mode.
+ *
+ * NOGROUPS and VISIBLEGROUPS never restrict - only SEPARATEGROUPS does, and
+ * only for a user without moodle/site:accessallgroups in this context.
+ * groups_get_activity_groupmode() already resolves any course-forced group
+ * mode, so a course-wide forced Separate Groups setting is respected even
+ * if this specific activity's own groupmode field was never touched.
+ *
+ * @param context_module $context The activity's module context.
+ * @param stdClass $course The course the activity belongs to.
+ * @param cm_info|stdClass $cm The activity's course-module record.
+ * @return bool
+ */
+function insightjournal_activity_group_restricted(context_module $context, stdClass $course, cm_info|stdClass $cm): bool {
+    if ((int) groups_get_activity_groupmode($cm, $course) !== SEPARATEGROUPS) {
+        return false;
+    }
+
+    return !has_capability('moodle/site:accessallgroups', $context);
+}
+
+/**
+ * Userids of every member of every group the current user belongs to in
+ * this course.
+ *
+ * Returns an empty array if the current user belongs to no groups in this
+ * course - callers must treat that as "matches nobody," not "no
+ * restriction": an empty result here still means the restriction is
+ * active, just that it currently excludes everyone.
+ *
+ * @param stdClass $course The course to look up group membership in.
+ * @return int[] Deduplicated user ids.
+ */
+function insightjournal_current_user_group_userids(stdClass $course): array {
+    global $USER;
+
+    $groups = groups_get_all_groups($course->id, $USER->id, 0, 'g.*', true);
+    $userids = [];
+    foreach ($groups as $group) {
+        $userids = array_merge($userids, array_map('intval', $group->members));
+    }
+
+    return array_values(array_unique($userids));
+}
