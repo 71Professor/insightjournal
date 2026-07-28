@@ -42,12 +42,24 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
+$restrictuserids = insightjournal_activity_group_restricted($context, $course, $cm)
+    ? insightjournal_current_user_group_userids($course)
+    : null;
+
 if ($wantscsv) {
     require_capability('mod/insightjournal:export', $context);
     confirm_sesskey();
 }
 
-$table = new report_table('mod_insightjournal_report_' . $cm->id, $course, $cm, $diary, $context, $search);
+$table = new report_table(
+    'mod_insightjournal_report_' . $cm->id,
+    $course,
+    $cm,
+    $diary,
+    $context,
+    $search,
+    $restrictuserids
+);
 $table->is_downloading(
     $wantscsv ? 'csv' : null,
     'insightjournal-' . $course->shortname . '-' . $diary->id

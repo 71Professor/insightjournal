@@ -229,6 +229,63 @@ final class report_table_test extends advanced_testcase {
     }
 
     /**
+     * When restricted to a specific set of userids, only their entries render.
+     */
+    public function test_restrict_to_userids_filters_participants(): void {
+        $visible = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $excluded = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->ij_generator()->create_entry($this->diary, (int) $visible->id, 'Included entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+        $this->ij_generator()->create_entry($this->diary, (int) $excluded->id, 'Excluded entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+
+        $table = new report_table(
+            'report_table_test_restricted',
+            $this->course,
+            $this->cm,
+            $this->diary,
+            $this->context,
+            '',
+            [(int) $visible->id]
+        );
+        $table->setup_columns();
+        $table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $this->cm->id]));
+
+        ob_start();
+        $table->out(20, false);
+        $html = ob_get_clean();
+
+        $this->assertStringContainsString('Included entry.', $html);
+        $this->assertStringNotContainsString('Excluded entry.', $html);
+    }
+
+    /**
+     * An empty (but non-null) restriction list means "restricted to
+     * nobody," not "no restriction" - a user in zero groups must see zero
+     * rows, never everyone.
+     */
+    public function test_restrict_to_empty_userids_shows_nobody(): void {
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'Should stay hidden.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+
+        $table = new report_table(
+            'report_table_test_restricted_empty',
+            $this->course,
+            $this->cm,
+            $this->diary,
+            $this->context,
+            '',
+            []
+        );
+        $table->setup_columns();
+        $table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $this->cm->id]));
+
+        ob_start();
+        $table->out(20, false);
+        $html = ob_get_clean();
+
+        $this->assertStringNotContainsString('Should stay hidden.', $html);
+    }
+
+    /**
      * The CSV download preserves the exact legacy 9-column format.
      *
      * This tests column rendering directly via query_db()/format_row()

@@ -66,6 +66,9 @@ class report_table extends table_sql {
      * @param stdClass $diary The insight journal instance.
      * @param context_module $context The activity's module context.
      * @param string $search Optional search term across participant name/email.
+     * @param ?array $restrictuserids When not null, only these userids' entries
+     *     are included (an empty array means "match nobody," not "no
+     *     restriction") - used to enforce Moodle's Separate Groups mode.
      */
     public function __construct(
         string $uniqueid,
@@ -73,7 +76,8 @@ class report_table extends table_sql {
         stdClass $cm,
         stdClass $diary,
         context_module $context,
-        string $search = ''
+        string $search = '',
+        ?array $restrictuserids = null
     ) {
         parent::__construct($uniqueid);
 
@@ -95,6 +99,11 @@ class report_table extends table_sql {
             $params['sfn'] = $needle;
             $params['sln'] = $needle;
             $params['sem'] = $needle;
+        }
+        if ($restrictuserids !== null) {
+            [$rinsql, $rparams] = $DB->get_in_or_equal($restrictuserids, SQL_PARAMS_NAMED, 'grp', true, -1);
+            $where .= ' AND u.id ' . $rinsql;
+            $params = array_merge($params, $rparams);
         }
 
         $this->set_sql(
