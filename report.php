@@ -53,7 +53,10 @@ $table->is_downloading(
     'insightjournal-' . $course->shortname . '-' . $diary->id
 );
 $table->setup_columns();
-$table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $cm->id, 'search' => $search]));
+$table->define_baseurl(new moodle_url(
+    '/mod/insightjournal/report.php',
+    ['id' => $cm->id, 'search' => $search, 'perpage' => $perpage]
+));
 
 if ($table->is_downloading()) {
     $table->out($perpage, false);
