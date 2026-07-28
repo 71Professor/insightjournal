@@ -62,6 +62,9 @@ Clone the repository into `mod/insightjournal/` and visit
 ## Trainer Workflow
 
 1. In a course, choose **Add an activity or resource → Insight Journal**.
+   The standard **Common module settings → Group mode** control is
+   available like any other activity — see [Reports](#reports) for how it
+   affects report visibility.
 2. Enter the activity **name** (shown in the course navigation).
 3. Enter the **Task / Question** — the reflection question or task for learners.
 4. Optionally set a **Task / Question background colour** (a hex code, e.g. `#ffcc00`) to
@@ -109,6 +112,11 @@ save-as-PDF).
 | `mod/insightjournal:viewall`     | Teacher, Editing teacher, Manager |
 | `mod/insightjournal:export`      | Teacher, Editing teacher, Manager |
 
+Moodle's core `moodle/site:accessallgroups` capability (Editing teacher,
+Manager by default) also affects this plugin: without it, a viewer in a
+Separate-Groups activity only sees their own group's participants in
+reports — see [Reports](#reports).
+
 ---
 
 ## Reports
@@ -125,6 +133,12 @@ save-as-PDF).
   `summary.php?courseid=<id>`) instead of routing learners through an activity
   first — no extra configuration needed, since `summary.php` handles its own
   access checks.
+- **Separate Groups mode is respected on all three pages above.** A viewer
+  without the core `moodle/site:accessallgroups` capability in an activity
+  running Separate Groups mode sees (or, for `summary.php`, may open) only
+  their own course group's participants. Visible Groups and No Groups
+  never restrict. The activity's own settings form gains the standard
+  "Group mode" setting for this, same as any other Moodle activity.
 
 ---
 

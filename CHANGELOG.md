@@ -37,6 +37,17 @@ Versions map to the `$plugin->release` value in `version.php`.
   for at least one more release before deleting it; it is slated for
   actual removal in a later release.
 
+- **The activity report, course-wide report, and learner summary page now
+  respect Moodle's Separate Groups mode** (addressing the R2-05 review
+  finding). A teacher without the `moodle/site:accessallgroups` capability
+  in a Separate-Groups activity now sees only their own group's
+  participants — previously every report showed every participant
+  regardless of group mode. The activity's own edit form also gains the
+  standard "Group mode" setting (`FEATURE_GROUPS` is now declared), so
+  trainers can set it per-activity, not only via the course default. Only
+  Separate Groups restricts; Visible Groups and No Groups are unaffected,
+  matching every other Moodle activity's behaviour.
+
 ## [0.7.0-beta] - 2026-07-27
 
 ### Fixed

@@ -75,11 +75,20 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 | `mod/insightjournal:export`      | Trainer/in, Editing Trainer/in, Manager/in |
 | `mod/insightjournal:addinstance` | Editing Trainer/in, Manager/in             |
 
+Moodles Kern-Capability `moodle/site:accessallgroups` (standardmäßig Editing
+Trainer/in, Manager/in) wirkt sich ebenfalls aus: ohne sie sehen Trainer/innen
+bei aktivierter Gruppentrennung (Separate Groups) in den Berichten nur die
+Teilnehmenden der eigenen Gruppe(n) – siehe Abschnitt 6 „Berichte &
+Auswertung".
+
 ---
 
 ## 4  Trainer/innen-Workflow
 
 1. Im Kurs auf **Aktivität oder Material anlegen** klicken und **Insight Journal** wählen.
+   Die Standard-Einstellung **Gemeinsame Moduleinstellungen → Gruppenmodus**
+   ist wie bei jeder anderen Aktivität verfügbar – siehe Abschnitt 6
+   „Berichte & Auswertung" für die Auswirkung auf die Berichte.
 2. **Name** der Aktivität eingeben (erscheint in der Kursnavigation).
 3. **Aufgabe / Frage** formulieren – das ist die Reflexionsfrage oder -aufgabe für die Lernenden.
 4. Optional: **Hintergrundfarbe für Aufgabe / Frage** als Hex-Code festlegen (z. B. `#ffcc00`), um Aufgabe/Frage überall dort, wo sie angezeigt wird, optisch von der Antwort der/des Lernenden abzuheben.
@@ -120,6 +129,10 @@ Aufruf: Innerhalb der Aktivität auf **Bericht** klicken (nur für Trainer/innen
 - Zeigt alle Einträge der Kursteilnehmenden für diese Aufgabe/Frage
 - Detailansicht bei Kiick auf Teilnehmernamen
 - CSV-Export (erfordert Capability `mod/insightjournal:export`)
+- Bei aktivierter Gruppentrennung (Separate Groups) sehen Trainer/innen ohne
+  die Capability `moodle/site:accessallgroups` nur die Einträge der eigenen
+  Gruppe(n) – dasselbe gilt für den Kursgesamtbericht und die persönliche
+  Zusammenfassung fremder Lernender.
 - Paginiert (Standard: 20 Teilnehmende pro Seite, über `perpage` anpassbar)
 
 ### 6.2  Persönliche Zusammenfassung
