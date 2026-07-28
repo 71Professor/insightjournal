@@ -157,6 +157,19 @@ function insightjournal_activity_group_restricted(context_module $context, stdCl
 function insightjournal_current_user_group_userids(stdClass $course): array {
     global $USER;
 
+    // groups_get_all_groups() only applies its userid filter when $userid is
+    // non-empty ("if (!empty($userid))" in core) - a falsy id (e.g. 0, the
+    // logged-out/guest sentinel) would silently return every group's
+    // members course-wide instead of "this user's groups," inverting the
+    // "empty means matches nobody" contract this function promises. Every
+    // real caller has already gone through require_login() by the time this
+    // runs, so $USER->id is never actually 0 in practice - guard anyway,
+    // since this is a security-relevant primitive, not just an internal
+    // convenience function.
+    if (empty($USER->id)) {
+        return [];
+    }
+
     $groups = groups_get_all_groups($course->id, $USER->id, 0, 'g.*', true);
     $userids = [];
     foreach ($groups as $group) {

@@ -217,4 +217,21 @@ final class locallib_groups_test extends advanced_testcase {
         $this->assertContains((int) $studenta->id, $userids);
         $this->assertContains((int) $studentb->id, $userids);
     }
+
+    /**
+     * A falsy $USER->id (e.g. 0, the logged-out/guest sentinel) must still
+     * produce "matches nobody," never silently fall through to
+     * groups_get_all_groups() ignoring its userid filter and returning
+     * every group's members course-wide.
+     */
+    public function test_group_userids_empty_when_user_id_is_falsy(): void {
+        $generator = $this->getDataGenerator();
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $group = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+
+        $this->setUser(0);
+
+        $this->assertSame([], insightjournal_current_user_group_userids($this->course));
+    }
 }
