@@ -56,7 +56,7 @@ if (empty($activities)) {
     throw new required_capability_exception($coursecontext, 'mod/insightjournal:viewall', 'nopermissions', '');
 }
 
-// $restrictgroupids is passed straight to get_enrolled_users()/count_enrolled_users(),
+// This value is passed straight to get_enrolled_users()/count_enrolled_users(),
 // which check it with a bare "if ($groupids)" - an empty array is falsy there, meaning
 // "no filter at all." $blockallparticipants explicitly catches "restricted, but the
 // viewer's own group list is empty" before that ambiguity can matter, so a viewer in

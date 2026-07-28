@@ -235,7 +235,12 @@ final class report_table_test extends advanced_testcase {
         $visible = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $excluded = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $this->ij_generator()->create_entry($this->diary, (int) $visible->id, 'Included entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
-        $this->ij_generator()->create_entry($this->diary, (int) $excluded->id, 'Excluded entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $excluded->id,
+            'Excluded entry.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
 
         $table = new report_table(
             'report_table_test_restricted',
@@ -264,7 +269,12 @@ final class report_table_test extends advanced_testcase {
      */
     public function test_restrict_to_empty_userids_shows_nobody(): void {
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
-        $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'Should stay hidden.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $student->id,
+            'Should stay hidden.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
 
         $table = new report_table(
             'report_table_test_restricted_empty',

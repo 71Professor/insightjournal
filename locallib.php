@@ -157,7 +157,7 @@ function insightjournal_activity_group_restricted(context_module $context, stdCl
 function insightjournal_current_user_group_userids(stdClass $course): array {
     global $USER;
 
-    // groups_get_all_groups() only applies its userid filter when $userid is
+    // Moodle's groups_get_all_groups() only applies its userid filter when $userid is
     // non-empty ("if (!empty($userid))" in core) - a falsy id (e.g. 0, the
     // logged-out/guest sentinel) would silently return every group's
     // members course-wide instead of "this user's groups," inverting the
