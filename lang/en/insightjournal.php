@@ -63,7 +63,6 @@ $string['modulename_help'] = 'The Insight Journal activity lets learners write r
 $string['modulenameplural'] = 'Insight Journals';
 $string['mysummary'] = 'My Insight Journal';
 $string['mysummaryfor'] = 'Insight Journal: {$a}';
-$string['noentries'] = 'No entries yet.';
 $string['noreflectionsincourse'] = 'There are no insight journal activities in this course yet.';
 $string['noresponse'] = 'No response entered.';
 $string['notsubmitted'] = 'Not submitted';

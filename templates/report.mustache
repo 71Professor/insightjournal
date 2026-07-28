@@ -17,7 +17,10 @@
 {{!
     @template mod_insightjournal/report
 
-    Activity report listing every participant's response with a search filter.
+    Page shell for the activity report: back/download buttons and the
+    participant search form. The response table itself is rendered
+    directly by \mod_insightjournal\table\report_table, not through this
+    template.
 
     Classes required for JS:
     * none
@@ -31,16 +34,6 @@
     * actionurl - Form action URL for the search filter.
     * cmid - Course module id.
     * search - Current search term.
-    * hasrows - Whether there are any rows to display.
-    * rows - List of response rows.
-        * summaryurl - URL to the participant's personal summary.
-        * fullname - Participant full name.
-        * email - Participant email.
-        * private - Whether this participant's own entry is private (decided
-          by them, not this activity). When true, a notice is shown instead
-          of their response, and timemodified is blank.
-        * response - Pre-formatted response HTML (rendered via triple braces), empty when private.
-        * timemodified - Localised last modified date, empty when private.
 
     Example context (json):
     {
@@ -48,18 +41,7 @@
         "downloadurl": "https://example.com/mod/insightjournal/report.php?id=5&download=csv",
         "actionurl": "https://example.com/mod/insightjournal/report.php",
         "cmid": 5,
-        "search": "",
-        "hasrows": true,
-        "rows": [
-            {
-                "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2&userid=3",
-                "fullname": "Jane Doe",
-                "email": "jane@example.com",
-                "private": false,
-                "response": "<p>Today I learned about Mustache templates.</p>",
-                "timemodified": "1 January 2026, 10:00 AM"
-            }
-        ]
+        "search": ""
     }
 }}
 <div class="insightjournal-report">
@@ -78,34 +60,4 @@
             </div>
         </div>
     </form>
-
-    {{#hasrows}}
-        <table class="generaltable">
-            <thead>
-                <tr>
-                    <th scope="col">{{#str}}participant, mod_insightjournal{{/str}}</th>
-                    <th scope="col">{{#str}}response, mod_insightjournal{{/str}}</th>
-                    <th scope="col">{{#str}}timemodified, mod_insightjournal{{/str}}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{#rows}}
-                    <tr>
-                        <td>
-                            <a href="{{summaryurl}}">{{fullname}}</a>
-                            <div class="small text-muted">{{email}}</div>
-                        </td>
-                        <td>
-                            {{#private}}<span class="text-muted font-italic">{{#str}}entriesprivatenotice, mod_insightjournal{{/str}}</span>{{/private}}
-                            {{^private}}<div class="insightjournal-response-text">{{{response}}}</div>{{/private}}
-                        </td>
-                        <td>{{timemodified}}</td>
-                    </tr>
-                {{/rows}}
-            </tbody>
-        </table>
-    {{/hasrows}}
-    {{^hasrows}}
-        <div class="alert alert-info">{{#str}}noentries, mod_insightjournal{{/str}}</div>
-    {{/hasrows}}
 </div>
