@@ -38,6 +38,7 @@ $coursecontext = context_course::instance($course->id);
 
 $modinfo = get_fast_modinfo($course);
 $activities = [];
+$restricted = false;
 foreach ($modinfo->get_instances_of('insightjournal') as $cm) {
     if (!$cm->uservisible) {
         continue;
@@ -45,12 +46,23 @@ foreach ($modinfo->get_instances_of('insightjournal') as $cm) {
     $context = context_module::instance($cm->id);
     if (has_capability('mod/insightjournal:viewall', $context)) {
         $activities[$cm->instance] = $cm;
+        if (insightjournal_activity_group_restricted($context, $course, $cm)) {
+            $restricted = true;
+        }
     }
 }
 
 if (empty($activities)) {
     throw new required_capability_exception($coursecontext, 'mod/insightjournal:viewall', 'nopermissions', '');
 }
+
+// $restrictgroupids is passed straight to get_enrolled_users()/count_enrolled_users(),
+// which check it with a bare "if ($groupids)" - an empty array is falsy there, meaning
+// "no filter at all." $blockallparticipants explicitly catches "restricted, but the
+// viewer's own group list is empty" before that ambiguity can matter, so a viewer in
+// zero groups sees zero participants rather than everyone.
+$restrictgroupids = $restricted ? array_keys(groups_get_all_groups($course->id, $USER->id)) : 0;
+$blockallparticipants = $restricted && empty($restrictgroupids);
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
@@ -62,7 +74,9 @@ if ($download === 'csv') {
     }
     confirm_sesskey();
 
-    $participants = get_enrolled_users($coursecontext, 'mod/insightjournal:submit', 0, $userfields, 'u.lastname,u.firstname');
+    $participants = $blockallparticipants
+        ? []
+        : get_enrolled_users($coursecontext, 'mod/insightjournal:submit', $restrictgroupids, $userfields, 'u.lastname,u.firstname');
 
     $entries = [];
     if (!empty($diaryids)) {
@@ -99,16 +113,20 @@ if ($download === 'csv') {
     exit;
 }
 
-$totalparticipants = count_enrolled_users($coursecontext, 'mod/insightjournal:submit', 0);
-$participants = get_enrolled_users(
-    $coursecontext,
-    'mod/insightjournal:submit',
-    0,
-    $userfields,
-    'u.lastname,u.firstname',
-    $page * $perpage,
-    $perpage
-);
+$totalparticipants = $blockallparticipants
+    ? 0
+    : count_enrolled_users($coursecontext, 'mod/insightjournal:submit', $restrictgroupids);
+$participants = $blockallparticipants
+    ? []
+    : get_enrolled_users(
+        $coursecontext,
+        'mod/insightjournal:submit',
+        $restrictgroupids,
+        $userfields,
+        'u.lastname,u.firstname',
+        $page * $perpage,
+        $perpage
+    );
 
 $entries = [];
 if (!empty($diaryids) && !empty($participants)) {
