@@ -93,4 +93,23 @@ class behat_mod_insightjournal extends behat_base {
             '/mod/insightjournal/report.php?id=' . $cm->id . '&perpage=' . $perpage,
         ]);
     }
+
+    /**
+     * Navigates directly to the course-wide insight journal report for a
+     * named course, with a specific page size, so participant pagination is
+     * reachable in tests without needing dozens of real enrolments.
+     *
+     * @Given /^I am on the course insight report for "((?:[^"]|\\")*)" with "(\d+)" per page$/
+     * @param string $coursename
+     * @param string $perpage
+     */
+    public function i_am_on_the_course_report_page_with_perpage($coursename, $perpage) {
+        global $DB;
+
+        $course = $DB->get_record('course', ['fullname' => $coursename], '*', MUST_EXIST);
+
+        $this->execute('behat_general::i_visit', [
+            '/mod/insightjournal/coursereport.php?courseid=' . $course->id . '&perpage=' . $perpage,
+        ]);
+    }
 }

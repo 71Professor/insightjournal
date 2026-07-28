@@ -209,3 +209,24 @@ Feature: Insight journal activity
     When I click on "2" "link"
     Then I should see "Student 3"
     And I should not see "Student 1"
+
+  Scenario: The course-wide report paginates through many participants
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    And the following "users" exist:
+      | username | firstname | lastname |
+      | student2 | Student   | 2        |
+      | student3 | Student   | 3        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | student2 | C1     | student |
+      | student3 | C1     | student |
+    And I log in as "teacher1"
+    And I am on the course insight report for "Course 1" with "2" per page
+    Then I should see "Student 1"
+    And I should see "Student 2"
+    And I should not see "Student 3"
+    When I click on "2" "link" in the "nav[aria-label='Page']" "css_element"
+    Then I should see "Student 3"
+    And I should not see "Student 1"
