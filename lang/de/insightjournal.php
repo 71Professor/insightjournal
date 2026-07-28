@@ -63,6 +63,7 @@ $string['modulename_help'] = 'Mit der Aktivität Insight Journal schreiben Teiln
 $string['modulenameplural'] = 'Insight Journals';
 $string['mysummary'] = 'Mein Insight Journal';
 $string['mysummaryfor'] = 'Insight Journal: {$a}';
+$string['noentries'] = 'Noch keine Einträge vorhanden.';
 $string['noreflectionsincourse'] = 'In diesem Kurs gibt es noch keine Insight-Journal-Aktivitäten.';
 $string['noresponse'] = 'Keine Antwort eingetragen.';
 $string['notsubmitted'] = 'Nicht eingereicht';

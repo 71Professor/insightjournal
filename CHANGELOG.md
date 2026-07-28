@@ -32,8 +32,10 @@ Versions map to the `$plugin->release` value in `version.php`.
   nothing) now shows Moodle's standard "Nothing to display" notification
   instead of the plugin's own "No entries yet." message, as a side effect
   of the `table_sql` migration above. The now-unused `noentries` string is
-  removed from the English and German language packs; see
-  `lang/en/deprecated.txt`.
+  deprecated (`lang/en/deprecated.txt`) rather than removed outright, per
+  Moodle's convention of keeping a deprecated string's definition in place
+  for at least one more release before deleting it; it is slated for
+  actual removal in a later release.
 
 ## [0.7.0-beta] - 2026-07-27
 
