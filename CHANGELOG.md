@@ -20,6 +20,21 @@ Versions map to the `$plugin->release` value in `version.php`.
   format is unchanged. Both reports' CSV exports are unaffected by
   pagination and continue to export every matching row.
 
+- **The activity report's CSV export now begins with a UTF-8 byte-order
+  mark (BOM)**, a side effect of moving its export onto Moodle's own CSV
+  writer (see above) for better default Excel compatibility. The
+  course-wide report's CSV, still written by hand, is unaffected and has
+  no BOM — the two reports' CSV exports are not currently byte-identical
+  in this one respect. Unifying both onto the same writer is left to a
+  future pass (R2-12).
+
+- **The activity report's empty state** (no entries, or a search matching
+  nothing) now shows Moodle's standard "Nothing to display" notification
+  instead of the plugin's own "No entries yet." message, as a side effect
+  of the `table_sql` migration above. The now-unused `noentries` string is
+  removed from the English and German language packs; see
+  `lang/en/deprecated.txt`.
+
 ## [0.7.0-beta] - 2026-07-27
 
 ### Fixed
