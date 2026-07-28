@@ -48,6 +48,7 @@ final class coursereport_template_test extends advanced_testcase {
             'hasactivities' => false,
             'activities' => [],
             'rows' => [],
+            'pagingbar' => '',
         ], $overrides);
     }
 
@@ -172,5 +173,38 @@ final class coursereport_template_test extends advanced_testcase {
         $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context());
 
         $this->assertStringContainsString(get_string('backtocourse', 'mod_insightjournal'), $html);
+    }
+
+    /**
+     * The paging bar HTML is inserted below the participant table when present.
+     */
+    public function test_paging_bar_rendered_when_present(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
+            'hasactivities' => true,
+            'activities' => [['name' => 'Week 1 reflection']],
+            'rows' => [],
+            'pagingbar' => '<div class="paging-test-marker">Page 2 of 3</div>',
+        ]));
+
+        $this->assertStringContainsString('Page 2 of 3', $html);
+    }
+
+    /**
+     * With no activities (and so no table), the paging bar is not rendered
+     * either, proving it is scoped inside the same hasactivities section as
+     * the table.
+     */
+    public function test_paging_bar_not_rendered_without_activities(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/coursereport', $this->make_context([
+            'pagingbar' => '<div class="paging-test-marker">Page 2 of 3</div>',
+        ]));
+
+        $this->assertStringNotContainsString('paging-test-marker', $html);
     }
 }

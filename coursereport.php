@@ -29,6 +29,8 @@ require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 $courseid = required_param('courseid', PARAM_INT);
 $download = optional_param('download', '', PARAM_ALPHA);
+$page = max(0, optional_param('page', 0, PARAM_INT));
+$perpage = max(1, min(200, optional_param('perpage', 20, PARAM_INT)));
 
 $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 require_login($course);
@@ -52,28 +54,25 @@ if (empty($activities)) {
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
-$participants = get_enrolled_users(
-    $coursecontext,
-    'mod/insightjournal:submit',
-    0,
-    'u.id,u.firstname,u.lastname,u.firstnamephonetic,u.lastnamephonetic,u.middlename,u.alternatename,u.email',
-    'u.lastname,u.firstname'
-);
-
-$entries = [];
-if (!empty($diaryids)) {
-    [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
-    $records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
-    foreach ($records as $entry) {
-        $entries[$entry->userid][$entry->insightjournalid] = $entry;
-    }
-}
+$userfields = 'u.id,u.firstname,u.lastname,u.firstnamephonetic,u.lastnamephonetic,u.middlename,u.alternatename,u.email';
 
 if ($download === 'csv') {
     foreach ($activities as $cm) {
         require_capability('mod/insightjournal:export', context_module::instance($cm->id));
     }
     confirm_sesskey();
+
+    $participants = get_enrolled_users($coursecontext, 'mod/insightjournal:submit', 0, $userfields, 'u.lastname,u.firstname');
+
+    $entries = [];
+    if (!empty($diaryids)) {
+        [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
+        $records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
+        foreach ($records as $entry) {
+            $entries[$entry->userid][$entry->insightjournalid] = $entry;
+        }
+    }
+
     insightjournal_send_csv_headers('insightjournal-course-' . $course->shortname . '.csv');
     $out = fopen('php://output', 'w');
     fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
@@ -100,7 +99,33 @@ if ($download === 'csv') {
     exit;
 }
 
-$PAGE->set_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id]);
+$totalparticipants = count_enrolled_users($coursecontext, 'mod/insightjournal:submit', 0);
+$participants = get_enrolled_users(
+    $coursecontext,
+    'mod/insightjournal:submit',
+    0,
+    $userfields,
+    'u.lastname,u.firstname',
+    $page * $perpage,
+    $perpage
+);
+
+$entries = [];
+if (!empty($diaryids) && !empty($participants)) {
+    $userids = array_keys($participants);
+    [$dinsql, $dparams] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED, 'diary');
+    [$uinsql, $uparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'user');
+    $records = $DB->get_records_select(
+        'insightjournal_entries',
+        "insightjournalid $dinsql AND userid $uinsql",
+        array_merge($dparams, $uparams)
+    );
+    foreach ($records as $entry) {
+        $entries[$entry->userid][$entry->insightjournalid] = $entry;
+    }
+}
+
+$PAGE->set_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id, 'page' => $page, 'perpage' => $perpage]);
 $PAGE->set_context($coursecontext);
 $PAGE->set_title(get_string('coursereport', 'insightjournal'));
 $PAGE->set_heading(format_string($course->fullname));
@@ -162,5 +187,6 @@ echo $OUTPUT->render_from_template('mod_insightjournal/coursereport', [
     'activities' => $activityheaders,
     'rows' => $rows,
     'hasactivities' => !empty($activityheaders),
+    'pagingbar' => $OUTPUT->paging_bar($totalparticipants, $page, $perpage, $PAGE->url),
 ]);
 echo $OUTPUT->footer();

@@ -42,6 +42,8 @@
             * status - Localised status text (absent when private).
             * timemodified - Localised last modified date, or empty (absent when private).
         * progress - Localised overall progress text.
+    * pagingbar - Pre-rendered paging bar HTML (from $OUTPUT->paging_bar()),
+      or an empty string when there is nothing to paginate.
 
     Example context (json):
     {
@@ -100,6 +102,7 @@
                 {{/rows}}
             </tbody>
         </table>
+        {{{pagingbar}}}
     {{/hasactivities}}
     {{^hasactivities}}
         <div class="alert alert-info">{{#str}}noreflectionsincourse, mod_insightjournal{{/str}}</div>
