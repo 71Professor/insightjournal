@@ -54,6 +54,7 @@ final class lib_test extends advanced_testcase {
         $this->assertTrue(insightjournal_supports(FEATURE_BACKUP_MOODLE2));
         $this->assertTrue(insightjournal_supports(FEATURE_COMPLETION_HAS_RULES));
         $this->assertTrue(insightjournal_supports(FEATURE_COMPLETION_TRACKS_VIEWS));
+        $this->assertTrue(insightjournal_supports(FEATURE_GROUPS));
         $this->assertFalse(insightjournal_supports(FEATURE_GRADE_HAS_GRADE));
         $this->assertEquals(MOD_PURPOSE_COLLABORATION, insightjournal_supports(FEATURE_MOD_PURPOSE));
         $this->assertNull(insightjournal_supports('a non existent feature'));

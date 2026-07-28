@@ -159,6 +159,36 @@ final class locallib_groups_test extends advanced_testcase {
     }
 
     /**
+     * The same course-forced restriction applies when $cm is a cm_info
+     * instance (as coursereport.php/summary.php pass) rather than a plain
+     * stdClass (as report.php passes). groups_get_activity_groupmode()
+     * takes a genuinely different code path for cm_info - it reads
+     * $cm->effectivegroupmode, which does consult FEATURE_GROUPS - versus a
+     * plain stdClass, which reads $course->groupmodeforce directly and
+     * never consults FEATURE_GROUPS at all. Without this test, deleting
+     * FEATURE_GROUPS from lib.php would go undetected by every other test
+     * in this file, since they all build $cm via get_coursemodule_from_id()
+     * (a plain stdClass).
+     */
+    public function test_restricted_when_course_forces_separate_groups_with_cm_info(): void {
+        global $DB;
+
+        $DB->set_field('course', 'groupmode', SEPARATEGROUPS, ['id' => $this->course->id]);
+        $DB->set_field('course', 'groupmodeforce', 1, ['id' => $this->course->id]);
+        $this->course = $DB->get_record('course', ['id' => $this->course->id], '*', MUST_EXIST);
+        rebuild_course_cache((int) $this->course->id, true);
+
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $this->setUser($teacher);
+
+        $cminfo = get_fast_modinfo($this->course)->get_cm($this->cm->id);
+
+        $this->assertTrue(
+            insightjournal_activity_group_restricted($this->context, $this->course, $cminfo)
+        );
+    }
+
+    /**
      * The current user's own group's members are returned, and another
      * group's members are excluded.
      */
