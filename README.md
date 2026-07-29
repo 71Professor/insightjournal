@@ -146,12 +146,14 @@ viewer's reports show no participant email address — see
   never restrict. The activity's own settings form gains the standard
   "Group mode" setting for this, same as any other Moodle activity.
 - **Participant email addresses are only shown to viewers who are allowed
-  to see them.** `report.php` and `coursereport.php` show/search/export a
-  participant's email only when the viewer holds Moodle's core
+  to see them.** `report.php` shows, searches, and exports a participant's
+  email only when the viewer holds Moodle's core
   `moodle/site:viewuseridentity` capability *and* the site has `email`
   configured in **Site administration → Users → Permissions → User
-  policies → Show user identity**. Table/CSV layout is unchanged either
-  way - the email cell is simply blank when not permitted.
+  policies → Show user identity**; `coursereport.php`'s CSV export is
+  gated the same way (it never showed email on screen or offered search).
+  Table/CSV layout is unchanged either way - the email cell is simply
+  blank when not permitted.
 
 ---
 

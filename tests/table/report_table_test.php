@@ -163,7 +163,11 @@ final class report_table_test extends advanced_testcase {
     }
 
     /**
-     * The search box filters by first name, last name, or email.
+     * The search box filters by first name or last name. Email is also
+     * searchable when the viewer is permitted to see it - see
+     * test_search_by_email_requires_capability() - but this default test
+     * user (id 0, no capabilities) never exercises that branch, so this
+     * test only covers the name-based match.
      */
     public function test_search_filters_by_name(): void {
         $jane = $this->getDataGenerator()->create_and_enrol(

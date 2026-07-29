@@ -68,7 +68,8 @@ class report_table extends table_sql {
      * @param stdClass $cm The activity's course-module record.
      * @param stdClass $diary The insight journal instance.
      * @param context_module $context The activity's module context.
-     * @param string $search Optional search term across participant name/email.
+     * @param string $search Optional search term across participant name, and
+     *     email too when the viewer is permitted to see it.
      * @param ?array $restrictuserids When not null, only these userids' entries
      *     are included (an empty array means "match nobody," not "no
      *     restriction") - used to enforce Moodle's Separate Groups mode.
@@ -97,6 +98,9 @@ class report_table extends table_sql {
         if ($this->showemail) {
             $userfields->including('email');
         }
+        // for_name()/including('email') can never add a custom profile field, so
+        // ->joins and ->params are always empty here - revisit this assumption if
+        // a with_identity()/custom-field include is ever added.
         $userfieldsql = $userfields->get_sql('u');
 
         $params = ['diaryid' => $diary->id];

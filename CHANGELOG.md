@@ -11,9 +11,10 @@ Versions map to the `$plugin->release` value in `version.php`.
 ### Changed
 
 - **Reports no longer show a participant's email address to a viewer who
-  isn't allowed to see it.** `report.php` and `coursereport.php` used to
-  select and expose `u.email` unconditionally - on screen, in participant
-  search, and in CSV export. Email now only appears when the viewer holds
+  isn't allowed to see it.** `report.php` used to select and expose
+  `u.email` unconditionally - on screen, in participant search, and in CSV
+  export; `coursereport.php` only in its CSV export (it never showed email
+  on screen or offered search). Email now only appears when the viewer holds
   Moodle's `moodle/site:viewuseridentity` capability *and* the site admin
   has kept `email` in **Site administration → Users → Permissions → User
   policies → Show user identity**, addressing the R2-06 review finding. On

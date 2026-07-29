@@ -77,11 +77,18 @@ $blockallparticipants = $restricted && empty($restrictgroupids);
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
+// Checked at course context, not per-activity like report_table.php - deliberately
+// coarse, matching this file's existing group-restriction gating above. A viewer
+// reaching this branch already holds the capability course-wide, so this can only
+// ever be more permissive than a hypothetical per-activity override, never less.
 $showemail = insightjournal_email_field_visible($coursecontext);
 $namefields = \core_user\fields::for_name()->including('id');
 if ($showemail) {
     $namefields->including('email');
 }
+// ->selects only: for_name()/including('id'|'email') can never add a custom
+// profile field, so ->joins and ->params are always empty here - revisit this
+// assumption if a with_identity()/custom-field include is ever added.
 $userfields = $namefields->get_sql('u', false, '', '', false)->selects;
 
 if ($download === 'csv') {
