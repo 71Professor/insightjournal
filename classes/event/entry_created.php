@@ -50,6 +50,7 @@ class entry_created extends \core\event\base {
      * @return self
      */
     public static function create_from_entry(\stdClass $entry, \stdClass $diary, \stdClass $cm, \stdClass $course): self {
+        /** @var self $event */
         $event = self::create([
             'objectid' => $entry->id,
             'context' => \context_module::instance($cm->id),
