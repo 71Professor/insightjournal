@@ -211,7 +211,7 @@ class report_table extends table_sql {
      * @return string
      */
     public function col_coursename(stdClass $row): string {
-        return insightjournal_csv_value($this->course->fullname);
+        return $this->course->fullname;
     }
 
     /**
@@ -231,7 +231,7 @@ class report_table extends table_sql {
      * @return string
      */
     public function col_activityname(stdClass $row): string {
-        return insightjournal_csv_value($this->diary->name);
+        return $this->diary->name;
     }
 
     /**
@@ -242,7 +242,7 @@ class report_table extends table_sql {
      * @return string
      */
     public function col_participantname(stdClass $row): string {
-        return insightjournal_csv_value(fullname($row));
+        return fullname($row);
     }
 
     /**
@@ -252,7 +252,7 @@ class report_table extends table_sql {
      * @return string
      */
     public function col_email(stdClass $row): string {
-        return insightjournal_csv_value($row->email ?? '');
+        return $row->email ?? '';
     }
 
     /**
@@ -266,12 +266,12 @@ class report_table extends table_sql {
         if (!insightjournal_entry_visible_to_teacher($row)) {
             $notice = get_string('entriesprivatenotice', 'mod_insightjournal');
             return $this->is_downloading()
-                ? insightjournal_csv_value($notice)
+                ? $notice
                 : html_writer::span($notice, 'text-muted font-italic');
         }
 
         if ($this->is_downloading()) {
-            return insightjournal_csv_value(insightjournal_html_to_text($row->response));
+            return insightjournal_html_to_text($row->response);
         }
 
         return html_writer::div(

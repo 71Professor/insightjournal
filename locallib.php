@@ -24,20 +24,6 @@
  */
 
 /**
- * Prefix potentially executable spreadsheet values before CSV export.
- *
- * @param mixed $value Raw value.
- * @return string Sanitised value.
- */
-function insightjournal_csv_value($value): string {
-    $value = (string) $value;
-    if ($value !== '' && preg_match('/^[=\+\-@]/', $value)) {
-        return "'" . $value;
-    }
-    return $value;
-}
-
-/**
  * Convert stored response HTML to its visible plain-text form.
  *
  * Used to measure "visible characters" for minchars/maxchars and to decide
