@@ -18,7 +18,9 @@ Versions map to the `$plugin->release` value in `version.php`.
   and become available to any log-consuming plugin (analytics,
   notifications, etc.), which previously showed nothing for this
   activity at all. Purely additive and server-side; no visible change to
-  any page.
+  any page. Note that `entry_updated` fires once per autosave as well as
+  per manual save, so an actively-typing learner can generate multiple
+  log rows per session.
 
 ### Changed
 

@@ -112,6 +112,7 @@ class entry_manager {
             }
 
             $newrevision = $currentrevision + 1;
+            $iscreate = !$entry;
             try {
                 if ($entry) {
                     $entry->response = $response;
@@ -122,7 +123,7 @@ class entry_manager {
                     $DB->update_record('insightjournal_entries', $entry);
                     $id = $entry->id;
                 } else {
-                    $id = $DB->insert_record('insightjournal_entries', (object) [
+                    $entry = (object) [
                         'insightjournalid' => $diary->id,
                         'userid' => $userid,
                         'response' => $response,
@@ -131,7 +132,9 @@ class entry_manager {
                         'visibility' => $visibility,
                         'timecreated' => $now,
                         'timemodified' => $now,
-                    ]);
+                    ];
+                    $id = $DB->insert_record('insightjournal_entries', $entry);
+                    $entry->id = $id;
                 }
             } catch (\dml_write_exception $e) {
                 // A dml_write_exception here covers any failed write, not just
@@ -156,27 +159,6 @@ class entry_manager {
             $lock->release();
         }
 
-        // Fired after the lock is released, same as the completion update below -
-        // trigger() runs registered observers synchronously and could take
-        // arbitrary time, so neither belongs inside the per-entry lock. Reuses the
-        // same $entry truthiness the write branch above already decided on.
-        if ($entry) {
-            \mod_insightjournal\event\entry_updated::create_from_entry($entry, $diary, $cm, $course)->trigger();
-        } else {
-            $entry = (object) [
-                'id' => $id,
-                'insightjournalid' => $diary->id,
-                'userid' => $userid,
-                'response' => $response,
-                'responseformat' => FORMAT_HTML,
-                'revision' => $newrevision,
-                'visibility' => $visibility,
-                'timecreated' => $now,
-                'timemodified' => $now,
-            ];
-            \mod_insightjournal\event\entry_created::create_from_entry($entry, $diary, $cm, $course)->trigger();
-        }
-
         // Let core recalculate the state via custom_completion::get_state() so the
         // minchars rule is honoured and completion reverts when the response no
         // longer qualifies. Forcing COMPLETION_COMPLETE here would bypass minchars.
@@ -184,6 +166,18 @@ class entry_manager {
         $completion = new \completion_info($course);
         if ($completion->is_enabled($cm)) {
             $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
+        }
+
+        // Fired after both the lock release and the completion update above,
+        // matching Moodle core's own mod_choice submission ordering (completion
+        // settled first, then the event) - trigger() runs registered observers
+        // synchronously and could throw, so anything it might disrupt should
+        // already be settled first. $entry now holds the complete, post-write row
+        // in both branches (built once above, reused here - not rebuilt).
+        if ($iscreate) {
+            \mod_insightjournal\event\entry_created::create_from_entry($entry, $diary, $cm, $course)->trigger();
+        } else {
+            \mod_insightjournal\event\entry_updated::create_from_entry($entry, $diary, $cm, $course)->trigger();
         }
 
         $timestr = userdate($now, get_string('strftimedatetimeshort', 'langconfig'));
