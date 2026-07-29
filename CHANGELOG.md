@@ -40,6 +40,20 @@ Versions map to the `$plugin->release` value in `version.php`.
   `summary.php`'s user fetch also drops a similarly-unconditional `email`
   selection that turned out to be entirely unused.
 
+- **`coursereport.php`'s CSV export now uses Moodle's `csv_export_writer`
+  instead of a hand-written `fputcsv()` loop**, addressing the R2-12 review
+  finding. Two visible effects: it now begins with a UTF-8 byte-order mark
+  (BOM), matching `report.php`'s CSV export (previously the two reports'
+  CSV exports differed in this one respect — see the 0.7.1-beta entry
+  below); and its formula-injection escaping (a leading `=`/`+`/`-`/`@`
+  gets a defensive `'` prefix, per OWASP's CSV-injection guidance) now also
+  catches a value with leading whitespace or control characters before that
+  character, which the plugin's own previous hand-rolled check did not
+  catch. Column layout and content are otherwise unchanged. The activity
+  report's own CSV export (`report_table.php`) already went through
+  Moodle's core writer since 0.7.1-beta and needed no equivalent fix — its
+  now-redundant manual escaping calls were simply removed.
+
 ## [0.7.1-beta] - 2026-07-28
 
 ### Changed
