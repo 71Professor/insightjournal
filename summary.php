@@ -80,10 +80,13 @@ if ($userid && $userid != $USER->id) {
 }
 
 // Only fetch fields needed for display – avoids exposing password hashes etc. if object is passed further.
+// fullname() is the only thing this file ever reads from $viewuser, and
+// core_user\fields::for_name() already returns exactly the field set
+// fullname() needs - email was selected here but never actually used.
 $viewuser = $DB->get_record(
     'user',
     ['id' => $viewuserid],
-    'id,firstname,lastname,firstnamephonetic,lastnamephonetic,middlename,alternatename,email',
+    implode(',', \core_user\fields::for_name()->including('id')->get_required_fields()),
     MUST_EXIST
 );
 // When viewing another user, restrict to journals where viewall is explicitly granted.
