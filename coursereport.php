@@ -77,7 +77,12 @@ $blockallparticipants = $restricted && empty($restrictgroupids);
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
-$userfields = 'u.id,u.firstname,u.lastname,u.firstnamephonetic,u.lastnamephonetic,u.middlename,u.alternatename,u.email';
+$showemail = insightjournal_email_field_visible($coursecontext);
+$namefields = \core_user\fields::for_name()->including('id');
+if ($showemail) {
+    $namefields->including('email');
+}
+$userfields = $namefields->get_sql('u', false, '', '', false)->selects;
 
 if ($download === 'csv') {
     foreach ($activities as $cm) {
@@ -112,7 +117,7 @@ if ($download === 'csv') {
                 insightjournal_csv_value($diary->name),
                 $user->id,
                 insightjournal_csv_value(fullname($user)),
-                insightjournal_csv_value($user->email),
+                $showemail ? insightjournal_csv_value($user->email) : '',
                 $private
                     ? insightjournal_csv_value(get_string('entriesprivatenotice', 'insightjournal'))
                     : insightjournal_csv_value(insightjournal_html_to_text($entry->response ?? '')),
