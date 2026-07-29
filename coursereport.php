@@ -86,9 +86,9 @@ $namefields = \core_user\fields::for_name()->including('id');
 if ($showemail) {
     $namefields->including('email');
 }
-// ->selects only: for_name()/including('id'|'email') can never add a custom
-// profile field, so ->joins and ->params are always empty here - revisit this
-// assumption if a with_identity()/custom-field include is ever added.
+// Only ->selects is used below: for_name()/including('id'|'email') can never add
+// a custom profile field, so ->joins and ->params are always empty here - revisit
+// this assumption if a with_identity()/custom-field include is ever added.
 $userfields = $namefields->get_sql('u', false, '', '', false)->selects;
 
 if ($download === 'csv') {

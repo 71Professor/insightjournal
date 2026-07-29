@@ -98,9 +98,9 @@ class report_table extends table_sql {
         if ($this->showemail) {
             $userfields->including('email');
         }
-        // for_name()/including('email') can never add a custom profile field, so
-        // ->joins and ->params are always empty here - revisit this assumption if
-        // a with_identity()/custom-field include is ever added.
+        // The for_name()/including('email') call can never add a custom profile
+        // field, so ->joins and ->params are always empty here - revisit this
+        // assumption if a with_identity()/custom-field include is ever added.
         $userfieldsql = $userfields->get_sql('u');
 
         $params = ['diaryid' => $diary->id];
