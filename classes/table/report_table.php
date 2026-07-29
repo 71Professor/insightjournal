@@ -168,7 +168,7 @@ class report_table extends table_sql {
 
     /**
      * On-screen participant cell: name linked to their summary page, with
-     * their email shown underneath.
+     * their email shown underneath when the viewer is permitted to see it.
      *
      * @param stdClass $row The current row.
      * @return string HTML for the cell.
