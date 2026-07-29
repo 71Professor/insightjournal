@@ -117,6 +117,12 @@ Manager by default) also affects this plugin: without it, a viewer in a
 Separate-Groups activity only sees their own group's participants in
 reports — see [Reports](#reports).
 
+Moodle's core `moodle/site:viewuseridentity` capability (Teacher, Editing
+teacher, Manager by default) also affects this plugin: without it, or if
+the site admin has removed `email` from **Show user identity**, a
+viewer's reports show no participant email address — see
+[Reports](#reports).
+
 ---
 
 ## Reports
@@ -139,6 +145,13 @@ reports — see [Reports](#reports).
   their own course group's participants. Visible Groups and No Groups
   never restrict. The activity's own settings form gains the standard
   "Group mode" setting for this, same as any other Moodle activity.
+- **Participant email addresses are only shown to viewers who are allowed
+  to see them.** `report.php` and `coursereport.php` show/search/export a
+  participant's email only when the viewer holds Moodle's core
+  `moodle/site:viewuseridentity` capability *and* the site has `email`
+  configured in **Site administration → Users → Permissions → User
+  policies → Show user identity**. Table/CSV layout is unchanged either
+  way - the email cell is simply blank when not permitted.
 
 ---
 

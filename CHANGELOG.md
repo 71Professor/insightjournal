@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Versions map to the `$plugin->release` value in `version.php`.
 
+## [Unreleased]
+
+### Changed
+
+- **Reports no longer show a participant's email address to a viewer who
+  isn't allowed to see it.** `report.php` and `coursereport.php` used to
+  select and expose `u.email` unconditionally - on screen, in participant
+  search, and in CSV export. Email now only appears when the viewer holds
+  Moodle's `moodle/site:viewuseridentity` capability *and* the site admin
+  has kept `email` in **Site administration → Users → Permissions → User
+  policies → Show user identity**, addressing the R2-06 review finding. On
+  a default-configured site with the standard teacher/editing
+  teacher/manager roles, this is invisible - nothing changes. It only
+  matters for a restricted role or a site that has customised its
+  identity-field configuration. Table and CSV column layout are unchanged
+  either way; only the email value goes blank when not permitted.
+  `summary.php`'s user fetch also drops a similarly-unconditional `email`
+  selection that turned out to be entirely unused.
+
 ## [0.7.1-beta] - 2026-07-28
 
 ### Changed

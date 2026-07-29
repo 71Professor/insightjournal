@@ -81,6 +81,13 @@ bei aktivierter Gruppentrennung (Separate Groups) in den Berichten nur die
 Teilnehmenden der eigenen Gruppe(n) – siehe Abschnitt 6 „Berichte &
 Auswertung".
 
+Moodles Kern-Capability `moodle/site:viewuseridentity` (standardmäßig
+Trainer/in, Editing Trainer/in, Manager/in) wirkt sich ebenfalls aus: ohne
+sie – oder wenn die Website-Einstellung **Website-Administration →
+Nutzer/innen → Berechtigungen → Nutzerrichtlinien → Anzeige der
+Nutzeridentität** `email` nicht mehr enthält – zeigen die Berichte keine
+E-Mail-Adresse der Teilnehmenden an.
+
 ---
 
 ## 4  Trainer/innen-Workflow
@@ -133,6 +140,9 @@ Aufruf: Innerhalb der Aktivität auf **Bericht** klicken (nur für Trainer/innen
   die Capability `moodle/site:accessallgroups` nur die Einträge der eigenen
   Gruppe(n) – dasselbe gilt für den Kursgesamtbericht und die persönliche
   Zusammenfassung fremder Lernender.
+- E-Mail-Adressen der Teilnehmenden erscheinen nur, wenn die/der
+  Betrachter/in die Capability `moodle/site:viewuseridentity` besitzt und
+  die Website `email` weiterhin unter „Anzeige der Nutzeridentität" führt
 - Paginiert (Standard: 20 Teilnehmende pro Seite, über `perpage` anpassbar)
 
 ### 6.2  Persönliche Zusammenfassung
