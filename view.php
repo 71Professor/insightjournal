@@ -96,8 +96,7 @@ if ($canwrite) {
     $entryformhtml = $mform->render();
 }
 
-$completion = new completion_info($course);
-$completion->set_module_viewed($cm);
+insightjournal_view($diary, $course, $cm, $context);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($diary->name));

@@ -227,3 +227,30 @@ function insightjournal_reset_course_userdata($data) {
     }
     return $status;
 }
+
+/**
+ * Triggers the course_module_viewed event and marks the activity as
+ * viewed for completion tracking.
+ *
+ * @param stdClass $diary The insight journal instance.
+ * @param stdClass $course The course the instance belongs to.
+ * @param stdClass $cm The course module.
+ * @param context_module $context The activity's module context.
+ * @return void
+ */
+function insightjournal_view(stdClass $diary, stdClass $course, stdClass $cm, context_module $context): void {
+    global $CFG;
+    require_once($CFG->libdir . '/completionlib.php');
+
+    $event = \mod_insightjournal\event\course_module_viewed::create([
+        'context' => $context,
+        'objectid' => $diary->id,
+    ]);
+    $event->add_record_snapshot('course_modules', $cm);
+    $event->add_record_snapshot('course', $course);
+    $event->add_record_snapshot('insightjournal', $diary);
+    $event->trigger();
+
+    $completion = new completion_info($course);
+    $completion->set_module_viewed($cm);
+}
