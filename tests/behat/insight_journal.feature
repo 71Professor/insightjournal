@@ -351,3 +351,27 @@ Feature: Insight journal activity
     And I log in as "teacher2"
     And I am on the insight journal summary for "student1" in "Course 1"
     Then I should see "From group A."
+
+  Scenario: A teacher without permission to view user identity sees no participant email
+    Given the following "users" exist:
+      | username | firstname | lastname | email                |
+      | student2 | Student   | 2        | student2@example.com |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | student2 | C1     | student |
+    And the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "Response from student 2."
+    And I press "Save"
+    And I log out
+    And the following "permission overrides" exist:
+      | capability                   | permission | role           | contextlevel | reference |
+      | moodle/site:viewuseridentity | Prevent    | editingteacher | Course       | C1        |
+    And I log in as "teacher1"
+    And I am on the report page for "My Journal" with "20" per page
+    Then I should see "Student 2"
+    And I should not see "student2@example.com"
+    When I am on the course insight report for "Course 1" with "20" per page
+    Then I should see "Student 2"
