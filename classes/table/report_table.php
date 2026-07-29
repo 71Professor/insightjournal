@@ -57,6 +57,9 @@ class report_table extends table_sql {
     /** @var context_module The activity's module context. */
     protected context_module $context;
 
+    /** @var bool Whether the current user may see participant email addresses. */
+    protected bool $showemail;
+
     /**
      * Builds the table for one activity's entries, optionally filtered by a search term.
      *
@@ -88,17 +91,29 @@ class report_table extends table_sql {
         $this->cm = $cm;
         $this->diary = $diary;
         $this->context = $context;
+        $this->showemail = insightjournal_email_field_visible($context);
+
+        $userfields = \core_user\fields::for_name();
+        if ($this->showemail) {
+            $userfields->including('email');
+        }
+        $userfieldsql = $userfields->get_sql('u');
 
         $params = ['diaryid' => $diary->id];
         $where = 'e.insightjournalid = :diaryid';
         if ($search !== '') {
             $needle = '%' . $DB->sql_like_escape($search) . '%';
-            $where .= ' AND (' . $DB->sql_like('u.firstname', ':sfn', false) .
-                      ' OR ' . $DB->sql_like('u.lastname', ':sln', false) .
-                      ' OR ' . $DB->sql_like('u.email', ':sem', false) . ')';
+            $clauses = [
+                $DB->sql_like('u.firstname', ':sfn', false),
+                $DB->sql_like('u.lastname', ':sln', false),
+            ];
             $params['sfn'] = $needle;
             $params['sln'] = $needle;
-            $params['sem'] = $needle;
+            if ($this->showemail) {
+                $clauses[] = $DB->sql_like('u.email', ':sem', false);
+                $params['sem'] = $needle;
+            }
+            $where .= ' AND (' . implode(' OR ', $clauses) . ')';
         }
         if ($restrictuserids !== null) {
             [$rinsql, $rparams] = $DB->get_in_or_equal($restrictuserids, SQL_PARAMS_NAMED, 'grp', true, -1);
@@ -107,7 +122,7 @@ class report_table extends table_sql {
         }
 
         $this->set_sql(
-            'e.*, u.firstname, u.lastname, u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, u.email',
+            'e.*' . $userfieldsql->selects,
             '{insightjournal_entries} e JOIN {user} u ON u.id = e.userid',
             $where,
             $params
@@ -168,8 +183,11 @@ class report_table extends table_sql {
             ))->out_as_local_url(false),
         ]);
 
-        return html_writer::link($summaryurl, fullname($row)) .
-            html_writer::div(s($row->email), 'small text-muted');
+        $html = html_writer::link($summaryurl, fullname($row));
+        if ($this->showemail) {
+            $html .= html_writer::div(s($row->email), 'small text-muted');
+        }
+        return $html;
     }
 
     /**
@@ -230,7 +248,7 @@ class report_table extends table_sql {
      * @return string
      */
     public function col_email(stdClass $row): string {
-        return insightjournal_csv_value($row->email);
+        return insightjournal_csv_value($row->email ?? '');
     }
 
     /**

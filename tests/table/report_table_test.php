@@ -310,6 +310,9 @@ final class report_table_test extends advanced_testcase {
      * confirmed empirically, not just theorised.
      */
     public function test_csv_export_matches_legacy_column_format(): void {
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $this->setUser($teacher);
+
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'CSV entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
 
@@ -381,5 +384,108 @@ final class report_table_test extends advanced_testcase {
 
         $this->assertSame(get_string('entriesprivatenotice', 'mod_insightjournal'), $row['response']);
         $this->assertSame('', $row['timemodified']);
+    }
+
+    /**
+     * The muted email line under a participant's name appears when the
+     * viewer holds moodle/site:viewuseridentity (the default for the
+     * teacher archetype).
+     */
+    public function test_email_shown_from_screen_with_capability(): void {
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $this->setUser($teacher);
+
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'Entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+
+        $html = $this->render_table();
+
+        $this->assertStringContainsString($student->email, $html);
+    }
+
+    /**
+     * The email line is entirely absent - not just visually hidden - when
+     * the viewer lacks moodle/site:viewuseridentity, even though they still
+     * see the participant's name.
+     */
+    public function test_email_hidden_from_screen_without_capability(): void {
+        global $DB;
+
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability('moodle/site:viewuseridentity', CAP_PREVENT, $teacherroleid, $this->context, true);
+        $this->setUser($teacher);
+
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'Entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+
+        $html = $this->render_table();
+
+        $this->assertStringContainsString(fullname($student), $html);
+        $this->assertStringNotContainsString($student->email, $html);
+    }
+
+    /**
+     * Searching by an email substring only matches when the viewer holds
+     * moodle/site:viewuseridentity - the WHERE clause never touches
+     * u.email for a viewer who lacks it.
+     */
+    public function test_search_by_email_requires_capability(): void {
+        global $DB;
+
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $this->setUser($teacher);
+        $student = $this->getDataGenerator()->create_and_enrol(
+            $this->course,
+            'student',
+            ['email' => 'findme@example.com']
+        );
+        $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'Entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+
+        $this->assertStringContainsString(fullname($student), $this->render_table('findme'));
+
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability('moodle/site:viewuseridentity', CAP_PREVENT, $teacherroleid, $this->context, true);
+
+        $this->assertStringNotContainsString(fullname($student), $this->render_table('findme'));
+    }
+
+    /**
+     * The CSV export's email column stays present (same 9-column legacy
+     * format), but its value is blank when the viewer lacks
+     * moodle/site:viewuseridentity. See
+     * test_csv_export_matches_legacy_column_format() for why this tests
+     * via query_db()/format_row() rather than out().
+     */
+    public function test_csv_export_blanks_email_without_capability(): void {
+        global $DB;
+
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability('moodle/site:viewuseridentity', CAP_PREVENT, $teacherroleid, $this->context, true);
+        $this->setUser($teacher);
+
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->ij_generator()->create_entry($this->diary, (int) $student->id, 'CSV entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+
+        $table = new report_table('report_table_test_csv_noemail', $this->course, $this->cm, $this->diary, $this->context);
+        ob_start();
+        $table->is_downloading('csv', 'insightjournal-test');
+        $table->setup_columns();
+        $table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $this->cm->id]));
+        $table->setup();
+        $table->query_db(20, false);
+        ob_end_clean();
+
+        $this->assertContains('email', $table->headers);
+
+        $rows = [];
+        foreach ($table->rawdata as $row) {
+            $rows[] = $table->format_row($row);
+        }
+        $this->assertCount(1, $rows);
+        $row = reset($rows);
+
+        $this->assertSame('', $row['email']);
     }
 }
