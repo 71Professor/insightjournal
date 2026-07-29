@@ -47,12 +47,18 @@ Versions map to the `$plugin->release` value in `version.php`.
   CSV exports differed in this one respect — see the 0.7.1-beta entry
   below); and its formula-injection escaping (a leading `=`/`+`/`-`/`@`
   gets a defensive `'` prefix, per OWASP's CSV-injection guidance) now also
-  catches a value with leading whitespace or control characters before that
-  character, which the plugin's own previous hand-rolled check did not
-  catch. Column layout and content are otherwise unchanged. The activity
-  report's own CSV export (`report_table.php`) already went through
-  Moodle's core writer since 0.7.1-beta and needed no equivalent fix — its
-  now-redundant manual escaping calls were simply removed.
+  catches a value with leading whitespace (spaces, tabs, line breaks) before
+  that character, which the plugin's own previous hand-rolled check did not
+  catch. If you parse this export programmatically, read it as
+  UTF-8-with-BOM (e.g. Python's `csv` module needs `encoding='utf-8-sig'`,
+  not plain `'utf-8'`) - otherwise a check like `row[0] == 'courseid'` will
+  now fail against the BOM-prefixed first cell. The export's `Content-Type`
+  also changes from `text/csv; charset=utf-8` to plain `text/csv`, matching
+  `report.php`'s CSV export. Column layout and content are otherwise
+  unchanged. The activity report's own CSV export (`report_table.php`)
+  already went through Moodle's core writer since 0.7.1-beta and needed no
+  equivalent fix — its now-redundant manual escaping calls were simply
+  removed.
 
 ## [0.7.1-beta] - 2026-07-28
 

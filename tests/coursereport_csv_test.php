@@ -216,4 +216,23 @@ final class coursereport_csv_test extends advanced_testcase {
 
         $this->assertStringStartsWith(\core_text::UTF8_BOM, $writer->print_csv_data(true));
     }
+
+    /**
+     * csv_export_writer escapes a formula-triggering character even after
+     * leading whitespace - the other half of the review's acceptance
+     * criterion (the first half, BOM, is pinned by the test above). This
+     * is why insightjournal_coursereport_csv_row() is allowed to return
+     * values unescaped: csv_export_writer::add_data() (via core's
+     * escape_spreadsheet_formula()) covers this case, which the plugin's
+     * own now-deleted insightjournal_csv_value() did not.
+     */
+    public function test_csv_export_writer_escapes_formula_after_leading_whitespace(): void {
+        global $CFG;
+        require_once($CFG->libdir . '/csvlib.class.php');
+
+        $writer = new \csv_export_writer('comma', '"', 'text/csv', true);
+        $writer->add_data(['  =SUM(1+1)']);
+
+        $this->assertStringContainsString("'  =SUM(1+1)", $writer->print_csv_data(true));
+    }
 }

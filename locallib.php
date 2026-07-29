@@ -206,7 +206,7 @@ function insightjournal_coursereport_csv_row(
         $diary->name,
         $user->id,
         fullname($user),
-        $showemail ? $user->email : '',
+        $showemail ? ($user->email ?? '') : '',
         $private
             ? get_string('entriesprivatenotice', 'insightjournal')
             : insightjournal_html_to_text($entry->response ?? ''),
