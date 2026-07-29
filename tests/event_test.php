@@ -31,6 +31,9 @@ use advanced_testcase;
 use completion_info;
 use context_module;
 use mod_insightjournal\event\course_module_viewed;
+use mod_insightjournal\event\entry_created;
+use mod_insightjournal\event\entry_updated;
+use mod_insightjournal\local\entry_manager;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use stdClass;
 
@@ -131,5 +134,102 @@ final class event_test extends advanced_testcase {
         $completion = new completion_info($course);
         $data = $completion->get_data($cm, false, (int) $student->id);
         $this->assertEquals(COMPLETION_VIEWED, $data->viewed);
+    }
+
+    /**
+     * Saving a first-ever entry fires exactly one entry_created event (not
+     * entry_updated), with the correct object, context, user, and
+     * insightjournalid.
+     */
+    public function test_first_save_fires_entry_created(): void {
+        $sink = $this->redirectEvents();
+        $result = entry_manager::save(
+            $this->diary,
+            $this->course,
+            $this->cm,
+            (int) $this->student->id,
+            'First response.',
+            0,
+            false
+        );
+        $events = $sink->get_events();
+        $sink->close();
+
+        $this->assertFalse($result['conflict']);
+        $this->assertCount(1, $events);
+        $event = reset($events);
+        $this->assertInstanceOf(entry_created::class, $event);
+        $this->assertEquals($result['id'], $event->objectid);
+        $this->assertEquals($this->context->id, $event->contextid);
+        $this->assertEquals((int) $this->student->id, $event->userid);
+        $this->assertEquals($this->diary->id, $event->other['insightjournalid']);
+    }
+
+    /**
+     * Saving again on an existing entry fires exactly one entry_updated
+     * event (not another entry_created).
+     */
+    public function test_second_save_fires_entry_updated(): void {
+        $first = entry_manager::save(
+            $this->diary,
+            $this->course,
+            $this->cm,
+            (int) $this->student->id,
+            'First response.',
+            0,
+            false
+        );
+
+        $sink = $this->redirectEvents();
+        $result = entry_manager::save(
+            $this->diary,
+            $this->course,
+            $this->cm,
+            (int) $this->student->id,
+            'Second response.',
+            $first['revision'],
+            false
+        );
+        $events = $sink->get_events();
+        $sink->close();
+
+        $this->assertFalse($result['conflict']);
+        $this->assertCount(1, $events);
+        $event = reset($events);
+        $this->assertInstanceOf(entry_updated::class, $event);
+        $this->assertEquals($first['id'], $event->objectid);
+        $this->assertEquals($this->diary->id, $event->other['insightjournalid']);
+    }
+
+    /**
+     * A conflicting save (stale expectedrevision) fires zero events - the
+     * review's explicit acceptance criterion for this feature.
+     */
+    public function test_conflicting_save_fires_no_events(): void {
+        entry_manager::save(
+            $this->diary,
+            $this->course,
+            $this->cm,
+            (int) $this->student->id,
+            'First response.',
+            0,
+            false
+        );
+
+        $sink = $this->redirectEvents();
+        $result = entry_manager::save(
+            $this->diary,
+            $this->course,
+            $this->cm,
+            (int) $this->student->id,
+            'Stale response.',
+            0,
+            false
+        );
+        $events = $sink->get_events();
+        $sink->close();
+
+        $this->assertTrue($result['conflict']);
+        $this->assertCount(0, $events);
     }
 }

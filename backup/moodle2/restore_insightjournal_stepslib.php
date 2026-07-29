@@ -71,11 +71,13 @@ class restore_insightjournal_activity_structure_step extends restore_activity_st
     protected function process_insightjournal_entry($data) {
         global $DB;
         $data = (object) $data;
+        $oldid = $data->id;
         unset($data->id);
         $data->insightjournalid = $this->get_new_parentid('insightjournal');
         $data->userid = $this->get_mappingid('user', $data->userid);
         if ($data->userid && $data->insightjournalid) {
-            $DB->insert_record('insightjournal_entries', $data);
+            $newid = $DB->insert_record('insightjournal_entries', $data);
+            $this->set_mapping('insightjournal_entry', $oldid, $newid);
         }
     }
 

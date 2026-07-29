@@ -156,6 +156,27 @@ class entry_manager {
             $lock->release();
         }
 
+        // Fired after the lock is released, same as the completion update below -
+        // trigger() runs registered observers synchronously and could take
+        // arbitrary time, so neither belongs inside the per-entry lock. Reuses the
+        // same $entry truthiness the write branch above already decided on.
+        if ($entry) {
+            \mod_insightjournal\event\entry_updated::create_from_entry($entry, $diary, $cm, $course)->trigger();
+        } else {
+            $entry = (object) [
+                'id' => $id,
+                'insightjournalid' => $diary->id,
+                'userid' => $userid,
+                'response' => $response,
+                'responseformat' => FORMAT_HTML,
+                'revision' => $newrevision,
+                'visibility' => $visibility,
+                'timecreated' => $now,
+                'timemodified' => $now,
+            ];
+            \mod_insightjournal\event\entry_created::create_from_entry($entry, $diary, $cm, $course)->trigger();
+        }
+
         // Let core recalculate the state via custom_completion::get_state() so the
         // minchars rule is honoured and completion reverts when the response no
         // longer qualifies. Forcing COMPLETION_COMPLETE here would bypass minchars.
