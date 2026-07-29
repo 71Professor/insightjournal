@@ -55,7 +55,7 @@ Clone the repository into `mod/insightjournal/` and visit
 
   In development environments with `$CFG->cachejs = false` this step is not required.
 
-**Requirements:** Moodle 4.5+ · PHP 7.4+ · No Composer or Node.js runtime dependencies.
+**Requirements:** Moodle 4.5+ · PHP 8.1+ · No Composer or Node.js runtime dependencies.
 
 ---
 
@@ -103,14 +103,14 @@ save-as-PDF).
 
 ## Capabilities
 
-| Capability                       | Default roles                     |
-| -------------------------------- | --------------------------------- |
-| `mod/insightjournal:addinstance` | Editing teacher, Manager          |
-| `mod/insightjournal:view`        | Student, Teacher, Editing teacher |
-| `mod/insightjournal:submit`      | Student                           |
-| `mod/insightjournal:viewown`     | Student                           |
-| `mod/insightjournal:viewall`     | Teacher, Editing teacher, Manager |
-| `mod/insightjournal:export`      | Teacher, Editing teacher, Manager |
+| Capability                       | Default roles                              |
+| -------------------------------- | ------------------------------------------- |
+| `mod/insightjournal:addinstance` | Editing teacher, Manager                    |
+| `mod/insightjournal:view`        | Student, Teacher, Editing teacher, Manager   |
+| `mod/insightjournal:submit`      | Student                                     |
+| `mod/insightjournal:viewown`     | Student, Teacher, Editing teacher, Manager  |
+| `mod/insightjournal:viewall`     | Teacher, Editing teacher, Manager           |
+| `mod/insightjournal:export`      | Teacher, Editing teacher, Manager           |
 
 Moodle's core `moodle/site:accessallgroups` capability (Editing teacher,
 Manager by default) also affects this plugin: without it, a viewer in a
@@ -131,7 +131,9 @@ viewer's reports show no participant email address — see
   export (requires `mod/insightjournal:export`), and pagination (20 per
   page by default, adjustable via a `perpage` URL parameter).
 - **`coursereport.php`** — course-level progress report across all Insight
-  Journal activities, paginated the same way as the activity report.
+  Journal activities, with CSV export (also requires
+  `mod/insightjournal:export`, checked per activity), paginated the same
+  way as the activity report.
 - **`summary.php`** — personal or trainer-selected learner summary; suitable for
   browser printing. Each of the viewer's own, still-writable entries shows a
   "Go to entry" link straight back to that activity. A trainer can also link
@@ -223,9 +225,11 @@ extension installed in the Moodle checkout being analysed
 to load a real site. Run from the Moodle root:
 `vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon`. CI runs this
 automatically on one representative branch (`MOODLE_500_STABLE`); a new type
-error there fails the build. `phpstan-baseline.neon` currently holds one
-documented suppression (a known false positive on `format_text()`'s `$format`
-parameter when passed the `FORMAT_HTML` constant).
+error there fails the build. `phpstan-baseline.neon` currently holds two
+documented suppressions: a known false positive on `format_text()`'s `$format`
+parameter when passed the `FORMAT_HTML` constant, and one on
+`moodleform_mod::standard_intro_elements()`'s `$customlabel` docblock (wrong
+in Moodle core itself — the method fully supports a string label).
 
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover a
 plain form submit with no JavaScript, the save/reload roundtrip, editing a

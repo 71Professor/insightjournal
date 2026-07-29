@@ -16,7 +16,7 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 
 **Aktivitätsbericht (`report.php`)** – Trainer/innen sehen alle Antworten der Kursteilnehmenden für eine Aufgabe/Frage; Volltextsuche nach Teilnehmenden; CSV-Export; paginiert (Standard: 20 pro Seite, über den URL-Parameter `perpage` anpassbar).
 
-**Kursgesamtbericht (`coursereport.php`)** – Übersicht über alle Insight-Journal-Aktivitäten im Kurs mit Fortschrittsanzeige je Teilnehmende/r; paginiert wie der Aktivitätsbericht.
+**Kursgesamtbericht (`coursereport.php`)** – Übersicht über alle Insight-Journal-Aktivitäten im Kurs mit Fortschrittsanzeige je Teilnehmende/r; CSV-Export (erfordert ebenfalls die Capability `mod/insightjournal:export`, je Aktivität geprüft); paginiert wie der Aktivitätsbericht.
 
 **Persönliche Zusammenfassung (`summary.php`)** – Lernende sehen alle ihre Antworten auf einer druckbaren Seite. Trainer/innen können die Zusammenfassung eines bestimmten Teilnehmenden aufrufen.
 
@@ -58,7 +58,7 @@ Nach Änderungen an Sprachstrings, Templates oder JavaScript: **Cache bereinigen
 | Plugin-Typ             | Moodle Activity Module (`mod`)                   |
 | Plugin-Name            | `mod_insightjournal`                             |
 | Moodle-Kompatibilität  | Moodle 4.5+ (`requires = 2024100700`)            |
-| PHP-Anforderung        | PHP 7.4+                                         |
+| PHP-Anforderung        | PHP 8.1+                                         |
 | Externe Abhängigkeiten | Keine (kein Composer, kein Node.js zur Laufzeit) |
 | Reifegrad              | Beta (`MATURITY_BETA`)                           |
 
@@ -68,9 +68,9 @@ Die Capabilities werden bei der Installation automatisch angelegt. Zur Kontrolle
 
 | Capability                       | Standardmäßig vergeben an                  |
 | -------------------------------- | ------------------------------------------ |
-| `mod/insightjournal:view`        | Lernende, Trainer/in                       |
+| `mod/insightjournal:view`        | Lernende, Trainer/in, Editing Trainer/in, Manager/in |
 | `mod/insightjournal:submit`      | Lernende                                   |
-| `mod/insightjournal:viewown`     | Lernende                                   |
+| `mod/insightjournal:viewown`     | Lernende, Trainer/in, Editing Trainer/in, Manager/in |
 | `mod/insightjournal:viewall`     | Trainer/in, Editing Trainer/in, Manager/in |
 | `mod/insightjournal:export`      | Trainer/in, Editing Trainer/in, Manager/in |
 | `mod/insightjournal:addinstance` | Editing Trainer/in, Manager/in             |

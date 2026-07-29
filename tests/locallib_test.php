@@ -38,10 +38,11 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
  * Tests for {@see \insightjournal_html_to_text()}, {@see \insightjournal_prompt_style()},
- * and {@see \insightjournal_entry_visible_to_teacher()}.
+ * {@see \insightjournal_contrasting_text_color()}, and {@see \insightjournal_entry_visible_to_teacher()}.
  */
 #[CoversFunction('insightjournal_html_to_text')]
 #[CoversFunction('insightjournal_prompt_style')]
+#[CoversFunction('insightjournal_contrasting_text_color')]
 #[CoversFunction('insightjournal_entry_visible_to_teacher')]
 final class locallib_test extends advanced_testcase {
     /**
@@ -106,6 +107,48 @@ final class locallib_test extends advanced_testcase {
      */
     public function test_prompt_style_rejects_invalid_colour(): void {
         $this->assertEquals('', \insightjournal_prompt_style('notacolor'));
+    }
+
+    /**
+     * A light background colour gets black text - white text on yellow
+     * would fail WCAG contrast.
+     */
+    public function test_prompt_style_uses_black_text_on_light_background(): void {
+        $style = \insightjournal_prompt_style('#ffcc00');
+        $this->assertStringContainsString('color: #000000;', $style);
+    }
+
+    /**
+     * A dark background colour gets white text.
+     */
+    public function test_prompt_style_uses_white_text_on_dark_background(): void {
+        $style = \insightjournal_prompt_style('#000080');
+        $this->assertStringContainsString('color: #ffffff;', $style);
+    }
+
+    /**
+     * White background contrasts better with black text than white.
+     */
+    public function test_contrasting_text_color_black_on_white(): void {
+        $this->assertEquals('#000000', \insightjournal_contrasting_text_color('#ffffff'));
+    }
+
+    /**
+     * Black background contrasts better with white text than black.
+     */
+    public function test_contrasting_text_color_white_on_black(): void {
+        $this->assertEquals('#ffffff', \insightjournal_contrasting_text_color('#000000'));
+    }
+
+    /**
+     * A 3-digit shorthand hex colour is expanded correctly before the
+     * contrast calculation.
+     */
+    public function test_contrasting_text_color_expands_shorthand_hex(): void {
+        $this->assertEquals(
+            \insightjournal_contrasting_text_color('#000000'),
+            \insightjournal_contrasting_text_color('#000')
+        );
     }
 
     /**

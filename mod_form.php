@@ -26,6 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/course/moodleform_mod.php');
+require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
 /**
  * Form definition for creating and editing an insightjournal activity instance.
@@ -107,6 +108,13 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $promptcolor = trim((string) ($data['promptcolor'] ?? ''));
         if ($promptcolor !== '' && !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $promptcolor)) {
             $errors['promptcolor'] = get_string('err_invalidcolor', 'insightjournal');
+        }
+        // Client-side 'required' rule on prompttext_editor is not enough on its own -
+        // it can be bypassed by posting directly to this form, and an editor can also
+        // serialise an empty entry as markup like "<p></p>" rather than "".
+        $prompttext = $data['prompttext_editor']['text'] ?? '';
+        if (insightjournal_html_to_text($prompttext) === '') {
+            $errors['prompttext_editor'] = get_string('err_emptyprompt', 'insightjournal');
         }
         return $errors;
     }

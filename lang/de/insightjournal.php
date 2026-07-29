@@ -40,6 +40,7 @@ $string['downloadcsv'] = 'CSV herunterladen';
 $string['entriesprivatenotice'] = 'Die Insight-Journal-Einträge sind derzeit privat. Nur die Person, die einen Eintrag verfasst hat, kann ihn einsehen.';
 $string['entryprivate'] = 'Diesen Eintrag privat halten (nur für dich sichtbar)';
 $string['entryprivate_help'] = 'Standardmäßig ist dein Eintrag für Trainer/innen mit der Fähigkeit „Alle Einträge ansehen" sichtbar. Aktiviere dieses Kästchen, um ihn nur für dich sichtbar zu halten – Trainer/innen sehen dann einen Hinweistext statt deiner Antwort. Du kannst dies jederzeit ändern.';
+$string['err_emptyprompt'] = 'Gib eine Aufgabe oder Frage ein - die Aufgabe/Frage darf nicht leer sein.';
 $string['err_invalidcolor'] = 'Gib einen gültigen Hex-Farbcode ein (z. B. #ffcc00) oder lasse das Feld leer.';
 $string['err_mingtmax'] = 'Die Mindestzeichenzahl darf die Höchstzeichenzahl nicht überschreiten.';
 $string['evententrycreated'] = 'Insight-Journal-Eintrag erstellt';

@@ -49,6 +49,11 @@ function insightjournal_html_to_text(string $html): string {
 /**
  * Build an inline CSS style for the task/question box's background colour.
  *
+ * Also sets a matching text colour (black or white, whichever contrasts
+ * better) so the prompt stays readable regardless of which background
+ * colour a trainer picks - a trainer choosing a dark colour would
+ * otherwise pair it with the theme's default dark text.
+ *
  * @param string|null $hexcolor Hex colour code (e.g. "#ffcc00" or "abc"), or empty/null for none.
  * @return string Inline style attribute value, or '' if no valid colour is set.
  */
@@ -60,8 +65,37 @@ function insightjournal_prompt_style(?string $hexcolor): string {
     if ($hexcolor[0] !== '#') {
         $hexcolor = '#' . $hexcolor;
     }
+    $textcolor = insightjournal_contrasting_text_color($hexcolor);
 
-    return "background-color: {$hexcolor}; padding: 0.75rem 1rem; border-radius: 0.25rem;";
+    return "background-color: {$hexcolor}; color: {$textcolor}; padding: 0.75rem 1rem; border-radius: 0.25rem;";
+}
+
+/**
+ * Picks black or white text, whichever gives the higher WCAG 2.x contrast
+ * ratio against the given background colour.
+ *
+ * @param string $hexcolor Background colour, as "#rrggbb" or "#rgb" (leading "#" required).
+ * @return string "#000000" or "#ffffff".
+ */
+function insightjournal_contrasting_text_color(string $hexcolor): string {
+    $hex = ltrim($hexcolor, '#');
+    if (strlen($hex) === 3) {
+        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+    }
+
+    $channel = static function (int $value): float {
+        $value /= 255;
+        return $value <= 0.03928 ? $value / 12.92 : (($value + 0.055) / 1.055) ** 2.4;
+    };
+    $luminance = 0.2126 * $channel(hexdec(substr($hex, 0, 2)))
+        + 0.7152 * $channel(hexdec(substr($hex, 2, 2)))
+        + 0.0722 * $channel(hexdec(substr($hex, 4, 2)));
+
+    // WCAG contrast ratio of white/black text against this background; pick whichever wins.
+    $contrastwithwhite = 1.05 / ($luminance + 0.05);
+    $contrastwithblack = ($luminance + 0.05) / 0.05;
+
+    return $contrastwithwhite >= $contrastwithblack ? '#ffffff' : '#000000';
 }
 
 /**
