@@ -8,6 +8,18 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Added
+
+- **The activity now fires Moodle's standard events**, addressing the
+  R2-09 review finding: `course_module_viewed` on every activity view,
+  and new `entry_created`/`entry_updated` events on every successful
+  entry save (never on a save that's rejected as a conflict). This makes
+  activity show up in Moodle's standard activity log (**Reports → Logs**)
+  and become available to any log-consuming plugin (analytics,
+  notifications, etc.), which previously showed nothing for this
+  activity at all. Purely additive and server-side; no visible change to
+  any page.
+
 ### Changed
 
 - **Reports no longer show a participant's email address to a viewer who
