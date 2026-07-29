@@ -197,3 +197,46 @@ function insightjournal_current_user_group_userids(stdClass $course): array {
 function insightjournal_email_field_visible(context $context): bool {
     return in_array('email', \core_user\fields::for_identity($context)->get_required_fields(), true);
 }
+
+/**
+ * Builds one course-report CSV row: one participant's entry (or lack of
+ * one) for one activity. Returned in the plugin's long-standing 9-column
+ * legacy order: courseid, coursename, cmid, activityname, userid,
+ * fullname, email, response, timemodified.
+ *
+ * Values are returned raw/unescaped - spreadsheet-formula-prefix escaping
+ * is csv_export_writer::add_data()'s job once this row reaches it, not
+ * this function's.
+ *
+ * @param stdClass $course The course the activity belongs to.
+ * @param int $cmid The activity's course-module id.
+ * @param stdClass $diary The insight journal instance.
+ * @param stdClass $user The participant.
+ * @param stdClass|null $entry The participant's entry for this activity, or null if they have none.
+ * @param bool $showemail Whether the viewer may see participant email addresses.
+ * @return array The 9-column row.
+ */
+function insightjournal_coursereport_csv_row(
+    stdClass $course,
+    int $cmid,
+    stdClass $diary,
+    stdClass $user,
+    ?stdClass $entry,
+    bool $showemail
+): array {
+    $private = $entry && !insightjournal_entry_visible_to_teacher($entry);
+
+    return [
+        $course->id,
+        $course->fullname,
+        $cmid,
+        $diary->name,
+        $user->id,
+        fullname($user),
+        $showemail ? $user->email : '',
+        $private
+            ? get_string('entriesprivatenotice', 'insightjournal')
+            : insightjournal_html_to_text($entry->response ?? ''),
+        (!$private && $entry) ? userdate($entry->timemodified) : '',
+    ];
+}
