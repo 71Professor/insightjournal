@@ -111,9 +111,12 @@ if ($download === 'csv') {
     }
 
     require_once($CFG->libdir . '/csvlib.class.php');
-    $writer = new csv_export_writer('comma', '"', 'text/csv', true); // bom: true - matches report.php's dataformat-writer BOM.
+    $writer = new csv_export_writer('comma', '"', 'text/csv', true); // BOM: true - matches report.php's dataformat-writer BOM.
     $writer->filename = clean_filename('insightjournal-course-' . $course->shortname . '.csv');
-    $writer->add_data(['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
+    $writer->add_data([
+        'courseid', 'coursename', 'cmid', 'activityname', 'userid',
+        'fullname', 'email', 'response', 'timemodified',
+    ]);
     foreach ($participants as $user) {
         foreach ($diaries as $diary) {
             $writer->add_data(insightjournal_coursereport_csv_row(
