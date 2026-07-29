@@ -79,19 +79,6 @@ function insightjournal_prompt_style(?string $hexcolor): string {
 }
 
 /**
- * Send standard CSV download headers.
- *
- * @param string $filename Clean file name.
- * @return void
- */
-function insightjournal_send_csv_headers(string $filename): void {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="' . clean_filename($filename) . '"');
-    header('Pragma: no-cache');
-    header('Expires: 0');
-}
-
-/**
  * Whether trainers/teachers may currently see this specific insight journal entry.
  *
  * Controlled per entry by the learner who authored it, via the visibility

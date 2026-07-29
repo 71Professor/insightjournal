@@ -198,4 +198,22 @@ final class coursereport_csv_test extends advanced_testcase {
 
         $this->assertSame('=cmd|"/c calc"!A1', $row[3]);
     }
+
+    /**
+     * csv_export_writer, constructed exactly as coursereport.php constructs
+     * it below, prefixes its output with a UTF-8 BOM - the review's
+     * explicit acceptance criterion for Excel/LibreOffice compatibility.
+     * This test exercises Moodle's own core class directly (bom: true is a
+     * constructor argument, not plugin logic), so it passes immediately -
+     * it exists to pin the exact recipe, not to drive new implementation.
+     */
+    public function test_csv_export_writer_recipe_produces_bom(): void {
+        global $CFG;
+        require_once($CFG->libdir . '/csvlib.class.php');
+
+        $writer = new \csv_export_writer('comma', '"', 'text/csv', true);
+        $writer->add_data(['header']);
+
+        $this->assertStringStartsWith(\core_text::UTF8_BOM, $writer->print_csv_data(true));
+    }
 }

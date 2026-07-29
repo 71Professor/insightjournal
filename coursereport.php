@@ -110,30 +110,23 @@ if ($download === 'csv') {
         }
     }
 
-    insightjournal_send_csv_headers('insightjournal-course-' . $course->shortname . '.csv');
-    $out = fopen('php://output', 'w');
-    fputcsv($out, ['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
+    require_once($CFG->libdir . '/csvlib.class.php');
+    $writer = new csv_export_writer('comma', '"', 'text/csv', true); // bom: true - matches report.php's dataformat-writer BOM.
+    $writer->filename = clean_filename('insightjournal-course-' . $course->shortname . '.csv');
+    $writer->add_data(['courseid', 'coursename', 'cmid', 'activityname', 'userid', 'fullname', 'email', 'response', 'timemodified']);
     foreach ($participants as $user) {
         foreach ($diaries as $diary) {
-            $entry = $entries[$user->id][$diary->id] ?? null;
-            $private = $entry && !insightjournal_entry_visible_to_teacher($entry);
-            fputcsv($out, [
-                $course->id,
-                insightjournal_csv_value($course->fullname),
+            $writer->add_data(insightjournal_coursereport_csv_row(
+                $course,
                 $activities[$diary->id]->id,
-                insightjournal_csv_value($diary->name),
-                $user->id,
-                insightjournal_csv_value(fullname($user)),
-                $showemail ? insightjournal_csv_value($user->email) : '',
-                $private
-                    ? insightjournal_csv_value(get_string('entriesprivatenotice', 'insightjournal'))
-                    : insightjournal_csv_value(insightjournal_html_to_text($entry->response ?? '')),
-                (!$private && $entry) ? userdate($entry->timemodified) : '',
-            ]);
+                $diary,
+                $user,
+                $entries[$user->id][$diary->id] ?? null,
+                $showemail
+            ));
         }
     }
-    fclose($out);
-    exit;
+    $writer->download_file(); // Sends headers, streams the file, and exit()s - same contract as the previous fclose()+exit.
 }
 
 $totalparticipants = $blockallparticipants
