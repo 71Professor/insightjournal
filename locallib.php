@@ -178,3 +178,22 @@ function insightjournal_current_user_group_userids(stdClass $course): array {
 
     return array_values(array_unique($userids));
 }
+
+/**
+ * Whether the current user may see participants' email addresses in this
+ * context, per Moodle's user-identity configuration.
+ *
+ * Wraps \core_user\fields::for_identity(), which already performs both
+ * checks needed here: the moodle/site:viewuseridentity capability in the
+ * given context, and whether 'email' is actually part of the site's
+ * configured $CFG->showuseridentity list (a site admin may have removed it
+ * even for an otherwise-capable viewer).
+ *
+ * @param context $context The context to check moodle/site:viewuseridentity
+ *     in - the activity's module context for a single-activity report, or
+ *     the course context for a course-wide one.
+ * @return bool
+ */
+function insightjournal_email_field_visible(context $context): bool {
+    return in_array('email', \core_user\fields::for_identity($context)->get_required_fields(), true);
+}
