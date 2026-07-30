@@ -478,4 +478,55 @@ final class save_entry_test extends advanced_testcase {
             'timemodified' => time(),
         ]);
     }
+
+    /**
+     * A student whose mod/insightjournal:submit capability has been
+     * explicitly revoked cannot save, and no entry row is created as a
+     * side effect of anything that runs before the capability check.
+     */
+    public function test_capability_denied_save_throws_and_writes_nothing(): void {
+        global $DB;
+
+        $context = \context_module::instance((int) $this->journal->cmid);
+        $studentroleid = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability('mod/insightjournal:submit', CAP_PREVENT, $studentroleid, $context, true);
+
+        try {
+            save_entry::execute((int) $this->journal->cmid, 'should not be saved', 0, false);
+            $this->fail('Expected a required_capability_exception.');
+        } catch (\required_capability_exception $e) {
+            // Expected.
+        }
+
+        $this->assertEquals(0, $DB->count_records('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]));
+    }
+
+    /**
+     * Resubmitting the exact same stale expectedrevision a second time,
+     * after it was already rejected once, is rejected again - proving
+     * there is no implicit "second attempt succeeds" path server-side,
+     * independently of whatever the JS client happens to do (already
+     * covered by the Behat scenario "A stale save is rejected as a
+     * conflict and locks further saves until reload").
+     */
+    public function test_repeated_stale_expectedrevision_is_rejected_again(): void {
+        global $DB;
+
+        $this->save('first response');
+        $firstconflict = $this->save('stale racing response, attempt 1', 0);
+        $secondconflict = $this->save('stale racing response, attempt 2', 0);
+
+        $this->assertTrue($firstconflict['conflict']);
+        $this->assertTrue($secondconflict['conflict']);
+        $this->assertEquals($firstconflict['revision'], $secondconflict['revision']);
+
+        $stored = $DB->get_record('insightjournal_entries', [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+        ]);
+        $this->assertEquals('first response', $stored->response);
+    }
 }
