@@ -71,7 +71,8 @@ final class backup_test extends advanced_testcase {
 
         /** @var \mod_insightjournal_generator $plugingenerator */
         $plugingenerator = $this->getDataGenerator()->get_plugin_generator('mod_insightjournal');
-        $plugingenerator->create_entry($journal, (int) $user->id, 'Private reflection.', INSIGHTJOURNAL_VISIBILITY_PRIVATE);
+        $entry = $plugingenerator->create_entry($journal, (int) $user->id, 'Private reflection.', INSIGHTJOURNAL_VISIBILITY_PRIVATE);
+        $DB->set_field('insightjournal_entries', 'revision', 3, ['id' => $entry->id]);
 
         $newcourseid = $this->backup_and_restore($course);
 
@@ -83,16 +84,45 @@ final class backup_test extends advanced_testcase {
             MUST_EXIST
         );
         $this->assertEquals(INSIGHTJOURNAL_VISIBILITY_PRIVATE, (int) $restoredentry->visibility);
+        $this->assertEquals('Private reflection.', $restoredentry->response);
+        $this->assertEquals(3, (int) $restoredentry->revision);
         $this->assertEquals($journal->name, $restoredjournal->name);
     }
 
     /**
-     * Backs a course up and restores it into a new course, with user data included.
+     * Backing up with "Include user data" turned off must not carry any
+     * entry rows into the restored course - entries are keyed to a
+     * userid and gated behind the standard userinfo backup setting in
+     * backup_insightjournal_stepslib.php, the same way core activities
+     * with per-user submissions behave.
+     */
+    public function test_no_user_data_backup_excludes_entries(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $journal = $this->getDataGenerator()->create_module('insightjournal', ['course' => $course->id]);
+        $user = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        /** @var \mod_insightjournal_generator $plugingenerator */
+        $plugingenerator = $this->getDataGenerator()->get_plugin_generator('mod_insightjournal');
+        $plugingenerator->create_entry($journal, (int) $user->id, 'Should not be restored.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+
+        $newcourseid = $this->backup_and_restore($course, false);
+
+        $restoredjournal = $DB->get_record('insightjournal', ['course' => $newcourseid], '*', MUST_EXIST);
+        $this->assertEquals(0, $DB->count_records('insightjournal_entries', ['insightjournalid' => $restoredjournal->id]));
+    }
+
+    /**
+     * Backs a course up and restores it into a new course.
      *
      * @param stdClass $srccourse Course object to back up.
+     * @param bool $includeuserdata Whether to include user data in the backup.
      * @return int ID of the newly restored course.
      */
-    private function backup_and_restore(stdClass $srccourse): int {
+    private function backup_and_restore(stdClass $srccourse, bool $includeuserdata = true): int {
         global $USER, $CFG;
 
         require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
@@ -109,7 +139,7 @@ final class backup_test extends advanced_testcase {
             $USER->id
         );
         $bc->get_plan()->get_setting('users')->set_status(backup_setting::NOT_LOCKED);
-        $bc->get_plan()->get_setting('users')->set_value(true);
+        $bc->get_plan()->get_setting('users')->set_value($includeuserdata);
 
         $backupid = $bc->get_backupid();
         $bc->execute_plan();
@@ -129,7 +159,7 @@ final class backup_test extends advanced_testcase {
             backup::TARGET_NEW_COURSE
         );
         $rc->get_plan()->get_setting('users')->set_status(backup_setting::NOT_LOCKED);
-        $rc->get_plan()->get_setting('users')->set_value(true);
+        $rc->get_plan()->get_setting('users')->set_value($includeuserdata);
 
         $this->assertTrue($rc->execute_precheck());
         $rc->execute_plan();
