@@ -62,21 +62,22 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ### Testing
 
-- **Closed four of the five targeted test-coverage gaps** identified by
-  the 2026-07-27 follow-up review (R2-11): a save attempt without the
-  `mod/insightjournal:submit` capability is now regression-tested end to
-  end (rejected, writes nothing, fires no event); resubmitting an
-  already-rejected stale save a second time is proven to fail again
-  server-side; a non-editing teacher without `accessallgroups` in
-  Separate Groups mode is now covered by an integration-level test that
-  exercises the real `report.php` wiring, not just its underlying
-  helpers in isolation; and course backup/restore is now verified to
-  preserve an entry's `response` and `revision` values and to exclude
-  entries entirely when "Include user data" is off. No behaviour
-  changed — this is coverage only. The fifth gap (a direct regression
-  test proving the R2-09 restore-mapping fix registers a queryable
-  mapping) was investigated and found technically infeasible against
-  Moodle's public API — its temp bookkeeping table is dropped inside
+- **Closed every test-coverage gap R2-11 identifies except one
+  sub-item**, per the 2026-07-27 follow-up review: a save attempt
+  without the `mod/insightjournal:submit` capability is now
+  regression-tested end to end (rejected, writes nothing, fires no
+  event); resubmitting an already-rejected stale save a second time is
+  proven to fail again server-side; a non-editing teacher without
+  `accessallgroups` in Separate Groups mode is now covered by an
+  integration-level test that exercises the real `report.php` wiring,
+  not just its underlying helpers in isolation; and course
+  backup/restore is now verified to preserve an entry's `response`,
+  `revision`, and `visibility` values and to exclude entries entirely
+  when "Include user data" is off. No behaviour changed — this is
+  coverage only. The one remaining sub-item (a direct regression test
+  proving the R2-09 restore-mapping fix registers a queryable mapping)
+  was investigated and found technically infeasible against Moodle's
+  public API — its temp bookkeeping table is dropped inside
   `execute_plan()` itself — and is logged as an accepted gap, consistent
   with the same call already made for this exact mapping when R2-09
   shipped it.
