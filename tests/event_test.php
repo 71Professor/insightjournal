@@ -33,6 +33,7 @@ use context_module;
 use mod_insightjournal\event\course_module_viewed;
 use mod_insightjournal\event\entry_created;
 use mod_insightjournal\event\entry_updated;
+use mod_insightjournal\external\save_entry;
 use mod_insightjournal\local\entry_manager;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use stdClass;
@@ -230,6 +231,33 @@ final class event_test extends advanced_testcase {
         $sink->close();
 
         $this->assertTrue($result['conflict']);
+        $this->assertCount(0, $events);
+    }
+
+    /**
+     * A capability-denied save attempt fires neither entry_created nor
+     * entry_updated - complements test_conflicting_save_fires_no_events()
+     * as the other explicit "no side effect on a rejected save"
+     * regression the review asks for.
+     */
+    public function test_capability_denied_save_fires_no_events(): void {
+        global $DB;
+
+        $studentroleid = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        assign_capability('mod/insightjournal:submit', CAP_PREVENT, $studentroleid, $this->context, true);
+        $this->setUser($this->student);
+
+        $sink = $this->redirectEvents();
+        try {
+            save_entry::execute((int) $this->cm->id, 'should not be saved', 0, false);
+            $this->fail('Expected a required_capability_exception.');
+        } catch (\required_capability_exception $e) {
+            // Expected.
+        } finally {
+            $events = $sink->get_events();
+            $sink->close();
+        }
+
         $this->assertCount(0, $events);
     }
 }
