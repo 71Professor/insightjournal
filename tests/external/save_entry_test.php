@@ -496,6 +496,7 @@ final class save_entry_test extends advanced_testcase {
             $this->fail('Expected a required_capability_exception.');
         } catch (\required_capability_exception $e) {
             // Expected.
+            unset($e);
         }
 
         $this->assertEquals(0, $DB->count_records('insightjournal_entries', [

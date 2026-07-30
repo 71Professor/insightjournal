@@ -253,6 +253,7 @@ final class event_test extends advanced_testcase {
             $this->fail('Expected a required_capability_exception.');
         } catch (\required_capability_exception $e) {
             // Expected.
+            unset($e);
         } finally {
             $events = $sink->get_events();
             $sink->close();

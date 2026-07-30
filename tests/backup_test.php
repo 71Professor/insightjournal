@@ -71,7 +71,12 @@ final class backup_test extends advanced_testcase {
 
         /** @var \mod_insightjournal_generator $plugingenerator */
         $plugingenerator = $this->getDataGenerator()->get_plugin_generator('mod_insightjournal');
-        $entry = $plugingenerator->create_entry($journal, (int) $user->id, 'Private reflection.', INSIGHTJOURNAL_VISIBILITY_PRIVATE);
+        $entry = $plugingenerator->create_entry(
+            $journal,
+            (int) $user->id,
+            'Private reflection.',
+            INSIGHTJOURNAL_VISIBILITY_PRIVATE
+        );
         $DB->set_field('insightjournal_entries', 'revision', 3, ['id' => $entry->id]);
 
         $newcourseid = $this->backup_and_restore($course);
