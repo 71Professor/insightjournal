@@ -38,7 +38,6 @@ $coursecontext = context_course::instance($course->id);
 
 $modinfo = get_fast_modinfo($course);
 $activities = [];
-$restricted = false;
 foreach ($modinfo->get_instances_of('insightjournal') as $cm) {
     if (!$cm->uservisible) {
         continue;
@@ -46,9 +45,6 @@ foreach ($modinfo->get_instances_of('insightjournal') as $cm) {
     $context = context_module::instance($cm->id);
     if (has_capability('mod/insightjournal:viewall', $context)) {
         $activities[$cm->instance] = $cm;
-        if (insightjournal_activity_group_restricted($context, $course, $cm)) {
-            $restricted = true;
-        }
     }
 }
 
@@ -56,24 +52,19 @@ if (empty($activities)) {
     throw new required_capability_exception($coursecontext, 'mod/insightjournal:viewall', 'nopermissions', '');
 }
 
-// This value is passed straight to get_enrolled_users()/count_enrolled_users(),
-// which check it with a bare "if ($groupids)" - an empty array is falsy there, meaning
-// "no filter at all." $blockallparticipants explicitly catches "restricted, but the
-// viewer's own group list is empty" before that ambiguity can matter, so a viewer in
-// zero groups sees zero participants rather than everyone. A falsy $USER->id gets the
-// same treatment as zero groups, not passed to groups_get_all_groups() at all: that
-// function only applies its own userid filter "if (!empty($userid))", so a falsy id
-// there would otherwise return every group in the course instead of "this user's
-// groups" - the same footgun insightjournal_current_user_group_userids() already
-// guards against in locallib.php.
-if (!$restricted) {
+// The insightjournal_coursereport_restrict_groupids() call already returns null for
+// "no restriction needed" (at least one visible activity is unrestricted); the
+// falsy-$USER->id guard now lives centrally in insightjournal_current_user_groups().
+// The bare "if ($groupids)" check inside get_enrolled_users()/count_enrolled_users()
+// would otherwise treat an empty array the SAME as null ("no filter"), so
+// $blockallparticipants still catches "every visible activity is restricted, but
+// the union of the viewer's own allowed groups is empty" explicitly, before that
+// ambiguity can matter.
+$restrictgroupids = insightjournal_coursereport_restrict_groupids($activities, $course);
+$blockallparticipants = $restrictgroupids !== null && empty($restrictgroupids);
+if ($restrictgroupids === null) {
     $restrictgroupids = 0;
-} else if (empty($USER->id)) {
-    $restrictgroupids = [];
-} else {
-    $restrictgroupids = array_keys(groups_get_all_groups($course->id, $USER->id));
 }
-$blockallparticipants = $restricted && empty($restrictgroupids);
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
@@ -119,9 +110,14 @@ if ($download === 'csv') {
     ]);
     foreach ($participants as $user) {
         foreach ($diaries as $diary) {
+            $cm = $activities[$diary->id];
+            $context = context_module::instance($cm->id);
+            if (!insightjournal_activity_visible_to_viewer($context, $course, $cm, (int) $user->id)) {
+                continue;
+            }
             $writer->add_data(insightjournal_coursereport_csv_row(
                 $course,
-                $activities[$diary->id]->id,
+                $cm->id,
                 $diary,
                 $user,
                 $entries[$user->id][$diary->id] ?? null,
@@ -177,8 +173,16 @@ foreach ($diaries as $diary) {
 $rows = [];
 foreach ($participants as $user) {
     $done = 0;
+    $authorized = false;
     $cells = [];
     foreach ($diaries as $diary) {
+        $cm = $activities[$diary->id];
+        $context = context_module::instance($cm->id);
+        if (!insightjournal_activity_visible_to_viewer($context, $course, $cm, (int) $user->id)) {
+            $cells[] = ['private' => true];
+            continue;
+        }
+        $authorized = true;
         $entry = $entries[$user->id][$diary->id] ?? null;
         if ($entry && !insightjournal_entry_visible_to_teacher($entry)) {
             $cells[] = ['private' => true];
@@ -194,6 +198,9 @@ foreach ($participants as $user) {
             'status' => get_string($completed ? 'submitted' : 'notsubmitted', 'insightjournal'),
             'timemodified' => $completed ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
         ];
+    }
+    if (!$authorized) {
+        continue;
     }
     $rows[] = [
         'fullname' => fullname($user),
