@@ -22,6 +22,20 @@ Versions map to the `$plugin->release` value in `version.php`.
   per manual save, so an actively-typing learner can generate multiple
   log rows per session.
 
+### Fixed
+
+- **The activity report's Separate Groups restriction is now scoped to
+  the activity's own grouping and only counts participation-eligible
+  groups**, closing the R3-01 review finding. Previously, a teacher
+  without `moodle/site:accessallgroups` was restricted to their group's
+  members course-wide - including members of groups tied to a
+  *different* grouping than the one this activity actually uses, and
+  including groups flagged as not participation-eligible. Both could
+  make the report show (or hide) participants outside the activity's
+  own group configuration. `coursereport.php`'s and `summary.php`'s
+  equivalent checks still use the old, course-wide behaviour - not yet
+  fixed here; that's the immediate next review item (R3-02).
+
 ### Changed
 
 - **Reports no longer show a participant's email address to a viewer who
