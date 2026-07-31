@@ -40,6 +40,20 @@ Versions map to the `$plugin->release` value in `version.php`.
   equivalent checks still use the old, course-wide behaviour - not yet
   fixed here; that's the immediate next review item (R3-02).
 
+- **`summary.php` and `coursereport.php` now authorize per activity,
+  not course-wide**, closing the R3-02 review finding. Both pages
+  previously computed a single course-wide "is the viewer group-
+  restricted anywhere" flag and applied it uniformly to every activity
+  the viewer could otherwise see - so a viewer's group membership
+  relevant to *one* activity's grouping could grant visibility into a
+  *different* activity's grouping in the same course. Both pages now
+  decide visibility per activity: `summary.php` only queries the
+  activities where the target user is actually visible under that
+  activity's own grouping; `coursereport.php` masks individual cells
+  (and drops CSV rows) per activity, removing a participant's row
+  entirely only when they are authorized for none of the visible
+  activities. `report.php` was already fixed this way in R3-01.
+
 - **The release workflow no longer trusts a `v`-prefixed branch/PR name
   alone**, addressing the R3-03 review finding. `ci.yml` runs on both
   `push` and `pull_request`, so a branch or PR merely *named* like a

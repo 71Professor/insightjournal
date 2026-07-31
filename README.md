@@ -252,15 +252,16 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: fifteen scenarios cover a plain
+- **Behat coverage is limited**: eighteen scenarios cover a plain
   no-JavaScript form submit, the save/reload roundtrip, editing a saved
   response, autosave, the minchars completion regression, a learner
   marking their own entry private, choosing differently across two
   activities in the same course, the Atto editor, the save-status
   classes, a save conflict locking further saves until reload, both
-  reports' pagination, and Separate Groups restriction across all three
-  report/summary surfaces. Broader coverage (CSV export) is not yet
-  automated.
+  reports' pagination, Separate Groups restriction across all three
+  report/summary surfaces, and two scenarios proving Separate Groups
+  restriction cannot leak across activities with different groupings.
+  Broader coverage (CSV export) is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -269,19 +270,6 @@ after `php admin/tool/behat/cli/init.php`.
   visibility override (2026-07-09); no functional impact. Planned: give the
   course-wide link a distinct label (e.g. "Course insight report", matching
   its own page heading).
-- **Separate Groups restriction is coarser on the summary page than on the
-  activity report.** `report.php` restricts per activity — it only ever
-  deals with one activity, so it's always correctly scoped. `summary.php`'s
-  "view another learner's summary" check restricts per *course* instead:
-  if any activity the viewer can otherwise see uses Separate Groups,
-  viewing any learner's summary is gated, not just entries tied to that
-  specific activity — matching `coursereport.php`'s existing, deliberately
-  coarse whole-report restriction. In a course mixing group modes across
-  multiple Insight Journal activities, this means `report.php` can show a
-  teacher a participant link that `summary.php` then refuses to open.
-  Fails closed (no data is ever exposed); found during the R2-05 final
-  review (2026-07-28). Planned: narrow `summary.php`'s check to the
-  specific activity the viewer is coming from.
 
 ---
 
@@ -291,14 +279,15 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (15 scenarios: save/reload roundtrip, editing a saved
+- [x] Add Behat tests (18 scenarios: save/reload roundtrip, editing a saved
       response, autosave, completion regression, save-status classes, a
       learner marking their own entry private, Atto editor, choosing
       differently across activities, save conflict locking, a plain
       no-JavaScript form submit, activity report pagination,
       course-wide report pagination, Separate Groups restriction across
-      all three report/summary surfaces) — 2026-07-09,
-      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28
+      all three report/summary surfaces, and Separate Groups restriction
+      cannot leak across activities with different groupings) — 2026-07-09,
+      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28, 2026-07-31
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory
