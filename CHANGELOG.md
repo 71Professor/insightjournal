@@ -37,8 +37,7 @@ Versions map to the `$plugin->release` value in `version.php`.
   activity's own grouping now correctly sees no participants at all in
   that activity's report, where they may previously have seen their
   course-wide group's members. `coursereport.php`'s and `summary.php`'s
-  equivalent checks still use the old, course-wide behaviour - not yet
-  fixed here; that's the immediate next review item (R3-02).
+  equivalent checks are fixed the same way by R3-02, immediately below.
 
 - **`summary.php` and `coursereport.php` now authorize per activity,
   not course-wide**, closing the R3-02 review finding. Both pages
@@ -52,7 +51,13 @@ Versions map to the `$plugin->release` value in `version.php`.
   activity's own grouping; `coursereport.php` masks individual cells
   (and drops CSV rows) per activity, removing a participant's row
   entirely only when they are authorized for none of the visible
-  activities. `report.php` was already fixed this way in R3-01.
+  activities. `report.php` was already fixed this way in R3-01. Unlike
+  R3-01, this isn't purely a narrowing change: in a course mixing an
+  unrestricted activity with a Separate-Groups one, `coursereport.php`'s
+  participant list can now correctly *widen* too - a participant
+  previously filtered out by the old course-wide restriction (which
+  wrongly applied even to the unrestricted activity) may now appear,
+  since an unrestricted activity's own visibility is never group-limited.
 
 - **The release workflow no longer trusts a `v`-prefixed branch/PR name
   alone**, addressing the R3-03 review finding. `ci.yml` runs on both

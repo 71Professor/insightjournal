@@ -35,8 +35,11 @@
         * summaryurl - URL to the participant's personal summary.
         * fullname - Participant full name.
         * cells - One cell per activity.
-            * private - Whether this specific entry is private (decided by
-              its author, not the activity). When true, a muted placeholder
+            * private - Whether this cell is masked, either because the
+              entry's own author marked it private, or because this
+              activity's group restriction doesn't authorize the viewer to
+              see this participant here (the UI deliberately does not
+              distinguish the two reasons). When true, a muted placeholder
               is shown instead of completed/status/timemodified.
             * completed - Whether the entry is complete (absent when private).
             * status - Localised status text (absent when private).

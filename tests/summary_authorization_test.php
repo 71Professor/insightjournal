@@ -73,7 +73,7 @@ final class summary_authorization_test extends advanced_testcase {
      * activities and a target user, returning the diary ids that
      * actually come back with a non-null response.
      *
-     * @param array<int, cm_info|stdClass> $querycms
+     * @param array<int, \cm_info|stdClass> $querycms
      * @param int $viewuserid
      * @return int[]
      */

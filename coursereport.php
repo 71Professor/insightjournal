@@ -68,10 +68,24 @@ if ($restrictgroupids === null) {
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
+// Precomputed once per activity (not per participant): insightjournal_activity_group_restricted()
+// and insightjournal_current_user_group_userids() do uncached DB queries depending only on
+// ($course, $cm), never on the participant being checked - calling them inside the participant
+// loops below would repeat identical queries once per participant per restricted activity. null
+// means "no restriction, every participant is visible under this activity"; otherwise a
+// userid => true map for O(1) per-cell lookups.
+$diaryallowedusers = [];
+foreach ($diaries as $diary) {
+    $cm = $activities[$diary->id];
+    $context = context_module::instance($cm->id);
+    $diaryallowedusers[$diary->id] = insightjournal_activity_group_restricted($context, $course, $cm)
+        ? array_flip(insightjournal_current_user_group_userids($course, $cm))
+        : null;
+}
 // Checked at course context, not per-activity like report_table.php - deliberately
-// coarse, matching this file's existing group-restriction gating above. A viewer
-// reaching this branch already holds the capability course-wide, so this can only
-// ever be more permissive than a hypothetical per-activity override, never less.
+// coarse. A viewer reaching this branch already holds the capability course-wide,
+// so this can only ever be more permissive than a hypothetical per-activity
+// override, never less.
 $showemail = insightjournal_email_field_visible($coursecontext);
 $namefields = \core_user\fields::for_name()->including('id');
 if ($showemail) {
@@ -110,14 +124,13 @@ if ($download === 'csv') {
     ]);
     foreach ($participants as $user) {
         foreach ($diaries as $diary) {
-            $cm = $activities[$diary->id];
-            $context = context_module::instance($cm->id);
-            if (!insightjournal_activity_visible_to_viewer($context, $course, $cm, (int) $user->id)) {
+            $allowedusers = $diaryallowedusers[$diary->id];
+            if ($allowedusers !== null && !isset($allowedusers[(int) $user->id])) {
                 continue;
             }
             $writer->add_data(insightjournal_coursereport_csv_row(
                 $course,
-                $cm->id,
+                $activities[$diary->id]->id,
                 $diary,
                 $user,
                 $entries[$user->id][$diary->id] ?? null,
@@ -176,9 +189,8 @@ foreach ($participants as $user) {
     $authorized = false;
     $cells = [];
     foreach ($diaries as $diary) {
-        $cm = $activities[$diary->id];
-        $context = context_module::instance($cm->id);
-        if (!insightjournal_activity_visible_to_viewer($context, $course, $cm, (int) $user->id)) {
+        $allowedusers = $diaryallowedusers[$diary->id];
+        if ($allowedusers !== null && !isset($allowedusers[(int) $user->id])) {
             $cells[] = ['private' => true];
             continue;
         }
