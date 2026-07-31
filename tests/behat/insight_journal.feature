@@ -303,6 +303,58 @@ Feature: Insight journal activity
     Then I should see "Student 1"
     And I should not see "Student 2"
 
+  @javascript
+  Scenario: A teacher restricted to Separate Groups never sees a different activity's grouping data in the course report
+    Given the following "users" exist:
+      | username | firstname | lastname |
+      | teacher2 | Teacher   | 2        |
+      | student2 | Student   | 2        |
+      | student3 | Student   | 3        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | teacher2 | C1     | teacher |
+      | student2 | C1     | student |
+      | student3 | C1     | student |
+    And the following "groupings" exist:
+      | name       | course | idnumber |
+      | Grouping A | C1     | GNA      |
+      | Grouping B | C1     | GNB      |
+    And the following "groups" exist:
+      | name    | course | idnumber |
+      | Group A | C1     | GA       |
+      | Group B | C1     | GB       |
+    And the following "grouping groups" exist:
+      | grouping | group |
+      | GNA      | GA    |
+      | GNB      | GB    |
+    And the following "group members" exist:
+      | user     | group |
+      | teacher2 | GA    |
+      | teacher2 | GB    |
+      | student2 | GB    |
+    And the following "activities" exist:
+      | activity       | course | name      | prompttext           | minchars | groupmode | grouping |
+      | insightjournal  | C1     | Journal A | What did you learn?  | 0        | 1         | GNA      |
+      | insightjournal  | C1     | Journal B | What did you learn?  | 0        | 1         | GNB      |
+    And I am on the "Journal A" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "Student 2 in Journal A."
+    And I press "Save"
+    And I log out
+    And I am on the "Journal B" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "Student 2 in Journal B."
+    And I press "Save"
+    And I log out
+    And I am on the "Journal A" "insightjournal activity" page logged in as student3
+    And I set the field "Response" to "Student 3 in Journal A."
+    And I press "Save"
+    And I log out
+    And I log in as "teacher2"
+    And I am on the course insight report for "Course 1" with "20" per page
+    Then I should see "Student 2"
+    And "Student 2" row "Journal B" column of "generaltable" table should contain "Submitted"
+    And "Student 2" row "Journal A" column of "generaltable" table should not contain "Submitted"
+    And I should not see "Student 3"
+
   # No negative/denial half to this scenario - only the "can view my own
   # group's summary while restricted" case. Moodle's Behat harness runs
   # look_for_exceptions() (behat_session_trait.php) as an automatic
@@ -351,6 +403,50 @@ Feature: Insight journal activity
     And I log in as "teacher2"
     And I am on the insight journal summary for "student1" in "Course 1"
     Then I should see "From group A."
+
+  @javascript
+  Scenario: A teacher restricted to Separate Groups never sees a different activity's grouping data in a learner's summary
+    Given the following "users" exist:
+      | username | firstname | lastname |
+      | teacher2 | Teacher   | 2        |
+      | student2 | Student   | 2        |
+    And the following "course enrolments" exist:
+      | user     | course | role    |
+      | teacher2 | C1     | teacher |
+      | student2 | C1     | student |
+    And the following "groupings" exist:
+      | name       | course | idnumber |
+      | Grouping A | C1     | GNA      |
+      | Grouping B | C1     | GNB      |
+    And the following "groups" exist:
+      | name    | course | idnumber |
+      | Group A | C1     | GA       |
+      | Group B | C1     | GB       |
+    And the following "grouping groups" exist:
+      | grouping | group |
+      | GNA      | GA    |
+      | GNB      | GB    |
+    And the following "group members" exist:
+      | user     | group |
+      | teacher2 | GA    |
+      | teacher2 | GB    |
+      | student2 | GB    |
+    And the following "activities" exist:
+      | activity       | course | name      | prompttext           | minchars | groupmode | grouping |
+      | insightjournal  | C1     | Journal A | What did you learn?  | 0        | 1         | GNA      |
+      | insightjournal  | C1     | Journal B | What did you learn?  | 0        | 1         | GNB      |
+    And I am on the "Journal A" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "Student 2 in Journal A."
+    And I press "Save"
+    And I log out
+    And I am on the "Journal B" "insightjournal activity" page logged in as student2
+    And I set the field "Response" to "Student 2 in Journal B."
+    And I press "Save"
+    And I log out
+    And I log in as "teacher2"
+    And I am on the insight journal summary for "student2" in "Course 1"
+    Then I should see "Student 2 in Journal B."
+    And I should not see "Student 2 in Journal A."
 
   Scenario: A teacher without permission to view user identity sees no participant email
     Given the following "users" exist:
