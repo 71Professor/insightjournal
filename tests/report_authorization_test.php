@@ -104,7 +104,7 @@ final class report_authorization_test extends advanced_testcase {
      */
     protected function render_table(): string {
         $restrictuserids = insightjournal_activity_group_restricted($this->context, $this->course, $this->cm)
-            ? insightjournal_current_user_group_userids($this->course)
+            ? insightjournal_current_user_group_userids($this->course, $this->cm)
             : null;
 
         $table = new report_table(
@@ -176,5 +176,67 @@ final class report_authorization_test extends advanced_testcase {
 
         $this->assertStringContainsString('Group A entry.', $html);
         $this->assertStringContainsString('Group B entry.', $html);
+    }
+
+    /**
+     * The review's own literal R3-01 acceptance criterion, reproduced
+     * end-to-end through the real report.php wiring: two groupings and
+     * a non-participating group - only entries belonging to members of
+     * the groups actually allowed for *this* activity appear.
+     */
+    public function test_two_groupings_and_a_non_participating_group(): void {
+        global $DB;
+
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $studenta = $generator->create_and_enrol($this->course, 'student');
+        $studentb = $generator->create_and_enrol($this->course, 'student');
+        $studentc = $generator->create_and_enrol($this->course, 'student');
+
+        $groupinga = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupingb = $generator->create_grouping(['courseid' => $this->course->id]);
+
+        // Allowed: same grouping as the activity, participation-eligible.
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupa->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $studenta->id]);
+
+        // Wrong grouping - must not appear, even though the teacher is a member.
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_grouping_group(['groupingid' => $groupingb->id, 'groupid' => $groupb->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $studentb->id]);
+
+        // Right grouping, but not participation-eligible - must not appear.
+        $groupc = $generator->create_group(['courseid' => $this->course->id, 'participation' => false]);
+        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupc->id]);
+        $generator->create_group_member(['groupid' => $groupc->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupc->id, 'userid' => $studentc->id]);
+
+        $DB->set_field('course_modules', 'groupingid', $groupinga->id, ['id' => $this->cm->id]);
+        $this->cm = get_coursemodule_from_id('insightjournal', $this->diary->cmid, 0, false, MUST_EXIST);
+        $this->context = context_module::instance($this->cm->id);
+
+        $this->ij_generator()->create_entry($this->diary, (int) $studenta->id, 'Allowed entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $studentb->id,
+            'Wrong grouping entry.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $studentc->id,
+            'Non participating entry.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $this->setUser($teacher);
+        $html = $this->render_table();
+
+        $this->assertStringContainsString('Allowed entry.', $html);
+        $this->assertStringNotContainsString('Wrong grouping entry.', $html);
+        $this->assertStringNotContainsString('Non participating entry.', $html);
     }
 }

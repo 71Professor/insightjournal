@@ -43,7 +43,7 @@ $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
 $restrictuserids = insightjournal_activity_group_restricted($context, $course, $cm)
-    ? insightjournal_current_user_group_userids($course)
+    ? insightjournal_current_user_group_userids($course, $cm)
     : null;
 
 if ($wantscsv) {
