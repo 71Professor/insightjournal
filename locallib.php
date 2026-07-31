@@ -256,10 +256,10 @@ function insightjournal_activity_visible_to_viewer(
  * visible to the current viewer, per
  * insightjournal_activity_visible_to_viewer().
  *
- * @param array<int, cm_info|stdClass> $cms Candidate activities, keyed by instance id.
+ * @param cm_info[]|stdClass[] $cms Candidate activities, keyed by instance id.
  * @param stdClass $course The course the activities belong to.
  * @param int $targetuserid The user whose visibility is being checked.
- * @return array<int, cm_info|stdClass> The visible subset, same keys/values as input.
+ * @return cm_info[]|stdClass[] The visible subset, same keys/values as input.
  */
 function insightjournal_visible_activities_for_user(array $cms, stdClass $course, int $targetuserid): array {
     return array_filter($cms, function ($cm) use ($course, $targetuserid) {
@@ -289,7 +289,7 @@ function insightjournal_visible_activities_for_user(array $cms, stdClass $course
  * the render loop) still determines exactly which of that participant's
  * cells are actually shown.
  *
- * @param array<int, cm_info|stdClass> $activities Visible activities, keyed by instance id.
+ * @param cm_info[]|stdClass[] $activities Visible activities, keyed by instance id.
  * @param stdClass $course The course the activities belong to.
  * @return int[]|null
  */
