@@ -40,6 +40,18 @@ Versions map to the `$plugin->release` value in `version.php`.
   equivalent checks still use the old, course-wide behaviour - not yet
   fixed here; that's the immediate next review item (R3-02).
 
+- **The release workflow no longer trusts a `v`-prefixed branch/PR name
+  alone**, addressing the R3-03 review finding. `ci.yml` runs on both
+  `push` and `pull_request`, so a branch or PR merely *named* like a
+  release tag (e.g. `v9.9.9-evil`) previously satisfied the release job's
+  entire gate once its CI run completed. The job now also requires the
+  triggering run to be a `push` from this repository (not a fork), and a
+  new pre-checkout step queries the remote directly to confirm a real git
+  tag exists and resolves to exactly the commit CI validated, failing
+  closed otherwise; checkout then uses that verified tag ref instead of a
+  bare SHA. No effect on a normal tagged release - only closes a spoofing
+  path nothing in this project's history has actually exploited.
+
 ### Changed
 
 - **Reports no longer show a participant's email address to a viewer who
