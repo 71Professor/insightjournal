@@ -39,7 +39,6 @@ $modinfo = get_fast_modinfo($course);
 $cms = [];
 $viewallcms = [];
 $canviewown = false;
-$restricted = false;
 foreach ($modinfo->get_instances_of('insightjournal') as $cm) {
     if (!$cm->uservisible) {
         continue;
@@ -52,9 +51,6 @@ foreach ($modinfo->get_instances_of('insightjournal') as $cm) {
     $canviewown = $canviewown || has_capability('mod/insightjournal:viewown', $modulecontext);
     if (has_capability('mod/insightjournal:viewall', $modulecontext)) {
         $viewallcms[$cm->instance] = $cm;
-        if (insightjournal_activity_group_restricted($modulecontext, $course, $cm)) {
-            $restricted = true;
-        }
     }
 }
 $canviewall = !empty($viewallcms);
@@ -64,6 +60,7 @@ if (empty($cms)) {
 }
 
 $viewuserid = $USER->id;
+$querycms = $cms;
 if ($userid && $userid != $USER->id) {
     if (!$canviewall) {
         throw new required_capability_exception($coursecontext, 'mod/insightjournal:viewall', 'nopermissions', '');
@@ -71,7 +68,8 @@ if ($userid && $userid != $USER->id) {
     if (!is_enrolled($coursecontext, $userid)) {
         throw new moodle_exception('notenrolled', 'enrol');
     }
-    if ($restricted && !in_array($userid, insightjournal_current_user_group_userids($course), true)) {
+    $querycms = insightjournal_visible_activities_for_user($viewallcms, $course, $userid);
+    if (empty($querycms)) {
         throw new required_capability_exception($coursecontext, 'mod/insightjournal:viewall', 'nopermissions', '');
     }
     $viewuserid = $userid;
@@ -89,9 +87,7 @@ $viewuser = $DB->get_record(
     implode(',', \core_user\fields::for_name()->including('id')->get_required_fields()),
     MUST_EXIST
 );
-// When viewing another user, restrict to journals where viewall is explicitly granted.
 $viewingother = $viewuserid !== $USER->id;
-$querycms = $viewingother ? $viewallcms : $cms;
 $diaryids = array_keys($querycms);
 
 [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
