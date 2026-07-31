@@ -96,6 +96,26 @@ final class locallib_groups_test extends advanced_testcase {
     }
 
     /**
+     * Creates a second insight journal activity in the same course,
+     * assigned to a given grouping with Separate Groups mode - for
+     * tests proving a viewer's authorization under one activity's
+     * grouping does not leak into a different activity's grouping.
+     *
+     * @param int $groupingid The grouping id to assign the new activity to.
+     * @return stdClass The new activity's course-module record.
+     */
+    protected function create_second_restricted_activity(int $groupingid): stdClass {
+        global $DB;
+
+        $diary = $this->getDataGenerator()->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupingid', $groupingid, ['id' => $cm->id]);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $cm->id]);
+
+        return get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+    }
+
+    /**
      * With group mode off, nobody is restricted.
      */
     public function test_not_restricted_when_group_mode_is_off(): void {
@@ -373,5 +393,142 @@ final class locallib_groups_test extends advanced_testcase {
         $userids = insightjournal_current_user_group_userids($this->course);
 
         $this->assertContains((int) $studentb->id, $userids);
+    }
+
+    /**
+     * Unrestricted activity: always visible, regardless of group
+     * membership.
+     */
+    public function test_activity_visible_when_not_restricted(): void {
+        $this->set_activity_groupmode(NOGROUPS);
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $this->setUser($teacher);
+
+        $this->assertTrue(
+            insightjournal_activity_visible_to_viewer($this->context, $this->course, $this->cm, (int) $student->id)
+        );
+    }
+
+    /**
+     * Restricted activity: target user in the viewer's own group for
+     * this activity's grouping is visible.
+     */
+    public function test_activity_visible_when_target_in_viewer_group(): void {
+        $this->set_activity_groupmode(SEPARATEGROUPS);
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $group = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+        $this->setUser($teacher);
+
+        $this->assertTrue(
+            insightjournal_activity_visible_to_viewer($this->context, $this->course, $this->cm, (int) $student->id)
+        );
+    }
+
+    /**
+     * A target user visible to the viewer only under a DIFFERENT
+     * activity's grouping must not be visible under THIS one - the
+     * R3-02 property.
+     */
+    public function test_activity_not_visible_when_target_only_in_different_grouping(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+
+        $groupinga = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupingb = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupa->id]);
+        $generator->create_grouping_group(['groupingid' => $groupingb->id, 'groupid' => $groupb->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $student->id]);
+
+        $this->set_activity_grouping((int) $groupinga->id);
+        $this->set_activity_groupmode(SEPARATEGROUPS);
+        $this->setUser($teacher);
+
+        $this->assertFalse(
+            insightjournal_activity_visible_to_viewer($this->context, $this->course, $this->cm, (int) $student->id)
+        );
+    }
+
+    /**
+     * Filters an activity list to just the ones visible to the viewer
+     * for a given target user - two activities, different groupings,
+     * target authorized under only one.
+     */
+    public function test_visible_activities_filters_to_authorized_only(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+
+        $groupinga = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupingb = $generator->create_grouping(['courseid' => $this->course->id]);
+        $this->set_activity_grouping((int) $groupinga->id);
+        $this->set_activity_groupmode(SEPARATEGROUPS);
+        $cmb = $this->create_second_restricted_activity((int) $groupingb->id);
+
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupa->id]);
+        $generator->create_grouping_group(['groupingid' => $groupingb->id, 'groupid' => $groupb->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $student->id]);
+
+        $this->setUser($teacher);
+
+        $cms = [$this->cm->instance => $this->cm, $cmb->instance => $cmb];
+        $visible = insightjournal_visible_activities_for_user($cms, $this->course, (int) $student->id);
+
+        $this->assertArrayNotHasKey($this->cm->instance, $visible);
+        $this->assertArrayHasKey($cmb->instance, $visible);
+    }
+
+    /**
+     * At least one visible activity is unrestricted - no SQL-level
+     * group filter is safe, since that activity alone could show every
+     * enrolled participant a visible cell.
+     */
+    public function test_restrict_groupids_null_when_any_activity_unrestricted(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $this->set_activity_groupmode(NOGROUPS);
+        $this->setUser($teacher);
+
+        $this->assertNull(
+            insightjournal_coursereport_restrict_groupids([$this->cm->instance => $this->cm], $this->course)
+        );
+    }
+
+    /**
+     * Every visible activity is restricted - returns the union of the
+     * viewer's own allowed groups across all of them.
+     */
+    public function test_restrict_groupids_unions_across_restricted_activities(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $this->set_activity_groupmode(SEPARATEGROUPS);
+        $cmb = $this->create_second_restricted_activity(0);
+
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+
+        $this->setUser($teacher);
+
+        $groupids = insightjournal_coursereport_restrict_groupids(
+            [$this->cm->instance => $this->cm, $cmb->instance => $cmb],
+            $this->course
+        );
+
+        $this->assertEqualsCanonicalizing([(int) $groupa->id, (int) $groupb->id], $groupids);
     }
 }

@@ -150,7 +150,9 @@ function insightjournal_activity_group_restricted(context_module $context, stdCl
 }
 
 /**
- * Userids of every member of every group the current user belongs to.
+ * Groups belonging to the current user, per Moodle's Separate Groups
+ * rules for a specific activity (or the course-wide legacy set when $cm
+ * is omitted).
  *
  * Returns an empty array if the current user belongs to no matching
  * groups - callers must treat that as "matches nobody," not "no
@@ -165,15 +167,16 @@ function insightjournal_activity_group_restricted(context_module $context, stdCl
  * without moodle/site:accessallgroups in Separate Groups mode. When $cm
  * is omitted, every group in the course counts regardless of grouping
  * or participation flag - this is the pre-R3-01 behaviour, kept for
- * callers (summary.php) that don't yet have a single natural activity
- * to scope to.
+ * callers without a single natural activity to scope to.
  *
  * @param stdClass $course The course to look up group membership in.
  * @param cm_info|stdClass|null $cm The activity to scope the search to,
  *     or null for the course-wide (unscoped) legacy behaviour.
- * @return int[] Deduplicated user ids.
+ * @return stdClass[] Group records, keyed by group id, each with a
+ *     populated ->members array (per groups_get_all_groups()'s
+ *     $withmembers = true).
  */
-function insightjournal_current_user_group_userids(stdClass $course, cm_info|stdClass|null $cm = null): array {
+function insightjournal_current_user_groups(stdClass $course, cm_info|stdClass|null $cm = null): array {
     global $USER;
 
     // Moodle's groups_get_all_groups() only applies its userid filter when $userid is
@@ -192,13 +195,115 @@ function insightjournal_current_user_group_userids(stdClass $course, cm_info|std
     $groupingid = $cm !== null ? (int) $cm->groupingid : 0;
     $participationonly = $cm !== null;
 
-    $groups = groups_get_all_groups($course->id, $USER->id, $groupingid, 'g.*', true, $participationonly);
+    return groups_get_all_groups($course->id, $USER->id, $groupingid, 'g.*', true, $participationonly);
+}
+
+/**
+ * Userids of every member of every group the current user belongs to.
+ *
+ * Thin wrapper flattening insightjournal_current_user_groups()'s group
+ * records to a deduplicated list of member userids. See that function's
+ * docblock for the $cm-scoping contract.
+ *
+ * @param stdClass $course The course to look up group membership in.
+ * @param cm_info|stdClass|null $cm The activity to scope the search to,
+ *     or null for the course-wide (unscoped) legacy behaviour.
+ * @return int[] Deduplicated user ids.
+ */
+function insightjournal_current_user_group_userids(stdClass $course, cm_info|stdClass|null $cm = null): array {
     $userids = [];
-    foreach ($groups as $group) {
+    foreach (insightjournal_current_user_groups($course, $cm) as $group) {
         $userids = array_merge($userids, array_map('intval', $group->members));
     }
 
     return array_values(array_unique($userids));
+}
+
+/**
+ * Whether $targetuserid is visible to the current user under this
+ * specific activity's own Separate Groups restriction.
+ *
+ * Always true when the activity isn't group-restricted for the current
+ * user (see insightjournal_activity_group_restricted()). When it is,
+ * true only if $targetuserid is a member of one of the groups this
+ * activity's own grouping allows the current user to see - scoped to
+ * *this* activity, never a different one in the same course (R3-02: the
+ * course-wide equivalent of this check let a viewer's group membership
+ * relevant to one activity's grouping leak visibility into a different
+ * activity's grouping).
+ *
+ * @param context_module $context The activity's module context.
+ * @param stdClass $course The course the activity belongs to.
+ * @param cm_info|stdClass $cm The activity's course-module record.
+ * @param int $targetuserid The user whose visibility is being checked.
+ * @return bool
+ */
+function insightjournal_activity_visible_to_viewer(
+    context_module $context,
+    stdClass $course,
+    cm_info|stdClass $cm,
+    int $targetuserid
+): bool {
+    if (!insightjournal_activity_group_restricted($context, $course, $cm)) {
+        return true;
+    }
+
+    return in_array($targetuserid, insightjournal_current_user_group_userids($course, $cm), true);
+}
+
+/**
+ * Filters $cms down to just the ones under which $targetuserid is
+ * visible to the current viewer, per
+ * insightjournal_activity_visible_to_viewer().
+ *
+ * @param array<int, cm_info|stdClass> $cms Candidate activities, keyed by instance id.
+ * @param stdClass $course The course the activities belong to.
+ * @param int $targetuserid The user whose visibility is being checked.
+ * @return array<int, cm_info|stdClass> The visible subset, same keys/values as input.
+ */
+function insightjournal_visible_activities_for_user(array $cms, stdClass $course, int $targetuserid): array {
+    return array_filter($cms, function ($cm) use ($course, $targetuserid) {
+        return insightjournal_activity_visible_to_viewer(
+            context_module::instance($cm->id),
+            $course,
+            $cm,
+            $targetuserid
+        );
+    });
+}
+
+/**
+ * The group ids coursereport.php's participant query should be
+ * restricted to, or null for "no restriction needed."
+ *
+ * Null means at least one activity in $activities is unrestricted for
+ * the current viewer - since that activity alone shows every enrolled
+ * participant a potentially-visible cell, no SQL-level group filter can
+ * safely narrow the participant list at all. Otherwise (every activity
+ * in $activities is restricted), returns the union of the current
+ * viewer's own allowed groups across all of them - a participant who
+ * matches any group in this union is guaranteed authorized for at least
+ * the one activity that contributed that group, so this can only ever
+ * be a safe (not over-permissive) SQL-level prefilter; per-cell masking
+ * (insightjournal_activity_visible_to_viewer(), applied per activity in
+ * the render loop) still determines exactly which of that participant's
+ * cells are actually shown.
+ *
+ * @param array<int, cm_info|stdClass> $activities Visible activities, keyed by instance id.
+ * @param stdClass $course The course the activities belong to.
+ * @return int[]|null
+ */
+function insightjournal_coursereport_restrict_groupids(array $activities, stdClass $course): ?array {
+    $groupids = [];
+    foreach ($activities as $cm) {
+        $context = context_module::instance($cm->id);
+        if (!insightjournal_activity_group_restricted($context, $course, $cm)) {
+            return null;
+        }
+        $groupids = array_merge($groupids, array_keys(insightjournal_current_user_groups($course, $cm)));
+    }
+
+    return array_values(array_unique($groupids));
 }
 
 /**
