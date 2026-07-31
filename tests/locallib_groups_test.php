@@ -39,11 +39,17 @@ require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
- * Tests for {@see \insightjournal_activity_group_restricted()} and
- * {@see \insightjournal_current_user_group_userids()}.
+ * Tests for {@see \insightjournal_activity_group_restricted()},
+ * {@see \insightjournal_current_user_group_userids()},
+ * {@see \insightjournal_activity_visible_to_viewer()},
+ * {@see \insightjournal_visible_activities_for_user()}, and
+ * {@see \insightjournal_coursereport_restrict_groupids()}.
  */
 #[CoversFunction('insightjournal_activity_group_restricted')]
 #[CoversFunction('insightjournal_current_user_group_userids')]
+#[CoversFunction('insightjournal_activity_visible_to_viewer')]
+#[CoversFunction('insightjournal_visible_activities_for_user')]
+#[CoversFunction('insightjournal_coursereport_restrict_groupids')]
 final class locallib_groups_test extends advanced_testcase {
     /** @var stdClass The course. */
     protected stdClass $course;
