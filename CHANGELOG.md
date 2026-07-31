@@ -32,7 +32,11 @@ Versions map to the `$plugin->release` value in `version.php`.
   *different* grouping than the one this activity actually uses, and
   including groups flagged as not participation-eligible. Both could
   make the report show (or hide) participants outside the activity's
-  own group configuration. `coursereport.php`'s and `summary.php`'s
+  own group configuration. On an upgrading site, this is a *narrowing*
+  change: a viewer with no participation-eligible group in this
+  activity's own grouping now correctly sees no participants at all in
+  that activity's report, where they may previously have seen their
+  course-wide group's members. `coursereport.php`'s and `summary.php`'s
   equivalent checks still use the old, course-wide behaviour - not yet
   fixed here; that's the immediate next review item (R3-02).
 
