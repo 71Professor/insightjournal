@@ -16,6 +16,22 @@ name: Release
 # the exact commit that was tagged - both confirmed against this repo's own
 # past tag runs (e.g. v0.6.0-beta's CI run has head_branch "v0.6.0-beta",
 # head_sha matching the tagged commit exactly).
+#
+# R3-03 hardening: a bare `startsWith(head_branch, 'v')` check left two
+# spoofing paths open. First, ci.yml's `on: [push, pull_request]` means a
+# PR or branch merely named like a tag (e.g. "v9.9.9-evil") also produces a
+# "Moodle Plugin CI" workflow_run whose head_branch starts with "v" - the
+# added `event == 'push'` check rejects anything but an actual push (tag
+# pushes included); `head_repository.full_name == github.repository`
+# rejects a fork's workflow_run reaching this job at all. Second, even a
+# genuine push-triggered run only proves some ref was pushed and CI'd - it
+# never confirms a real git tag object exists and points at that exact
+# commit. The "Verify the tag..." step below queries the remote directly
+# (git ls-remote, no checkout needed) and fails closed if refs/tags/$TAG is
+# missing or resolves to a different commit than head_sha - only then is
+# that verified tag ref (not a bare SHA) checked out, so every later step
+# operates on a commit provably reachable via a real tag, not merely a
+# same-named branch or a tag that moved after CI ran.
 on:
   workflow_run:
     workflows: ["Moodle Plugin CI"]
@@ -29,13 +45,38 @@ jobs:
     runs-on: 'ubuntu-latest'
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
       startsWith(github.event.workflow_run.head_branch, 'v')
 
     steps:
-      - name: Check out repository code
+      - name: Verify the tag exists and resolves to the CI-validated commit
+        run: |
+          # Query both the tag ref and its peeled form in one call: a
+          # lightweight tag returns one line (the commit SHA itself); an
+          # annotated tag returns two (the tag object first, the peeled
+          # commit SHA second, via the `^{}` suffix) - `tail -n1` always
+          # picks the commit SHA either way. No local repo/checkout needed.
+          resolved=$(git ls-remote "https://github.com/${GITHUB_REPOSITORY}" \
+            "refs/tags/${TAG}" "refs/tags/${TAG}^{}" | awk '{print $1}' | tail -n1)
+
+          if [ -z "${resolved}" ]; then
+            echo "::error::No tag refs/tags/${TAG} exists on the remote - refusing to release from a branch or PR merely named like a tag."
+            exit 1
+          fi
+          if [ "${resolved}" != "${HEAD_SHA}" ]; then
+            echo "::error::Tag ${TAG} resolves to ${resolved}, but the CI run that triggered this release validated ${HEAD_SHA} - refusing to release a commit CI never tested (the tag may have moved after CI ran)."
+            exit 1
+          fi
+          echo "Verified: refs/tags/${TAG} resolves to ${HEAD_SHA}, matching the CI-validated commit."
+        env:
+          TAG: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Check out the verified tag
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: refs/tags/${{ github.event.workflow_run.head_branch }}
           persist-credentials: false
 
       - name: Check tag matches version.php release
