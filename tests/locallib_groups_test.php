@@ -84,6 +84,18 @@ final class locallib_groups_test extends advanced_testcase {
     }
 
     /**
+     * Assigns this activity to a specific grouping, bypassing the form.
+     *
+     * @param int $groupingid The grouping id (0 clears any grouping).
+     */
+    protected function set_activity_grouping(int $groupingid): void {
+        global $DB;
+
+        $DB->set_field('course_modules', 'groupingid', $groupingid, ['id' => $this->cm->id]);
+        $this->cm = get_coursemodule_from_id('insightjournal', $this->diary->cmid, 0, false, MUST_EXIST);
+    }
+
+    /**
      * With group mode off, nobody is restricted.
      */
     public function test_not_restricted_when_group_mode_is_off(): void {
@@ -263,5 +275,103 @@ final class locallib_groups_test extends advanced_testcase {
         $this->setUser(0);
 
         $this->assertSame([], insightjournal_current_user_group_userids($this->course));
+    }
+
+    /**
+     * A grouping-scoped $cm restricts the returned userids to only the
+     * groups belonging to that grouping - a group in a different
+     * grouping must never leak in, even if the current user also
+     * belongs to it.
+     */
+    public function test_group_userids_scoped_to_activity_groupingid_when_cm_given(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $studenta = $generator->create_and_enrol($this->course, 'student');
+        $studentb = $generator->create_and_enrol($this->course, 'student');
+
+        $groupinga = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupingb = $generator->create_grouping(['courseid' => $this->course->id]);
+
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupa->id]);
+        $generator->create_grouping_group(['groupingid' => $groupingb->id, 'groupid' => $groupb->id]);
+
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $studenta->id]);
+        // The teacher also belongs to groupb, in the OTHER grouping - must not leak in.
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $studentb->id]);
+
+        $this->set_activity_grouping((int) $groupinga->id);
+        $this->setUser($teacher);
+
+        $userids = insightjournal_current_user_group_userids($this->course, $this->cm);
+
+        $this->assertContains((int) $studenta->id, $userids);
+        $this->assertNotContains((int) $studentb->id, $userids);
+    }
+
+    /**
+     * A non-participating group's members are excluded even when the
+     * group belongs to the activity's own grouping - "participation"
+     * governs whether a group counts for activity-level restriction at
+     * all, separately from grouping membership.
+     */
+    public function test_group_userids_excludes_non_participating_group_when_cm_given(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $studenta = $generator->create_and_enrol($this->course, 'student');
+
+        $grouping = $generator->create_grouping(['courseid' => $this->course->id]);
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'participation' => false,
+        ]);
+        $generator->create_grouping_group(['groupingid' => $grouping->id, 'groupid' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $studenta->id]);
+
+        $this->set_activity_grouping((int) $grouping->id);
+        $this->setUser($teacher);
+
+        $userids = insightjournal_current_user_group_userids($this->course, $this->cm);
+
+        $this->assertSame([], $userids);
+    }
+
+    /**
+     * Omitting $cm preserves today's course-wide behaviour exactly -
+     * this is the exact call summary.php's untouched call site
+     * continues to make. A future accidental change here would
+     * silently alter summary.php's behaviour without summary.php itself
+     * ever being touched.
+     */
+    public function test_group_userids_ignores_grouping_when_cm_omitted(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $studentb = $generator->create_and_enrol($this->course, 'student');
+
+        $groupinga = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupingb = $generator->create_grouping(['courseid' => $this->course->id]);
+
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupa->id]);
+        $generator->create_grouping_group(['groupingid' => $groupingb->id, 'groupid' => $groupb->id]);
+
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $studentb->id]);
+
+        $this->set_activity_grouping((int) $groupinga->id);
+        $this->setUser($teacher);
+
+        // No $cm passed - must return the union across every grouping,
+        // exactly like before this fix, even though the activity itself
+        // is now scoped to groupinga.
+        $userids = insightjournal_current_user_group_userids($this->course);
+
+        $this->assertContains((int) $studentb->id, $userids);
     }
 }

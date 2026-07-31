@@ -150,18 +150,30 @@ function insightjournal_activity_group_restricted(context_module $context, stdCl
 }
 
 /**
- * Userids of every member of every group the current user belongs to in
- * this course.
+ * Userids of every member of every group the current user belongs to.
  *
- * Returns an empty array if the current user belongs to no groups in this
- * course - callers must treat that as "matches nobody," not "no
+ * Returns an empty array if the current user belongs to no matching
+ * groups - callers must treat that as "matches nobody," not "no
  * restriction": an empty result here still means the restriction is
  * active, just that it currently excludes everyone.
  *
+ * When $cm is given, the search is scoped to that activity: only groups
+ * belonging to $cm->groupingid (0 means every grouping, i.e. no
+ * restriction to a specific grouping) and flagged as
+ * participation-eligible are considered - matching what Moodle core's
+ * own groups_get_activity_allowed_groups() resolves to for a user
+ * without moodle/site:accessallgroups in Separate Groups mode. When $cm
+ * is omitted, every group in the course counts regardless of grouping
+ * or participation flag - this is the pre-R3-01 behaviour, kept for
+ * callers (summary.php) that don't yet have a single natural activity
+ * to scope to.
+ *
  * @param stdClass $course The course to look up group membership in.
+ * @param cm_info|stdClass|null $cm The activity to scope the search to,
+ *     or null for the course-wide (unscoped) legacy behaviour.
  * @return int[] Deduplicated user ids.
  */
-function insightjournal_current_user_group_userids(stdClass $course): array {
+function insightjournal_current_user_group_userids(stdClass $course, cm_info|stdClass|null $cm = null): array {
     global $USER;
 
     // Moodle's groups_get_all_groups() only applies its userid filter when $userid is
@@ -177,7 +189,10 @@ function insightjournal_current_user_group_userids(stdClass $course): array {
         return [];
     }
 
-    $groups = groups_get_all_groups($course->id, $USER->id, 0, 'g.*', true);
+    $groupingid = $cm !== null ? (int) $cm->groupingid : 0;
+    $participationonly = $cm !== null;
+
+    $groups = groups_get_all_groups($course->id, $USER->id, $groupingid, 'g.*', true, $participationonly);
     $userids = [];
     foreach ($groups as $group) {
         $userids = array_merge($userids, array_map('intval', $group->members));
