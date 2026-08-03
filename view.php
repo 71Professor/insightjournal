@@ -60,6 +60,7 @@ $haveentry = insightjournal_html_to_text($responseraw) !== '';
 $entryprivate = $entry ? !insightjournal_entry_visible_to_teacher($entry) : false;
 
 $entryformhtml = '';
+$conflict = null;
 if ($canwrite) {
     $mform = new \mod_insightjournal\form\entry_form(
         new moodle_url('/mod/insightjournal/view.php', ['id' => $id]),
@@ -69,7 +70,8 @@ if ($canwrite) {
     // Standard POST submit (no JavaScript required): the same entry_manager
     // service the AJAX external function (classes/external/save_entry.php)
     // calls. Handled before any output, per the usual Moodle
-    // process-then-redirect pattern.
+    // process-then-redirect pattern - except on a conflict, which falls
+    // through to render immediately instead of redirecting (see below).
     if ($data = $mform->get_data()) {
         $result = \mod_insightjournal\local\entry_manager::save(
             $diary,
@@ -81,18 +83,33 @@ if ($canwrite) {
             (bool) $data->private
         );
         if ($result['conflict']) {
-            \core\notification::error(get_string('saveconflict', 'insightjournal'));
+            // Never silently discard the learner's just-typed draft by
+            // redirecting to the server's current record - re-render
+            // immediately with the draft still in the editor alongside the
+            // server's actual current content, the same "show both, let the
+            // learner choose" principle autosave.js's showConflictBanner()
+            // already follows for the AJAX/JS path. expectedrevision is
+            // updated to what's now current, so clicking Save again either
+            // succeeds (nothing else changed meanwhile) or reports a fresh
+            // conflict; the reload link below is the explicit way to discard
+            // the draft and adopt the server's version instead.
+            $conflict = $result;
+            $mform->set_data([
+                'response' => ['text' => $data->response['text'], 'format' => FORMAT_HTML],
+                'expectedrevision' => $result['revision'],
+                'private' => $data->private ? 1 : 0,
+            ]);
         } else {
             \core\notification::success(get_string('savedat', 'insightjournal', $result['timestr']));
+            redirect(new moodle_url('/mod/insightjournal/view.php', ['id' => $id]));
         }
-        redirect(new moodle_url('/mod/insightjournal/view.php', ['id' => $id]));
+    } else {
+        $mform->set_data([
+            'response' => ['text' => $responseraw, 'format' => $entry ? $entry->responseformat : FORMAT_HTML],
+            'expectedrevision' => $entry ? (int) $entry->revision : 0,
+            'private' => $entryprivate ? 1 : 0,
+        ]);
     }
-
-    $mform->set_data([
-        'response' => ['text' => $responseraw, 'format' => $entry ? $entry->responseformat : FORMAT_HTML],
-        'expectedrevision' => $entry ? (int) $entry->revision : 0,
-        'private' => $entryprivate ? 1 : 0,
-    ]);
     $entryformhtml = $mform->render();
 }
 
@@ -132,6 +149,10 @@ $templatecontext = [
     'summaryurl' => (new moodle_url('/mod/insightjournal/summary.php', ['courseid' => $course->id]))->out(false),
     'sectionurl' => (new moodle_url('/course/view.php', ['id' => $course->id, 'section' => $sectionnum]))->out(false),
     'canviewall' => $canviewall,
+    'conflict' => (bool) $conflict,
+    'conflictmessage' => $conflict ? get_string('saveconflict', 'insightjournal') : '',
+    'conflictcontent' => $conflict ? $conflict['responsehtml'] : '',
+    'viewurl' => (new moodle_url('/mod/insightjournal/view.php', ['id' => $id]))->out(false),
 ];
 echo $OUTPUT->render_from_template('mod_insightjournal/view', $templatecontext);
 echo $OUTPUT->footer();

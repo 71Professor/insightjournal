@@ -58,6 +58,10 @@ final class view_template_test extends advanced_testcase {
             'sectionurl' => 'https://example.com/course.php',
             'canviewall' => false,
             'promptstyle' => '',
+            'conflict' => false,
+            'conflictmessage' => '',
+            'conflictcontent' => '',
+            'viewurl' => 'https://example.com/view.php',
         ], $overrides);
     }
 
@@ -89,6 +93,53 @@ final class view_template_test extends advanced_testcase {
         $this->assertDoesNotMatchRegularExpression('/data-insightjournal-view[^>]*class="[^"]*d-none/', $html);
         $this->assertMatchesRegularExpression('/data-insightjournal-edit-panel[^>]*class="[^"]*d-none/', $html);
         $this->assertStringContainsString('My reflection', $html);
+    }
+
+    /**
+     * A conflict forces the edit panel open (with the learner's draft) and
+     * hides the view panel, even when an existing entry would otherwise show
+     * the view panel by default - the draft must never be silently replaced
+     * by the read-only view of the server's version.
+     */
+    public function test_conflict_forces_edit_panel_open_even_with_existing_entry(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context([
+            'haveentry' => true,
+            'responseformatted' => '<p>Old saved entry</p>',
+            'entryformhtml' => '<form data-marker="draft"></form>',
+            'conflict' => true,
+            'conflictmessage' => 'Someone else already saved a newer version.',
+            'conflictcontent' => '<p>Server current content</p>',
+        ]));
+
+        $this->assertDoesNotMatchRegularExpression('/data-insightjournal-edit-panel[^>]*class="[^"]*d-none/', $html);
+        $this->assertMatchesRegularExpression('/data-insightjournal-view[^>]*class="[^"]*d-none/', $html);
+        $this->assertStringNotContainsString('alert-danger d-none', $html);
+        $this->assertStringContainsString('Someone else already saved a newer version.', $html);
+        $this->assertStringContainsString('Server current content', $html);
+        $this->assertStringContainsString('data-marker="draft"', $html);
+    }
+
+    /**
+     * Without a conflict, the banner stays hidden and the reload link is
+     * still a real, working URL (not just a JS-only control) even though
+     * it is never shown without JS toggling it or a server-side conflict.
+     */
+    public function test_no_conflict_hides_banner_but_reload_link_has_a_real_url(): void {
+        global $OUTPUT;
+        $this->resetAfterTest();
+
+        $html = $OUTPUT->render_from_template('mod_insightjournal/view', $this->make_context([
+            'viewurl' => 'https://example.com/mod/insightjournal/view.php?id=5',
+        ]));
+
+        $this->assertStringContainsString('alert-danger d-none', $html);
+        $this->assertStringContainsString(
+            'href="https://example.com/mod/insightjournal/view.php?id=5"',
+            $html
+        );
     }
 
     /**

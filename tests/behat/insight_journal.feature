@@ -28,6 +28,20 @@ Feature: Insight journal activity
     When I reload the page
     Then I should see "Saved without JavaScript."
 
+  Scenario: A no-JS save conflict re-shows the learner's draft instead of discarding it
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    And I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "My no-JS draft, about to conflict."
+    And insight journal entry for "student1" in "My Journal" was saved elsewhere as "Saved from another tab, no JS."
+    When I press "Save"
+    Then I should see "a newer version was saved elsewhere"
+    And I should see "Saved from another tab, no JS." in the "[data-insightjournal-conflict-content]" "css_element"
+    And the field "Response" matches value "My no-JS draft, about to conflict."
+    When I press "Save"
+    Then I should see "My no-JS draft, about to conflict."
+
   @javascript
   Scenario: A learner writes and saves a response, then sees it again after reload
     Given the following "activities" exist:

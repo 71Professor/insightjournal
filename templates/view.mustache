@@ -50,6 +50,15 @@
     through arbitrary attributes, so amd/src/autosave.js locates it by its
     standard Moodle-generated id ("id_response") instead.
 
+    The conflict banner and reload control are rendered server-side too, not
+    just toggled by JS: a no-JS POST that hits a save conflict re-renders this
+    same template with conflict true, entryformhtml pre-filled with the
+    learner's just-submitted draft (never the server's version - the whole
+    point is not to silently discard it), and conflictcontent holding the
+    server's actual current content alongside it. The reload control is a
+    real <a href> to viewurl so it works without JS; autosave.js's own click
+    handler (preventDefault + reload()) still attaches to it unchanged.
+
     Context variables required for this template:
     * cmid - Course module id.
     * prompt - Pre-formatted prompt HTML (rendered via triple braces).
@@ -66,6 +75,12 @@
     * canviewall - Whether the user may view the activity report.
     * reporturl - URL to the activity report.
     * sectionurl - URL to the course section where this activity lives.
+    * conflict - Whether a no-JS submit just hit a save conflict; forces the edit
+      panel open (with the learner's draft) even when haveentry is true.
+    * conflictmessage - Localised conflict notice text, or '' when conflict is false.
+    * conflictcontent - The server's current content, pre-formatted for display, or
+      '' when conflict is false.
+    * viewurl - This page's own URL, for the conflict banner's reload link.
 
     Example context (json):
     {
@@ -82,7 +97,11 @@
         "summaryurl": "https://example.com/mod/insightjournal/summary.php?courseid=2",
         "canviewall": false,
         "reporturl": "https://example.com/mod/insightjournal/report.php?id=5",
-        "sectionurl": "https://example.com/course/view.php?id=2&section=3"
+        "sectionurl": "https://example.com/course/view.php?id=2&section=3",
+        "conflict": false,
+        "conflictmessage": "",
+        "conflictcontent": "",
+        "viewurl": "https://example.com/mod/insightjournal/view.php?id=5"
     }
 }}
 <div class="insightjournal-view" data-cmid="{{cmid}}">
@@ -91,18 +110,18 @@
             {{! prompt is pre-sanitised via format_text() in PHP – triple braces intentional, never use for student response }}
             <div class="insightjournal-prompt mb-3"{{#promptstyle}} style="{{promptstyle}}"{{/promptstyle}}>{{{prompt}}}</div>
             {{#canwrite}}
-                <div data-insightjournal-view class="{{^haveentry}}d-none{{/haveentry}}">
+                <div data-insightjournal-view class="{{^haveentry}}d-none {{/haveentry}}{{#conflict}}d-none{{/conflict}}">
                     <div class="insightjournal-response-text mb-2" data-insightjournal-response-display>{{{responseformatted}}}</div>
                     <div class="d-flex align-items-center gap-2">
                         <button type="button" class="btn btn-secondary" data-insightjournal-edit>{{#str}}edit{{/str}}</button>
                         <span data-insightjournal-view-status class="small text-muted">{{lastsaved}}</span>
                     </div>
                 </div>
-                <div data-insightjournal-edit-panel class="{{#haveentry}}d-none{{/haveentry}}">
-                    <div class="alert alert-danger d-none" data-insightjournal-conflict-banner role="alert">
-                        <p data-insightjournal-conflict-message class="mb-2"></p>
-                        <div class="insightjournal-conflict-content border rounded p-2 mb-2 bg-white" data-insightjournal-conflict-content></div>
-                        <button type="button" class="btn btn-danger" data-insightjournal-conflict-reload>{{#str}}conflictreload, mod_insightjournal{{/str}}</button>
+                <div data-insightjournal-edit-panel class="{{#haveentry}}{{^conflict}}d-none{{/conflict}}{{/haveentry}}">
+                    <div class="alert alert-danger {{^conflict}}d-none{{/conflict}}" data-insightjournal-conflict-banner role="alert">
+                        <p data-insightjournal-conflict-message class="mb-2">{{conflictmessage}}</p>
+                        <div class="insightjournal-conflict-content border rounded p-2 mb-2 bg-white" data-insightjournal-conflict-content>{{{conflictcontent}}}</div>
+                        <a href="{{viewurl}}" class="btn btn-danger" role="button" data-insightjournal-conflict-reload>{{#str}}conflictreload, mod_insightjournal{{/str}}</a>
                     </div>
                     {{{entryformhtml}}}
                     <div class="d-flex align-items-center gap-2 mt-2">
