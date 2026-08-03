@@ -101,6 +101,22 @@ class entry_form extends moodleform {
     }
 
     /**
+     * Forces expectedrevision to a specific value regardless of what was
+     * submitted - used only when re-rendering after a save conflict, where
+     * the submitted value is the very (stale) revision that just caused the
+     * conflict. set_data() cannot do this: HTML_QuickForm_element's
+     * onQuickFormEvent('updateValue') resolves constant values first,
+     * *then* submitted, then default - a set_data()-provided default is
+     * always overridden by an already-submitted value for the same field.
+     * setConstant() is the one mechanism that overrides a submitted value.
+     *
+     * @param int $revision
+     */
+    public function force_expected_revision(int $revision): void {
+        $this->_form->setConstant('expectedrevision', $revision);
+    }
+
+    /**
      * Server-side maxchars check, mirroring entry_manager::save()'s own
      * backstop but surfaced as a normal inline form error here.
      *

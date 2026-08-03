@@ -323,14 +323,18 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             }
             var conflictreload = document.querySelector('[data-insightjournal-conflict-reload]');
             if (conflictreload) {
-                // A full reload is the only way out of a conflict: it re-derives
-                // every bit of client state (currentRevision, lastSeenValue, the
-                // response itself) from the server's actual current record via
-                // the normal page render, rather than trying to reconcile it
-                // in place.
+                // Navigates via the link's own href rather than
+                // window.location.reload(): the no-JS conflict path (see
+                // view.php) renders this same control on a POST response, and
+                // reload() would resubmit that POST (triggering a browser
+                // "confirm form resubmission" prompt) instead of loading a
+                // fresh GET. Using href re-derives every bit of client state
+                // (currentRevision, lastSeenValue, the response itself) from
+                // the server's actual current record via a normal page load,
+                // rather than trying to reconcile it in place.
                 conflictreload.addEventListener('click', function(e) {
                     e.preventDefault();
-                    window.location.reload();
+                    window.location.href = conflictreload.href;
                 });
             }
             // Poll rather than bind to a live editor event: Tiny attaches

@@ -85,20 +85,21 @@ if ($canwrite) {
         if ($result['conflict']) {
             // Never silently discard the learner's just-typed draft by
             // redirecting to the server's current record - re-render
-            // immediately with the draft still in the editor alongside the
-            // server's actual current content, the same "show both, let the
-            // learner choose" principle autosave.js's showConflictBanner()
-            // already follows for the AJAX/JS path. expectedrevision is
-            // updated to what's now current, so clicking Save again either
-            // succeeds (nothing else changed meanwhile) or reports a fresh
-            // conflict; the reload link below is the explicit way to discard
-            // the draft and adopt the server's version instead.
+            // immediately instead, the same "show both, let the learner
+            // choose" principle autosave.js's showConflictBanner() already
+            // follows for the AJAX/JS path. The response/private fields need
+            // no explicit action: a submitted moodleform value already wins
+            // over any default at render time, so the draft is redisplayed
+            // as-is. expectedrevision is different - it must be forced past
+            // the just-submitted (now-stale) value via setConstant(), since
+            // set_data()/setDefaults() alone can never override a submitted
+            // value - see entry_form::force_expected_revision(). This makes
+            // clicking Save again either succeed (nothing else changed
+            // meanwhile) or report a fresh conflict; the reload link below
+            // is the explicit way to discard the draft and adopt the
+            // server's version instead.
             $conflict = $result;
-            $mform->set_data([
-                'response' => ['text' => $data->response['text'], 'format' => FORMAT_HTML],
-                'expectedrevision' => $result['revision'],
-                'private' => $data->private ? 1 : 0,
-            ]);
+            $mform->force_expected_revision((int) $result['revision']);
         } else {
             \core\notification::success(get_string('savedat', 'insightjournal', $result['timestr']));
             redirect(new moodle_url('/mod/insightjournal/view.php', ['id' => $id]));

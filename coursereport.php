@@ -123,7 +123,7 @@ if ($download === 'csv') {
             'mod/insightjournal:submit',
             $restrictgroupids,
             $userfields,
-            'u.lastname,u.firstname',
+            'u.lastname,u.firstname,u.id',
             $offset,
             $csvchunksize
         );
@@ -165,7 +165,7 @@ $participants = $blockallparticipants
         'mod/insightjournal:submit',
         $restrictgroupids,
         $userfields,
-        'u.lastname,u.firstname',
+        'u.lastname,u.firstname,u.id',
         $page * $perpage,
         $perpage
     );

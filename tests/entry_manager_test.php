@@ -111,4 +111,33 @@ final class entry_manager_test extends advanced_testcase {
         $this->assertEquals($racingentry->id, $result['id']);
         $this->assertEquals(1, $result['revision']);
     }
+
+    /**
+     * A write failure that leaves no row behind is a genuine DB error (a
+     * deadlock, a connection loss - not a duplicate-key race) and must
+     * propagate rather than being reported as an ordinary conflict, since
+     * there is nothing to reconcile against. Forced here via a value the
+     * revision column's integer type genuinely rejects at the DB level,
+     * distinct from the unique-index violation the other test above
+     * exercises (which fails to insert but leaves a real row behind).
+     */
+    public function test_insert_failure_without_a_confirmed_row_propagates(): void {
+        $newentry = (object) [
+            'insightjournalid' => $this->journal->id,
+            'userid' => $this->student->id,
+            'response' => 'this insert should fail outright, not report a conflict',
+            'responseformat' => FORMAT_HTML,
+            'revision' => 'not-a-number',
+            'visibility' => INSIGHTJOURNAL_VISIBILITY_VISIBLE,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ];
+
+        $method = new \ReflectionMethod(entry_manager::class, 'insert_or_detect_race');
+        $method->setAccessible(true);
+        $context = \context_module::instance((int) $this->journal->cmid);
+
+        $this->expectException(\dml_write_exception::class);
+        $method->invoke(null, $newentry, $this->journal->id, $this->student->id, $context);
+    }
 }

@@ -40,7 +40,8 @@ Feature: Insight journal activity
     And I should see "Saved from another tab, no JS." in the "[data-insightjournal-conflict-content]" "css_element"
     And the field "Response" matches value "My no-JS draft, about to conflict."
     When I press "Save"
-    Then I should see "My no-JS draft, about to conflict."
+    Then I should see "My no-JS draft, about to conflict." in the "[data-insightjournal-view]" "css_element"
+    And I should not see "a newer version was saved elsewhere"
 
   @javascript
   Scenario: A learner writes and saves a response, then sees it again after reload
