@@ -38,11 +38,13 @@ require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
- * Tests for {@see \insightjournal_coursereport_csv_row()} and
- * {@see \insightjournal_entries_by_diary_and_user()}.
+ * Tests for {@see \insightjournal_coursereport_csv_row()},
+ * {@see \insightjournal_entries_by_diary_and_user()}, and
+ * {@see \insightjournal_coursereport_cell_state()}.
  */
 #[CoversFunction('insightjournal_coursereport_csv_row')]
 #[CoversFunction('insightjournal_entries_by_diary_and_user')]
+#[CoversFunction('insightjournal_coursereport_cell_state')]
 final class coursereport_csv_test extends advanced_testcase {
     /** @var stdClass The course. */
     protected stdClass $course;
@@ -297,5 +299,71 @@ final class coursereport_csv_test extends advanced_testcase {
     public function test_empty_diaryids_or_userids_returns_empty_map(): void {
         $this->assertSame([], \insightjournal_entries_by_diary_and_user([], [(int) $this->student->id]));
         $this->assertSame([], \insightjournal_entries_by_diary_and_user([(int) $this->diary->id], []));
+    }
+
+    /**
+     * No entry at all is neither completed nor private.
+     */
+    public function test_cell_state_no_entry(): void {
+        $state = \insightjournal_coursereport_cell_state(null);
+
+        $this->assertFalse($state['completed']);
+        $this->assertFalse($state['private']);
+    }
+
+    /**
+     * A normal, visible, non-empty entry is completed and not private.
+     */
+    public function test_cell_state_visible_entry_is_completed(): void {
+        $entry = $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $this->student->id,
+            'A real reflection.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $state = \insightjournal_coursereport_cell_state($entry);
+
+        $this->assertTrue($state['completed']);
+        $this->assertFalse($state['private']);
+    }
+
+    /**
+     * A private entry still counts as completed (R3-09: matches
+     * custom_completion.php's own state calculation, which never checks
+     * visibility) - only the private flag differs, so the caller can still
+     * hide its status/timestamp/content from the trainer's per-cell view.
+     */
+    public function test_cell_state_private_entry_still_counts_as_completed(): void {
+        $entry = $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $this->student->id,
+            'A private reflection.',
+            INSIGHTJOURNAL_VISIBILITY_PRIVATE
+        );
+
+        $state = \insightjournal_coursereport_cell_state($entry);
+
+        $this->assertTrue($state['completed']);
+        $this->assertTrue($state['private']);
+    }
+
+    /**
+     * An empty rich-text editor shell (e.g. "<p></p>") is not completed,
+     * private or not - an entry row existing is not the same as having
+     * written anything.
+     */
+    public function test_cell_state_empty_entry_is_not_completed(): void {
+        $entry = $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $this->student->id,
+            '<p></p>',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $state = \insightjournal_coursereport_cell_state($entry);
+
+        $this->assertFalse($state['completed']);
+        $this->assertFalse($state['private']);
     }
 }

@@ -21,6 +21,13 @@
  * @author     Michael Kohl
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+// The Squiz.Functions.MultiLineFunctionDeclaration sniff demands a space
+// after `function`, which directly contradicts ESLint's
+// space-before-function-paren rule (enforced by the Grunt CI step) that
+// forbids that same space - a permanent contradiction for this file's
+// style, not staleness. Disabled for this file only, so the sniff still
+// protects every other file in the plugin.
+// phpcs:disable Squiz.Functions.MultiLineFunctionDeclaration
 define([], function() {
     return {
         init: function() {
@@ -34,3 +41,4 @@ define([], function() {
         }
     };
 });
+// phpcs:enable Squiz.Functions.MultiLineFunctionDeclaration

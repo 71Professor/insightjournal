@@ -94,14 +94,15 @@ jobs:
 
       - name: Moodle Code Checker
         if: ${{ !cancelled() && matrix.php >= '8.2' }}
-        # Squiz.Functions.MultiLineFunctionDeclaration.SpaceAfterFunction is excluded:
-        # it demands a space after `function` in AMD JS, which directly
-        # contradicts ESLint's space-before-function-paren rule (enforced by
-        # the Grunt step below with --max-lint-warnings 0), which forbids
-        # that same space. Excluding it here keeps both gates satisfiable.
-        # --exclude only accepts Standard.Category.Sniff (3-part) codes, not the
-        # full 4-part message code, so this drops the whole sniff.
-        run: moodle-plugin-ci phpcs --max-warnings 0 --exclude=Squiz.Functions.MultiLineFunctionDeclaration
+        # Squiz.Functions.MultiLineFunctionDeclaration.SpaceAfterFunction demands a
+        # space after `function` in AMD JS, which directly contradicts ESLint's
+        # space-before-function-paren rule (enforced by the Grunt step below with
+        # --max-lint-warnings 0), which forbids that same space. Previously excluded
+        # here repo-wide via --exclude (which only accepts 3-part Standard.Category.Sniff
+        # codes, disabling the whole sniff everywhere); now scoped to just the two AMD
+        # files that actually need it via inline `// phpcs:disable`/`// phpcs:enable`
+        # comments, so this sniff still protects every other file in the plugin.
+        run: moodle-plugin-ci phpcs --max-warnings 0
 
       - name: Moodle PHPDoc Checker
         if: ${{ !cancelled() }}
@@ -117,9 +118,13 @@ jobs:
         # composer install, and the plugin's own code doesn't vary by
         # Moodle branch in a way that would change its analysis result.
         # Baseline (phpstan-baseline.neon) is never regenerated in CI.
+        # Version pinned exactly (R3-11): an unpinned require would silently
+        # pick up whatever release is newest on the day CI happens to run,
+        # so a breaking change upstream could turn this step red with no
+        # corresponding change in this repo. Bump deliberately when needed.
         run: |
           cd moodle
-          composer require --dev --no-interaction micaherne/phpstan-moodle
+          composer require --dev --no-interaction micaherne/phpstan-moodle:1.1.0
           vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon --memory-limit=1G --no-progress
 
       - name: Validating

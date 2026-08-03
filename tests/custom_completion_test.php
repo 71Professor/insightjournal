@@ -158,6 +158,22 @@ final class custom_completion_test extends advanced_testcase {
     }
 
     /**
+     * A two-paragraph response ("HelloWorld", 10 visible characters per the
+     * client's own live counter) must be incomplete against an 11-character
+     * minimum - not complete, which is what it would wrongly be if minchars
+     * were still measured via insightjournal_html_to_text()'s inserted
+     * blank-line paragraph separator ("Hello\n\nWorld", 12 characters).
+     * Regression guard for R3-08 (JS/PHP visible-character count parity).
+     */
+    public function test_minchars_does_not_count_paragraph_separators(): void {
+        $this->resetAfterTest();
+        $this->assertEquals(
+            COMPLETION_INCOMPLETE,
+            $this->compute_state(11, '<p>Hello</p><p>World</p>')
+        );
+    }
+
+    /**
      * The plugin defines exactly the completionentries rule.
      */
     public function test_get_defined_custom_rules(): void {

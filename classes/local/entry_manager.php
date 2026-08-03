@@ -88,7 +88,7 @@ class entry_manager {
         $context = \context_module::instance($cm->id);
         $now = time();
         $response = clean_param($response, PARAM_CLEANHTML);
-        $visiblelength = \core_text::strlen(insightjournal_html_to_text($response));
+        $visiblelength = insightjournal_visible_char_count($response);
         if (!empty($diary->maxchars) && $visiblelength > (int) $diary->maxchars) {
             throw new \moodle_exception('maxcharserror', 'mod_insightjournal', '', (int) $diary->maxchars);
         }

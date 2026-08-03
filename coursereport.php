@@ -197,19 +197,21 @@ foreach ($participants as $user) {
         }
         $authorized = true;
         $entry = $entries[$user->id][$diary->id] ?? null;
-        if ($entry && !insightjournal_entry_visible_to_teacher($entry)) {
+        $state = insightjournal_coursereport_cell_state($entry);
+        if ($state['completed']) {
+            $done++;
+        }
+        if ($state['private']) {
             $cells[] = ['private' => true];
             continue;
         }
-        $completed = $entry && insightjournal_html_to_text($entry->response) !== '';
-        if ($completed) {
-            $done++;
-        }
         $cells[] = [
             'private' => false,
-            'completed' => $completed,
-            'status' => get_string($completed ? 'submitted' : 'notsubmitted', 'insightjournal'),
-            'timemodified' => $completed ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig')) : '',
+            'completed' => $state['completed'],
+            'status' => get_string($state['completed'] ? 'submitted' : 'notsubmitted', 'insightjournal'),
+            'timemodified' => $state['completed']
+                ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
+                : '',
         ];
     }
     if (!$authorized) {

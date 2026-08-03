@@ -24,18 +24,22 @@
  */
 
 /**
- * Convert stored response HTML to its visible plain-text form.
+ * Convert stored response HTML to its visible plain-text form, for display
+ * (CSV export, table cells) and for deciding whether a response is
+ * meaningfully empty. An empty rich-text editor serialises to markup like
+ * "<p></p>" or "<p><br></p>", not "", so a raw trim()/strlen() check on
+ * stored HTML is unreliable.
  *
- * Used to measure "visible characters" for minchars/maxchars and to decide
- * whether a response is meaningfully empty. An empty rich-text editor
- * serialises to markup like "<p></p>" or "<p><br></p>", not "", so a raw
- * trim()/strlen() check on stored HTML is unreliable.
+ * Not used for minchars/maxchars length checks - see
+ * insightjournal_visible_char_count() for that, which deliberately counts
+ * differently (no inserted paragraph/list formatting) to match the
+ * client-side counter.
  *
  * Moodle's html_to_text() upper-cases the visible content of <b>, <strong>,
  * <h1>-<h6> and <th> elements to convey emphasis in its plain-text output.
- * That case transform is undesirable for a character-count/emptiness check,
- * so those tags are unwrapped (keeping their inner text as-is) before
- * delegating to html_to_text().
+ * That case transform is undesirable for an emptiness check, so those tags
+ * are unwrapped (keeping their inner text as-is) before delegating to
+ * html_to_text().
  *
  * @param string $html Stored response HTML (or plain text).
  * @return string Trimmed visible text, with all markup stripped.
@@ -44,6 +48,35 @@ function insightjournal_html_to_text(string $html): string {
     $html = preg_replace('#</?(?:b|strong|h[1-6]|th)(?:\s[^>]*)?>#i', '', $html);
 
     return trim(html_to_text($html, 0, false));
+}
+
+/**
+ * Counts "visible characters" the same way the client-side counter does
+ * (amd/src/autosave.js's stripHtml()/charCount(), i.e. a browser
+ * DOMParser's textContent): DOM text-node concatenation, with no separators
+ * inserted between block-level elements or list items. Used everywhere a
+ * length is compared against minchars/maxchars, so the server enforces
+ * exactly what the learner's live counter showed.
+ *
+ * Deliberately distinct from insightjournal_html_to_text(), which inserts
+ * paragraph/list formatting (blank lines, "* " bullets) for plain-text
+ * readability - that formatting made server-side length checks count
+ * higher than the client's live counter for multi-paragraph or list
+ * content, most learners' most natural way of writing a longer reflection.
+ *
+ * @param string $html Response HTML (or plain text).
+ * @return int
+ */
+function insightjournal_visible_char_count(string $html): int {
+    if (trim($html) === '') {
+        return 0;
+    }
+    $doc = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $doc->loadHTML('<?xml encoding="utf-8"?><div>' . $html . '</div>', LIBXML_NOERROR | LIBXML_NOWARNING);
+    libxml_clear_errors();
+
+    return core_text::strlen($doc->textContent);
 }
 
 /**
@@ -397,4 +430,25 @@ function insightjournal_entries_by_diary_and_user(array $diaryids, array $userid
         $entries[$entry->userid][$entry->insightjournalid] = $entry;
     }
     return $entries;
+}
+
+/**
+ * Decides, for one participant's entry in one activity of the course-wide
+ * report, whether it counts toward the learner's progress total and
+ * whether its per-cell display must stay private.
+ *
+ * completed is decided independently of privacy and counts regardless of
+ * it - matching custom_completion.php's own completion state calculation,
+ * which never checks visibility either: a private entry is real completed
+ * work, just hidden from the trainer's view of its content/status/
+ * timestamp, not from whether it happened at all.
+ *
+ * @param stdClass|null $entry The participant's entry for this activity, or null if they have none.
+ * @return array{completed: bool, private: bool}
+ */
+function insightjournal_coursereport_cell_state(?stdClass $entry): array {
+    return [
+        'completed' => $entry !== null && insightjournal_html_to_text($entry->response) !== '',
+        'private' => $entry !== null && !insightjournal_entry_visible_to_teacher($entry),
+    ];
 }

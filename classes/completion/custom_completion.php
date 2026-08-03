@@ -67,12 +67,11 @@ class custom_completion extends activity_custom_completion {
             return COMPLETION_INCOMPLETE;
         }
 
-        $visibletext = \insightjournal_html_to_text($entry->response);
-        if ($visibletext === '') {
+        if (\insightjournal_html_to_text($entry->response) === '') {
             return COMPLETION_INCOMPLETE;
         }
 
-        $meetsminchars = \core_text::strlen($visibletext) >= (int) $diary->minchars;
+        $meetsminchars = \insightjournal_visible_char_count($entry->response) >= (int) $diary->minchars;
         return $meetsminchars ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
     }
 

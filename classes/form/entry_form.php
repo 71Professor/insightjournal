@@ -132,7 +132,7 @@ class entry_form extends moodleform {
             global $CFG;
             require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
             $text = $data['response']['text'] ?? '';
-            $visiblelength = \core_text::strlen(insightjournal_html_to_text($text));
+            $visiblelength = insightjournal_visible_char_count($text);
             if ($visiblelength > $maxchars) {
                 $errors['response'] = get_string('maxcharserror', 'mod_insightjournal', $maxchars);
             }

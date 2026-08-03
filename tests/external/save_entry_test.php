@@ -232,6 +232,26 @@ final class save_entry_test extends advanced_testcase {
     }
 
     /**
+     * A two-item list ("OneTwo", 6 visible characters per the client's own
+     * live counter) must fit within a 6-character maxchars limit - not be
+     * rejected, which is what would wrongly happen if length were still
+     * measured via insightjournal_html_to_text()'s "* " bullet-marker
+     * formatting ("* One\n\t* Two", 12 characters). Regression guard for
+     * R3-08 (JS/PHP visible-character count parity).
+     */
+    public function test_maxchars_does_not_count_list_bullet_formatting(): void {
+        $generator = $this->getDataGenerator();
+        $journal = $generator->create_module('insightjournal', [
+            'course' => $this->course->id,
+            'maxchars' => 6,
+        ]);
+
+        $result = save_entry::execute((int) $journal->cmid, '<ul><li>One</li><li>Two</li></ul>', 0, false);
+        $result = external_api::clean_returnvalue(save_entry::execute_returns(), $result);
+        $this->assertTrue($result['success']);
+    }
+
+    /**
      * A first save against a brand new entry must use expectedrevision 0.
      */
     public function test_first_save_requires_expectedrevision_zero(): void {

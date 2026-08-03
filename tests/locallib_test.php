@@ -38,12 +38,14 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
  * Tests for {@see \insightjournal_html_to_text()}, {@see \insightjournal_prompt_style()},
- * {@see \insightjournal_contrasting_text_color()}, and {@see \insightjournal_entry_visible_to_teacher()}.
+ * {@see \insightjournal_contrasting_text_color()}, {@see \insightjournal_entry_visible_to_teacher()},
+ * and {@see \insightjournal_visible_char_count()}.
  */
 #[CoversFunction('insightjournal_html_to_text')]
 #[CoversFunction('insightjournal_prompt_style')]
 #[CoversFunction('insightjournal_contrasting_text_color')]
 #[CoversFunction('insightjournal_entry_visible_to_teacher')]
+#[CoversFunction('insightjournal_visible_char_count')]
 final class locallib_test extends advanced_testcase {
     /**
      * Tags are stripped but visible text survives.
@@ -214,5 +216,77 @@ final class locallib_test extends advanced_testcase {
     public function test_entry_hidden_when_value_is_invalid(): void {
         $entry = $this->make_entry(99);
         $this->assertFalse(\insightjournal_entry_visible_to_teacher($entry));
+    }
+
+    /**
+     * Plain text with no markup at all counts identically either way - the
+     * baseline case where insightjournal_visible_char_count() and
+     * insightjournal_html_to_text()/strlen() must always agree.
+     */
+    public function test_visible_char_count_plain_text(): void {
+        $this->assertEquals(12, \insightjournal_visible_char_count('twelve chars'));
+    }
+
+    /**
+     * Two paragraphs count as a plain concatenation (10), not with the
+     * blank-line separator insightjournal_html_to_text() inserts for
+     * plain-text readability (which would make this 12) - matching a
+     * browser DOMParser's textContent, the same thing the client-side
+     * counter in amd/src/autosave.js measures.
+     */
+    public function test_visible_char_count_ignores_paragraph_breaks(): void {
+        $this->assertEquals(10, \insightjournal_visible_char_count('<p>Hello</p><p>World</p>'));
+    }
+
+    /**
+     * List items count as a plain concatenation (6), not with the "* "
+     * bullet markers insightjournal_html_to_text() adds (which would make
+     * this 12) - a list is a natural way to write a longer reflection, so
+     * this was the most likely case to visibly diverge from the client's
+     * live counter.
+     */
+    public function test_visible_char_count_ignores_list_formatting(): void {
+        $this->assertEquals(6, \insightjournal_visible_char_count('<ul><li>One</li><li>Two</li></ul>'));
+    }
+
+    /**
+     * <br> contributes no character of its own, matching a browser's
+     * textContent (which never represents <br> as a text character) rather
+     * than insightjournal_html_to_text(), which renders it as "\n".
+     */
+    public function test_visible_char_count_ignores_line_breaks(): void {
+        $this->assertEquals(10, \insightjournal_visible_char_count('<p>Line1<br>Line2</p>'));
+    }
+
+    /**
+     * An empty rich-text editor shell counts as zero, not the length of its
+     * own markup - the same emptiness guarantee
+     * insightjournal_html_to_text() already provides.
+     */
+    public function test_visible_char_count_empty_shell_is_zero(): void {
+        $this->assertEquals(0, \insightjournal_visible_char_count(''));
+        $this->assertEquals(0, \insightjournal_visible_char_count('<p></p>'));
+        $this->assertEquals(0, \insightjournal_visible_char_count('<p><br></p>'));
+    }
+
+    /**
+     * Counted in Unicode code points, not bytes: a multibyte accented
+     * character and a 4-byte-UTF-8 emoji (outside the Basic Multilingual
+     * Plane) each still count as exactly one character, matching a
+     * browser's [...string].length (spread-based, code-point-aware)
+     * iteration in amd/src/autosave.js's charCount().
+     */
+    public function test_visible_char_count_counts_code_points_not_bytes(): void {
+        $this->assertEquals(19, \insightjournal_visible_char_count('<p>héllo wörld émoji 😀</p>'));
+    }
+
+    /**
+     * A non-breaking space and unwrapped bold/emphasis markup already
+     * agreed between the two functions before this change - confirms this
+     * function didn't regress either.
+     */
+    public function test_visible_char_count_matches_html_to_text_for_simple_cases(): void {
+        $this->assertEquals(11, \insightjournal_visible_char_count('<p>Hello&nbsp;World</p>'));
+        $this->assertEquals(11, \insightjournal_visible_char_count('<p>Hello <b>World</b></p>'));
     }
 }

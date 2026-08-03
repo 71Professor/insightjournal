@@ -8,6 +8,8 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+## [0.8.0-beta] - 2026-08-03
+
 ### Added
 
 - **The activity now fires Moodle's standard events**, addressing the
@@ -112,6 +114,24 @@ Versions map to the `$plugin->release` value in `version.php`.
   surfaces as an actual error instead of a misleading "someone else saved
   a newer version" message.
 
+- **The server now counts "visible characters" for minchars/maxchars the
+  same way the learner's live character counter does**, closing the R3-08
+  review finding. The counter in `amd/src/autosave.js` strips markup via a
+  browser `textContent` (no separators added between paragraphs or list
+  items); the server's minchars/maxchars checks and completion tracking
+  previously measured length via `insightjournal_html_to_text()`, which
+  deliberately inserts blank lines between paragraphs and `"* "` bullet
+  markers for list items - readable for CSV export/display, but longer
+  than what the learner actually saw counted while typing. Most noticeable
+  for multi-paragraph or list-formatted responses, a natural way to write
+  a longer reflection: previously, such a response could be silently
+  rejected as over `maxchars` (or fail to reach `minchars` for completion)
+  even though the client's own counter showed it within range. New
+  `insightjournal_visible_char_count()` in `locallib.php` is now used
+  everywhere a length is compared against minchars/maxchars;
+  `insightjournal_html_to_text()` is unchanged and still used for display
+  and emptiness checks, where the added formatting is intentional.
+
 ### Changed
 
 - **Reports no longer show a participant's email address to a viewer who
@@ -149,6 +169,32 @@ Versions map to the `$plugin->release` value in `version.php`.
   already went through Moodle's core writer since 0.7.1-beta and needed no
   equivalent fix — its now-redundant manual escaping calls were simply
   removed.
+
+- **The course-wide report's per-learner progress count ("X / N") now
+  counts a private entry as done**, closing the R3-09 review finding.
+  Previously it excluded private entries entirely, undercounting real
+  completed work and disagreeing with the activity's own Moodle completion
+  tracking (`custom_completion.php`), which never checked privacy in the
+  first place. Only the aggregate count changes - a private entry's
+  per-cell status, timestamp, and content stay exactly as hidden from the
+  trainer as before.
+
+- **CI's Moodle Code Checker no longer disables
+  `Squiz.Functions.MultiLineFunctionDeclaration` across the whole plugin**,
+  closing the R3-10 review finding. The sniff's contradiction with ESLint's
+  `space-before-function-paren` rule (see the 0.7.1-beta entry below) only
+  ever applied to `amd/src/autosave.js`/`summary.js`'s specific style; it's
+  now suppressed with inline `phpcs:disable`/`phpcs:enable` comments in
+  just those two files, so the sniff still protects every other file in
+  the plugin (all PHP files, and any future AMD module that doesn't share
+  this particular contradiction).
+
+- **CI's PHPStan step now installs a pinned `micaherne/phpstan-moodle`
+  version (`1.1.0`) instead of an unconstrained `composer require`**,
+  closing the R3-11 review finding. An unpinned install could silently
+  pick up a new, potentially breaking release on whatever day CI happens
+  to run next, turning the step red with no corresponding change in this
+  repository.
 
 ### Testing
 
