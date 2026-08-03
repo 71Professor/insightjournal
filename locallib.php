@@ -72,9 +72,18 @@ function insightjournal_visible_char_count(string $html): int {
         return 0;
     }
     $doc = new DOMDocument();
-    libxml_use_internal_errors(true);
-    $doc->loadHTML('<?xml encoding="utf-8"?><div>' . $html . '</div>', LIBXML_NOERROR | LIBXML_NOWARNING);
+    $previoushandling = libxml_use_internal_errors(true);
+    // A meta charset tag, not an XML declaration, is what reliably forces
+    // loadHTML() to treat $html as UTF-8: the XML-declaration form stopped
+    // working once libxml2 >= 2.14.0 (each UTF-8 continuation byte is then
+    // read as its own character) - the same fix Moodle core applied in
+    // lib/classes/formatting.php after hitting this exact regression.
+    $doc->loadHTML(
+        '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"><div>' . $html . '</div>',
+        LIBXML_NOERROR | LIBXML_NOWARNING
+    );
     libxml_clear_errors();
+    libxml_use_internal_errors($previoushandling);
 
     return core_text::strlen($doc->textContent);
 }

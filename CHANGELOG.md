@@ -514,5 +514,11 @@ maturity `MATURITY_BETA`.
   included; restore maps user IDs and skips entries for unavailable users.
 - English and German language packs.
 
-[Unreleased]: https://github.com/71Professor/insightjournal/compare/v0.5.0-beta...HEAD
+[Unreleased]: https://github.com/71Professor/insightjournal/compare/v0.7.1-beta...HEAD
+[0.8.0-beta]: https://github.com/71Professor/insightjournal/compare/v0.7.1-beta...v0.8.0-beta
+[0.7.1-beta]: https://github.com/71Professor/insightjournal/compare/v0.7.0-beta...v0.7.1-beta
+[0.7.0-beta]: https://github.com/71Professor/insightjournal/compare/v0.6.0-beta...v0.7.0-beta
+[0.6.0-beta]: https://github.com/71Professor/insightjournal/compare/v0.5.0-beta...v0.6.0-beta
+[0.5.0-beta]: https://github.com/71Professor/insightjournal/compare/v0.4.1-beta...v0.5.0-beta
+[0.4.1-beta]: https://github.com/71Professor/insightjournal/releases/tag/v0.4.1-beta
 [0.2.0-beta]: https://github.com/71Professor/insightjournal/releases/tag/v0.2.0-beta

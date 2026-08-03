@@ -368,6 +368,10 @@ Feature: Insight journal activity
     Then I should see "Student 2"
     And "Student 2" row "Journal B" column of "generaltable" table should contain "Submitted"
     And "Student 2" row "Journal A" column of "generaltable" table should not contain "Submitted"
+    # Progress reads 1 / 1, not 1 / 2: the denominator only counts Journal B,
+    # the one activity teacher2 is actually authorized to see for Student 2 -
+    # Journal A is invisible to this viewer for this learner, not "not done".
+    And "Student 2" row "Progress" column of "generaltable" table should contain "1 / 1"
     And I should not see "Student 3"
 
   # No negative/denial half to this scenario - only the "can view my own

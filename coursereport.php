@@ -187,7 +187,13 @@ foreach ($diaries as $diary) {
 $rows = [];
 foreach ($participants as $user) {
     $done = 0;
-    $authorized = false;
+    // Counts only the diaries this viewer is authorized to see for this
+    // learner (i.e. not group-restricted away), used as the progress
+    // denominator below - not count($diaries), which would silently
+    // understate a learner's ratio by diaries the viewer cannot see any
+    // data for at all, the same "authorization-invisible activities don't
+    // count" principle already applied everywhere else on this page.
+    $visiblecount = 0;
     $cells = [];
     foreach ($diaries as $diary) {
         $allowedusers = $diaryallowedusers[$diary->id];
@@ -195,7 +201,7 @@ foreach ($participants as $user) {
             $cells[] = ['private' => true];
             continue;
         }
-        $authorized = true;
+        $visiblecount++;
         $entry = $entries[$user->id][$diary->id] ?? null;
         $state = insightjournal_coursereport_cell_state($entry);
         if ($state['completed']) {
@@ -214,7 +220,7 @@ foreach ($participants as $user) {
                 : '',
         ];
     }
-    if (!$authorized) {
+    if ($visiblecount === 0) {
         continue;
     }
     $rows[] = [
@@ -231,7 +237,7 @@ foreach ($participants as $user) {
             ]
         ))->out(false),
         'cells' => $cells,
-        'progress' => $done . ' / ' . count($diaries),
+        'progress' => $done . ' / ' . $visiblecount,
     ];
 }
 

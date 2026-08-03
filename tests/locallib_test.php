@@ -250,6 +250,30 @@ final class locallib_test extends advanced_testcase {
     }
 
     /**
+     * Real editors (TinyMCE, Atto) serialise a newline between sibling
+     * block elements, e.g. "<p>Hello</p>\n<p>World</p>", not the
+     * concatenated form the tests above use. That newline is a real DOM
+     * text node (a document's HTML parser never treats inter-element
+     * whitespace as insignificant at the tree level - that's a rendering
+     * concern, not a DOM one), so it counts here too: 11, not 10 - matching
+     * a browser's textContent exactly rather than the "no separators at
+     * all" simplification the other tests above use for readability.
+     */
+    public function test_visible_char_count_counts_whitespace_between_real_editor_paragraphs(): void {
+        $this->assertEquals(11, \insightjournal_visible_char_count("<p>Hello</p>\n<p>World</p>"));
+    }
+
+    /**
+     * Same as above for a real editor's serialised list markup: three
+     * inter-element newlines (before the first <li>, between the two
+     * </li>/<li> pairs, and before </ul>) are each a real text node, so
+     * they count: 9 ("One" + "Two" + 3 newlines), not 6.
+     */
+    public function test_visible_char_count_counts_whitespace_between_real_editor_list_items(): void {
+        $this->assertEquals(9, \insightjournal_visible_char_count("<ul>\n<li>One</li>\n<li>Two</li>\n</ul>"));
+    }
+
+    /**
      * <br> contributes no character of its own, matching a browser's
      * textContent (which never represents <br> as a text character) rather
      * than insightjournal_html_to_text(), which renders it as "\n".
