@@ -71,6 +71,47 @@ Versions map to the `$plugin->release` value in `version.php`.
   bare SHA. No effect on a normal tagged release - only closes a spoofing
   path nothing in this project's history has actually exploited.
 
+- **The course-wide report's CSV export now streams participants in
+  bounded chunks (500 at a time) instead of loading every enrolled
+  participant and every entry across all of its activities into memory at
+  once**, closing the R3-04 review finding - the root cause of this
+  report's long load times on large courses. Output and column layout are
+  unchanged; only memory use during the export is now bounded independent
+  of course size, the same property `report.php`'s CSV export already got
+  from its `table_sql` migration in R2-04. The entries lookup shared by
+  both the on-screen pagination and the CSV export is now a single
+  `insightjournal_entries_by_diary_and_user()` helper in `locallib.php`,
+  replacing two near-identical inline queries.
+
+- **A save conflict on the no-JavaScript form-submit path no longer
+  discards the learner's unsaved draft**, closing the R3-05 review
+  finding. Previously, a rejected (conflicting) save via a plain POST
+  submit redirected straight back to the activity view, silently
+  replacing the learner's just-typed text with whatever was already
+  stored on the server. The page now re-renders immediately instead: the
+  learner's own draft stays in the editor, a conflict notice is shown
+  alongside the server's actual current content (mirroring the AJAX/JS
+  path's existing conflict banner), and an explicit "Reload page" link is
+  offered to discard the draft and adopt the server's version instead.
+  Clicking Save again either succeeds (if nothing else changed in the
+  meantime) or reports a fresh conflict.
+
+- **A genuine database write failure during save is no longer mislabeled
+  as an ordinary save conflict**, closing the R3-06 review finding.
+  `entry_manager::save()`'s backstop for a brand-new entry racing with a
+  write from outside its own lock (the only realistic source is a course
+  restore inserting entries directly) used to catch *any*
+  `dml_write_exception` from either an insert or an update and report it
+  as a conflict - including a genuine, unrelated DB error (deadlock,
+  connection loss). Now: an update failure always propagates as a real
+  error (an update can never legitimately race on the unique index the
+  way a brand-new insert can); an insert failure is only reported as a
+  conflict once a row is confirmed to actually exist for that (activity,
+  learner) pair - anything else propagates too. No visible change for the
+  overwhelming majority of saves; a genuine DB error at save time now
+  surfaces as an actual error instead of a misleading "someone else saved
+  a newer version" message.
+
 ### Changed
 
 - **Reports no longer show a participant's email address to a viewer who

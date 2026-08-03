@@ -232,14 +232,15 @@ parameter when passed the `FORMAT_HTML` constant, and one on
 in Moodle core itself — the method fully supports a string label).
 
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover a
-plain form submit with no JavaScript, the save/reload roundtrip, editing a
-previously saved response, autosave persisting a change without leaving
-edit mode, the minchars completion regression, a successful save never
-showing the error status, a learner marking their own entry private,
-saving/the character counter/autosave with the Atto editor, a learner
-choosing differently across two activities in the same course, a stale
-save being rejected as a conflict that locks further saves until the
-learner reloads, and both reports' pagination. Run via
+plain form submit with no JavaScript, a no-JavaScript save conflict
+re-showing the learner's draft instead of discarding it, the save/reload
+roundtrip, editing a previously saved response, autosave persisting a
+change without leaving edit mode, the minchars completion regression, a
+successful save never showing the error status, a learner marking their
+own entry private, saving/the character counter/autosave with the Atto
+editor, a learner choosing differently across two activities in the same
+course, a stale save being rejected as a conflict that locks further
+saves until the learner reloads, and both reports' pagination. Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
 after `php admin/tool/behat/cli/init.php`.
 
@@ -252,11 +253,12 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: eighteen scenarios cover a plain
-  no-JavaScript form submit, the save/reload roundtrip, editing a saved
-  response, autosave, the minchars completion regression, a learner
-  marking their own entry private, choosing differently across two
-  activities in the same course, the Atto editor, the save-status
+- **Behat coverage is limited**: nineteen scenarios cover a plain
+  no-JavaScript form submit, a no-JavaScript save conflict re-showing the
+  learner's draft instead of discarding it, the save/reload roundtrip,
+  editing a saved response, autosave, the minchars completion regression,
+  a learner marking their own entry private, choosing differently across
+  two activities in the same course, the Atto editor, the save-status
   classes, a save conflict locking further saves until reload, both
   reports' pagination, Separate Groups restriction across all three
   report/summary surfaces, and two scenarios proving Separate Groups
@@ -279,15 +281,17 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (18 scenarios: save/reload roundtrip, editing a saved
+- [x] Add Behat tests (19 scenarios: save/reload roundtrip, editing a saved
       response, autosave, completion regression, save-status classes, a
       learner marking their own entry private, Atto editor, choosing
       differently across activities, save conflict locking, a plain
-      no-JavaScript form submit, activity report pagination,
+      no-JavaScript form submit, a no-JavaScript save conflict re-showing
+      the learner's draft, activity report pagination,
       course-wide report pagination, Separate Groups restriction across
       all three report/summary surfaces, and Separate Groups restriction
       cannot leak across activities with different groupings) — 2026-07-09,
-      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28, 2026-07-31
+      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28, 2026-07-31,
+      2026-08-03
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory
