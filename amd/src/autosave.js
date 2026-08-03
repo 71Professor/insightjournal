@@ -373,4 +373,5 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         }
     };
 });
+// Closes the disable block opened above define().
 // phpcs:enable Squiz.Functions.MultiLineFunctionDeclaration

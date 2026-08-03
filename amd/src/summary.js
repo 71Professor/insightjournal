@@ -41,4 +41,5 @@ define([], function() {
         }
     };
 });
+// Closes the disable block opened above define().
 // phpcs:enable Squiz.Functions.MultiLineFunctionDeclaration
