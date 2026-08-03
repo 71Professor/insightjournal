@@ -113,47 +113,36 @@ class entry_manager {
 
             $newrevision = $currentrevision + 1;
             $iscreate = !$entry;
-            try {
-                if ($entry) {
-                    $entry->response = $response;
-                    $entry->responseformat = FORMAT_HTML;
-                    $entry->revision = $newrevision;
-                    $entry->visibility = $visibility;
-                    $entry->timemodified = $now;
-                    $DB->update_record('insightjournal_entries', $entry);
-                    $id = $entry->id;
-                } else {
-                    $entry = (object) [
-                        'insightjournalid' => $diary->id,
-                        'userid' => $userid,
-                        'response' => $response,
-                        'responseformat' => FORMAT_HTML,
-                        'revision' => $newrevision,
-                        'visibility' => $visibility,
-                        'timecreated' => $now,
-                        'timemodified' => $now,
-                    ];
-                    $id = $DB->insert_record('insightjournal_entries', $entry);
-                    $entry->id = $id;
+            if ($entry) {
+                // An update only ever targets a row already selected by its own
+                // primary key, so it can never race on the (insightjournalid,
+                // userid) unique index the way a brand-new insert can - a write
+                // failure here is a genuine DB error (deadlock, connection loss)
+                // and must propagate, not be relabelled as an ordinary conflict.
+                $entry->response = $response;
+                $entry->responseformat = FORMAT_HTML;
+                $entry->revision = $newrevision;
+                $entry->visibility = $visibility;
+                $entry->timemodified = $now;
+                $DB->update_record('insightjournal_entries', $entry);
+                $id = $entry->id;
+            } else {
+                $newentry = (object) [
+                    'insightjournalid' => $diary->id,
+                    'userid' => $userid,
+                    'response' => $response,
+                    'responseformat' => FORMAT_HTML,
+                    'revision' => $newrevision,
+                    'visibility' => $visibility,
+                    'timecreated' => $now,
+                    'timemodified' => $now,
+                ];
+                $conflict = self::insert_or_detect_race($newentry, $diary->id, $userid, $context);
+                if ($conflict !== null) {
+                    return $conflict;
                 }
-            } catch (\dml_write_exception $e) {
-                // A dml_write_exception here covers any failed write, not just
-                // the unique-index violation this backstop targets, so log it:
-                // this stays reachable only via a write to this table from outside
-                // save() (see restore_insightjournal_stepslib.php, which inserts
-                // entries during a course restore) landing between our locked
-                // read and write, but an unrelated DB failure (deadlock,
-                // connection loss) would hit the same catch and must not be
-                // silently relabelled as an ordinary conflict without a trace.
-                debugging(
-                    'entry_manager::save: write failed inside the lock, reporting as a conflict: ' . $e->getMessage(),
-                    DEBUG_DEVELOPER
-                );
-                $entry = $DB->get_record(
-                    'insightjournal_entries',
-                    ['insightjournalid' => $diary->id, 'userid' => $userid]
-                );
-                return self::build_conflict_response($entry, $context);
+                $entry = $newentry;
+                $id = $entry->id;
             }
         } finally {
             $lock->release();
@@ -191,6 +180,45 @@ class entry_manager {
             'responsehtml' => format_text($response, FORMAT_HTML, ['context' => $context]),
             'private' => $private,
         ];
+    }
+
+    /**
+     * Inserts a brand-new entry row, treating a unique-index hit as a
+     * confirmed race with a writer outside save()'s lock (the only one able
+     * to reach this table without it is a course restore, see
+     * restore_insightjournal_stepslib.php) rather than an ordinary write
+     * failure. A genuinely unrelated failure (deadlock, connection loss)
+     * raises the same exception type but leaves no row behind, so the two
+     * are told apart by re-querying, not assumed from the exception type
+     * alone - only a confirmed race is reported as a conflict; anything else
+     * is rethrown.
+     *
+     * @param \stdClass $entry New entry to insert; receives its id on success.
+     * @param int $diaryid
+     * @param int $userid
+     * @param \context $context Module context, for rendering responsehtml on conflict.
+     * @return array|null Conflict response if a race was confirmed, otherwise null (entry->id is set).
+     */
+    private static function insert_or_detect_race(\stdClass $entry, int $diaryid, int $userid, \context $context): ?array {
+        global $DB;
+        try {
+            $entry->id = $DB->insert_record('insightjournal_entries', $entry);
+        } catch (\dml_write_exception $e) {
+            $existing = $DB->get_record(
+                'insightjournal_entries',
+                ['insightjournalid' => $diaryid, 'userid' => $userid]
+            );
+            if (!$existing) {
+                throw $e;
+            }
+            debugging(
+                'entry_manager::save: insert raced with an external writer, reporting as a conflict: '
+                    . $e->getMessage(),
+                DEBUG_DEVELOPER
+            );
+            return self::build_conflict_response($existing, $context);
+        }
+        return null;
     }
 
     /**
