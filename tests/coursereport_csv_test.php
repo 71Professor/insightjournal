@@ -38,9 +38,11 @@ require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
- * Tests for {@see \insightjournal_coursereport_csv_row()}.
+ * Tests for {@see \insightjournal_coursereport_csv_row()} and
+ * {@see \insightjournal_entries_by_diary_and_user()}.
  */
 #[CoversFunction('insightjournal_coursereport_csv_row')]
+#[CoversFunction('insightjournal_entries_by_diary_and_user')]
 final class coursereport_csv_test extends advanced_testcase {
     /** @var stdClass The course. */
     protected stdClass $course;
@@ -234,5 +236,66 @@ final class coursereport_csv_test extends advanced_testcase {
         $writer->add_data(['  =SUM(1+1)']);
 
         $this->assertStringContainsString("'  =SUM(1+1)", $writer->print_csv_data(true));
+    }
+
+    /**
+     * Entries come back keyed by userid then insightjournalid - the shape
+     * both coursereport.php's on-screen pagination and its CSV chunk loop
+     * build their per-cell lookups around - and a user/diary combination
+     * with no entry is simply absent, not a null placeholder.
+     */
+    public function test_maps_entries_by_userid_then_diaryid(): void {
+        $otherstudent = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $entry = $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $this->student->id,
+            'Entry for student one.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $entries = \insightjournal_entries_by_diary_and_user(
+            [(int) $this->diary->id],
+            [(int) $this->student->id, (int) $otherstudent->id]
+        );
+
+        $this->assertArrayNotHasKey($otherstudent->id, $entries);
+        $this->assertEquals($entry->id, $entries[$this->student->id][$this->diary->id]->id);
+    }
+
+    /**
+     * A diary not included in $diaryids is excluded even when the user has
+     * an entry there - callers rely on this to scope a query to one
+     * page/chunk's activities only, not every activity the user has ever
+     * written in.
+     */
+    public function test_excludes_entries_for_diaries_not_requested(): void {
+        $otherdiary = $this->getDataGenerator()->create_module('insightjournal', ['course' => $this->course->id]);
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $this->student->id,
+            'In requested diary.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+        $this->ij_generator()->create_entry(
+            $otherdiary,
+            (int) $this->student->id,
+            'In other diary.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $entries = \insightjournal_entries_by_diary_and_user([(int) $this->diary->id], [(int) $this->student->id]);
+
+        $this->assertArrayNotHasKey($otherdiary->id, $entries[$this->student->id]);
+    }
+
+    /**
+     * An empty diary or user list short-circuits to an empty map instead of
+     * issuing a get_in_or_equal() query with an empty array, which would
+     * otherwise match nothing in a way that is easy to mistake for "no
+     * entries exist" rather than "no query was meaningful to run".
+     */
+    public function test_empty_diaryids_or_userids_returns_empty_map(): void {
+        $this->assertSame([], \insightjournal_entries_by_diary_and_user([], [(int) $this->student->id]));
+        $this->assertSame([], \insightjournal_entries_by_diary_and_user([(int) $this->diary->id], []));
     }
 }

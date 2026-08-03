@@ -367,3 +367,34 @@ function insightjournal_coursereport_csv_row(
         (!$private && $entry) ? userdate($entry->timemodified) : '',
     ];
 }
+
+/**
+ * Fetches entries for a specific set of activities and participants, keyed
+ * for O(1) per-cell lookup: userid => insightjournalid => entry. Scopes the
+ * entries query to only the participants actually being rendered/exported at
+ * a time (one page, or one CSV chunk), rather than every entry across the
+ * whole course at once.
+ *
+ * @param int[] $diaryids
+ * @param int[] $userids
+ * @return array
+ */
+function insightjournal_entries_by_diary_and_user(array $diaryids, array $userids): array {
+    global $DB;
+
+    $entries = [];
+    if (empty($diaryids) || empty($userids)) {
+        return $entries;
+    }
+    [$dinsql, $dparams] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED, 'diary');
+    [$uinsql, $uparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'user');
+    $records = $DB->get_records_select(
+        'insightjournal_entries',
+        "insightjournalid $dinsql AND userid $uinsql",
+        array_merge($dparams, $uparams)
+    );
+    foreach ($records as $entry) {
+        $entries[$entry->userid][$entry->insightjournalid] = $entry;
+    }
+    return $entries;
+}

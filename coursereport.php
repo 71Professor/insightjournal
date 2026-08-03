@@ -102,19 +102,6 @@ if ($download === 'csv') {
     }
     confirm_sesskey();
 
-    $participants = $blockallparticipants
-        ? []
-        : get_enrolled_users($coursecontext, 'mod/insightjournal:submit', $restrictgroupids, $userfields, 'u.lastname,u.firstname');
-
-    $entries = [];
-    if (!empty($diaryids)) {
-        [$insql, $params] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED);
-        $records = $DB->get_records_select('insightjournal_entries', "insightjournalid $insql", $params);
-        foreach ($records as $entry) {
-            $entries[$entry->userid][$entry->insightjournalid] = $entry;
-        }
-    }
-
     require_once($CFG->libdir . '/csvlib.class.php');
     $writer = new csv_export_writer('comma', '"', 'text/csv', true); // BOM: true - matches report.php's dataformat-writer BOM.
     $writer->filename = clean_filename('insightjournal-course-' . $course->shortname . '.csv');
@@ -122,20 +109,47 @@ if ($download === 'csv') {
         'courseid', 'coursename', 'cmid', 'activityname', 'userid',
         'fullname', 'email', 'response', 'timemodified',
     ]);
-    foreach ($participants as $user) {
-        foreach ($diaries as $diary) {
-            $allowedusers = $diaryallowedusers[$diary->id];
-            if ($allowedusers !== null && !isset($allowedusers[(int) $user->id])) {
-                continue;
+
+    // Fetched and written one bounded chunk of participants at a time, each
+    // with only that chunk's own entries, instead of the whole course's
+    // participants/entries held in memory at once - keeps memory bounded
+    // regardless of course size, the same property report.php already gets
+    // for free from table_sql (R2-04).
+    $csvchunksize = 500;
+    $offset = 0;
+    while (!$blockallparticipants) {
+        $chunk = get_enrolled_users(
+            $coursecontext,
+            'mod/insightjournal:submit',
+            $restrictgroupids,
+            $userfields,
+            'u.lastname,u.firstname',
+            $offset,
+            $csvchunksize
+        );
+        if (empty($chunk)) {
+            break;
+        }
+        $chunkentries = insightjournal_entries_by_diary_and_user($diaryids, array_keys($chunk));
+        foreach ($chunk as $user) {
+            foreach ($diaries as $diary) {
+                $allowedusers = $diaryallowedusers[$diary->id];
+                if ($allowedusers !== null && !isset($allowedusers[(int) $user->id])) {
+                    continue;
+                }
+                $writer->add_data(insightjournal_coursereport_csv_row(
+                    $course,
+                    $activities[$diary->id]->id,
+                    $diary,
+                    $user,
+                    $chunkentries[$user->id][$diary->id] ?? null,
+                    $showemail
+                ));
             }
-            $writer->add_data(insightjournal_coursereport_csv_row(
-                $course,
-                $activities[$diary->id]->id,
-                $diary,
-                $user,
-                $entries[$user->id][$diary->id] ?? null,
-                $showemail
-            ));
+        }
+        $offset += $csvchunksize;
+        if (count($chunk) < $csvchunksize) {
+            break;
         }
     }
     $writer->download_file(); // Sends headers, streams the file, and exit()s - same contract as the previous fclose()+exit.
@@ -156,20 +170,7 @@ $participants = $blockallparticipants
         $perpage
     );
 
-$entries = [];
-if (!empty($diaryids) && !empty($participants)) {
-    $userids = array_keys($participants);
-    [$dinsql, $dparams] = $DB->get_in_or_equal($diaryids, SQL_PARAMS_NAMED, 'diary');
-    [$uinsql, $uparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'user');
-    $records = $DB->get_records_select(
-        'insightjournal_entries',
-        "insightjournalid $dinsql AND userid $uinsql",
-        array_merge($dparams, $uparams)
-    );
-    foreach ($records as $entry) {
-        $entries[$entry->userid][$entry->insightjournalid] = $entry;
-    }
-}
+$entries = insightjournal_entries_by_diary_and_user($diaryids, array_keys($participants));
 
 $PAGE->set_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id, 'page' => $page, 'perpage' => $perpage]);
 $PAGE->set_context($coursecontext);
