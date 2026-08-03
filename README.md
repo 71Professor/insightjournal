@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal for Moodle
 
-[![Moodle Plugin CI](https://github.com/71Professor/insightjournal/actions/workflows/ci.yml/badge.svg)](https://github.com/71Professor/insightjournal/actions/workflows/ci.yml)
+[![Moodle Plugin CI](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml/badge.svg)](https://github.com/71Professor/moodle-mod_insightjournal/actions/workflows/ci.yml)
 
 **Version 0.8.0-beta · August 2026 · Moodle 4.5+**
 
@@ -24,7 +24,7 @@ A detailed German user guide is available at
 ### Recommended: install the release ZIP
 
 1. Download the `mod_insightjournal-v…zip` file from the latest
-   [GitHub release](https://github.com/71Professor/insightjournal/releases).
+   [GitHub release](https://github.com/71Professor/moodle-mod_insightjournal/releases).
    Its root folder is already named `insightjournal`, as the Moodle installer requires.
 2. In Moodle, go to **Site administration → Plugins → Install plugins**, upload the
    ZIP and follow the installer — the database installation runs automatically.
@@ -314,4 +314,4 @@ All feedback is welcome — whether you are evaluating it as a developer or as a
 
 **Contact:** Michael Kohl — michaelkohl71@gmail.com
 
-**GitHub:** https://github.com/71Professor/insightjournal/issues
+**GitHub:** https://github.com/71Professor/moodle-mod_insightjournal/issues

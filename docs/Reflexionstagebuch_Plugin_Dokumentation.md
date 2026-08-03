@@ -30,7 +30,7 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 
 **Empfohlener Weg – Release-ZIP:**
 
-1. Die Datei `mod_insightjournal-v….zip` vom neuesten [GitHub-Release](https://github.com/71Professor/insightjournal/releases) herunterladen. Ihr Wurzelordner heißt bereits `insightjournal`, wie es der Moodle-Installer verlangt.
+1. Die Datei `mod_insightjournal-v….zip` vom neuesten [GitHub-Release](https://github.com/71Professor/moodle-mod_insightjournal/releases) herunterladen. Ihr Wurzelordner heißt bereits `insightjournal`, wie es der Moodle-Installer verlangt.
 2. In Moodle unter **Website-Administration → Plugins → Plugins installieren** die ZIP-Datei hochladen und dem Installer folgen – die Datenbankinstallation läuft automatisch.
 
 **Alternativ – manuell kopieren:**
@@ -236,7 +236,7 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 **Kontakt:** Michael Kohl – michaelkohl71@gmail.com
 
-**GitHub:** https://github.com/71Professor/insightjournal/issues
+**GitHub:** https://github.com/71Professor/moodle-mod_insightjournal/issues
 
 ---
 
