@@ -118,6 +118,20 @@ final class custom_completion_test extends advanced_testcase {
     }
 
     /**
+     * A response consisting only of NBSP or only zero-width characters
+     * counts as empty and does not complete the activity, matching
+     * insightjournal_visible_char_count()'s Unicode-aware emptiness check
+     * (R4-01). Before that change, a lone NBSP counted as 1 visible
+     * character and could satisfy both this "has any content" gate and a
+     * minchars of 1.
+     */
+    public function test_nbsp_and_zero_width_only_response_is_incomplete(): void {
+        $this->resetAfterTest();
+        $this->assertEquals(COMPLETION_INCOMPLETE, $this->compute_state(0, '<p>&nbsp;</p>'));
+        $this->assertEquals(COMPLETION_INCOMPLETE, $this->compute_state(0, "\u{200b}\u{200c}\u{200d}"));
+    }
+
+    /**
      * With minchars = 0 any non-empty response completes the activity.
      */
     public function test_any_response_completes_when_no_minimum(): void {

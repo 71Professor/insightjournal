@@ -67,7 +67,7 @@ class custom_completion extends activity_custom_completion {
             return COMPLETION_INCOMPLETE;
         }
 
-        if (\insightjournal_html_to_text($entry->response) === '') {
+        if (\insightjournal_visible_char_count($entry->response) === 0) {
             return COMPLETION_INCOMPLETE;
         }
 
