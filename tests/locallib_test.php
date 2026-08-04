@@ -224,9 +224,11 @@ final class locallib_test extends advanced_testcase {
      * tests/fixtures/visible_char_fixtures.json and
      * tests/behat/insight_journal.feature.
      *
-     * @return iterable<string, array{string, int}>
+     * Each yielded value is [string $html, int $expected], keyed by fixture id.
+     *
+     * @return \Generator
      */
-    public static function visible_char_count_fixture_provider(): iterable {
+    public static function visible_char_count_fixture_provider(): \Generator {
         $fixtures = json_decode(
             file_get_contents(__DIR__ . '/fixtures/visible_char_fixtures.json'),
             true,
