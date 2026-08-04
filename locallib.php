@@ -51,6 +51,34 @@ function insightjournal_html_to_text(string $html): string {
 }
 
 /**
+ * Decides whether extracted text is visually empty: nothing but ASCII
+ * whitespace, a non-breaking space, or a zero-width character remains
+ * after stripping. Used to give insightjournal_visible_char_count() an
+ * empty result (0) for input that would show as a blank field to a
+ * learner, even though DOMDocument's textContent is technically a non-empty
+ * string for e.g. a lone NBSP.
+ *
+ * Deliberately narrow: only decides the ALL-invisible boundary case.
+ * Interior whitespace/NBSP/zero-width characters next to at least one
+ * other, non-invisible character still count normally in
+ * insightjournal_visible_char_count() - this function is not a general
+ * "strip invisible characters" transform.
+ *
+ * @param string $text Already-extracted plain text (e.g. DOMDocument::$textContent).
+ * @return bool
+ */
+function insightjournal_is_visually_empty(string $text): bool {
+    // Zero-width space/non-joiner/joiner (U+200B-U+200D), the word joiner
+    // (U+2060), and the BOM/ZWNBSP (U+FEFF) never render anything; NBSP
+    // (U+00A0) renders an invisible gap. PHP's trim() only strips ASCII
+    // whitespace, so these are stripped first; the final trim() then
+    // catches any ordinary leading/trailing ASCII whitespace around them.
+    $stripped = preg_replace('/[\x{00A0}\x{200B}\x{200C}\x{200D}\x{2060}\x{FEFF}]/u', '', $text);
+
+    return trim($stripped) === '';
+}
+
+/**
  * Counts "visible characters" the same way the client-side counter does
  * (amd/src/autosave.js's stripHtml()/charCount(), i.e. a browser
  * DOMParser's textContent): DOM text-node concatenation, with no separators
@@ -63,6 +91,13 @@ function insightjournal_html_to_text(string $html): string {
  * readability - that formatting made server-side length checks count
  * higher than the client's live counter for multi-paragraph or list
  * content, most learners' most natural way of writing a longer reflection.
+ *
+ * Returns 0 for input that is visually empty per
+ * insightjournal_is_visually_empty() (e.g. only whitespace, only NBSP,
+ * only zero-width characters), even though DOMDocument's textContent is
+ * technically non-empty for some of those - see R4-01. Any input with at
+ * least one other character keeps its raw length, including surrounding
+ * whitespace/NBSP.
  *
  * @param string $html Response HTML (or plain text).
  * @return int
@@ -78,14 +113,21 @@ function insightjournal_visible_char_count(string $html): int {
     // working once libxml2 >= 2.14.0 (each UTF-8 continuation byte is then
     // read as its own character) - the same fix Moodle core applied in
     // lib/classes/formatting.php after hitting this exact regression.
+    // LIBXML_NONET blocks any network access libxml2 might otherwise
+    // attempt while resolving external entities/DTDs during parsing.
     $doc->loadHTML(
         '<meta http-equiv="Content-Type" content="text/html; charset=utf-8"><div>' . $html . '</div>',
-        LIBXML_NOERROR | LIBXML_NOWARNING
+        LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_NONET
     );
     libxml_clear_errors();
     libxml_use_internal_errors($previoushandling);
 
-    return core_text::strlen($doc->textContent);
+    $text = $doc->textContent;
+    if (insightjournal_is_visually_empty($text)) {
+        return 0;
+    }
+
+    return core_text::strlen($text);
 }
 
 /**

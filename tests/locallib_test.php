@@ -29,6 +29,7 @@ namespace mod_insightjournal;
 
 use advanced_testcase;
 use PHPUnit\Framework\Attributes\CoversFunction;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -219,98 +220,31 @@ final class locallib_test extends advanced_testcase {
     }
 
     /**
-     * Plain text with no markup at all counts identically either way - the
-     * baseline case where insightjournal_visible_char_count() and
-     * insightjournal_html_to_text()/strlen() must always agree.
+     * Data provider backed by the fixture table shared with the JavaScript
+     * side (amd/src/autosave.js) and its Behat parity proof - see
+     * tests/fixtures/visible_char_fixtures.json and
+     * tests/behat/insight_journal.feature.
+     *
+     * @return iterable<string, array{string, int}>
      */
-    public function test_visible_char_count_plain_text(): void {
-        $this->assertEquals(12, \insightjournal_visible_char_count('twelve chars'));
+    public static function visible_char_count_fixture_provider(): iterable {
+        $fixtures = json_decode(
+            file_get_contents(__DIR__ . '/fixtures/visible_char_fixtures.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+        foreach ($fixtures as $fixture) {
+            yield $fixture['id'] => [$fixture['html'], $fixture['expected']];
+        }
     }
 
     /**
-     * Two paragraphs count as a plain concatenation (10), not with the
-     * blank-line separator insightjournal_html_to_text() inserts for
-     * plain-text readability (which would make this 12) - matching a
-     * browser DOMParser's textContent, the same thing the client-side
-     * counter in amd/src/autosave.js measures.
+     * insightjournal_visible_char_count() matches the shared PHP/JS fixture
+     * table exactly, row for row.
      */
-    public function test_visible_char_count_ignores_paragraph_breaks(): void {
-        $this->assertEquals(10, \insightjournal_visible_char_count('<p>Hello</p><p>World</p>'));
-    }
-
-    /**
-     * List items count as a plain concatenation (6), not with the "* "
-     * bullet markers insightjournal_html_to_text() adds (which would make
-     * this 12) - a list is a natural way to write a longer reflection, so
-     * this was the most likely case to visibly diverge from the client's
-     * live counter.
-     */
-    public function test_visible_char_count_ignores_list_formatting(): void {
-        $this->assertEquals(6, \insightjournal_visible_char_count('<ul><li>One</li><li>Two</li></ul>'));
-    }
-
-    /**
-     * Real editors (TinyMCE, Atto) serialise a newline between sibling
-     * block elements, e.g. "<p>Hello</p>\n<p>World</p>", not the
-     * concatenated form the tests above use. That newline is a real DOM
-     * text node (a document's HTML parser never treats inter-element
-     * whitespace as insignificant at the tree level - that's a rendering
-     * concern, not a DOM one), so it counts here too: 11, not 10 - matching
-     * a browser's textContent exactly rather than the "no separators at
-     * all" simplification the other tests above use for readability.
-     */
-    public function test_visible_char_count_counts_whitespace_between_real_editor_paragraphs(): void {
-        $this->assertEquals(11, \insightjournal_visible_char_count("<p>Hello</p>\n<p>World</p>"));
-    }
-
-    /**
-     * Same as above for a real editor's serialised list markup: three
-     * inter-element newlines (before the first <li>, between the two
-     * </li>/<li> pairs, and before </ul>) are each a real text node, so
-     * they count: 9 ("One" + "Two" + 3 newlines), not 6.
-     */
-    public function test_visible_char_count_counts_whitespace_between_real_editor_list_items(): void {
-        $this->assertEquals(9, \insightjournal_visible_char_count("<ul>\n<li>One</li>\n<li>Two</li>\n</ul>"));
-    }
-
-    /**
-     * <br> contributes no character of its own, matching a browser's
-     * textContent (which never represents <br> as a text character) rather
-     * than insightjournal_html_to_text(), which renders it as "\n".
-     */
-    public function test_visible_char_count_ignores_line_breaks(): void {
-        $this->assertEquals(10, \insightjournal_visible_char_count('<p>Line1<br>Line2</p>'));
-    }
-
-    /**
-     * An empty rich-text editor shell counts as zero, not the length of its
-     * own markup - the same emptiness guarantee
-     * insightjournal_html_to_text() already provides.
-     */
-    public function test_visible_char_count_empty_shell_is_zero(): void {
-        $this->assertEquals(0, \insightjournal_visible_char_count(''));
-        $this->assertEquals(0, \insightjournal_visible_char_count('<p></p>'));
-        $this->assertEquals(0, \insightjournal_visible_char_count('<p><br></p>'));
-    }
-
-    /**
-     * Counted in Unicode code points, not bytes: a multibyte accented
-     * character and a 4-byte-UTF-8 emoji (outside the Basic Multilingual
-     * Plane) each still count as exactly one character, matching a
-     * browser's [...string].length (spread-based, code-point-aware)
-     * iteration in amd/src/autosave.js's charCount().
-     */
-    public function test_visible_char_count_counts_code_points_not_bytes(): void {
-        $this->assertEquals(19, \insightjournal_visible_char_count('<p>héllo wörld émoji 😀</p>'));
-    }
-
-    /**
-     * A non-breaking space and unwrapped bold/emphasis markup already
-     * agreed between the two functions before this change - confirms this
-     * function didn't regress either.
-     */
-    public function test_visible_char_count_matches_html_to_text_for_simple_cases(): void {
-        $this->assertEquals(11, \insightjournal_visible_char_count('<p>Hello&nbsp;World</p>'));
-        $this->assertEquals(11, \insightjournal_visible_char_count('<p>Hello <b>World</b></p>'));
+    #[DataProvider('visible_char_count_fixture_provider')]
+    public function test_visible_char_count_matches_fixture(string $html, int $expected): void {
+        $this->assertEquals($expected, \insightjournal_visible_char_count($html));
     }
 }

@@ -1,0 +1,158 @@
+[
+    {
+        "id": "plain-text-baseline",
+        "html": "twelve chars",
+        "expected": 12,
+        "description": "Plain text with no markup counts identically to a Unicode-code-point-aware strlen."
+    },
+    {
+        "id": "paragraphs-no-separator",
+        "html": "<p>Hello</p><p>World</p>",
+        "expected": 10,
+        "description": "Two paragraphs with no whitespace between them in the source concatenate directly, matching a browser's textContent (not html_to_text's inserted blank-line separator)."
+    },
+    {
+        "id": "list-items-no-separator",
+        "html": "<ul><li>One</li><li>Two</li></ul>",
+        "expected": 6,
+        "description": "List items with no whitespace between them in the source concatenate directly, matching textContent (not html_to_text's bullet markers)."
+    },
+    {
+        "id": "paragraphs-real-editor-whitespace",
+        "html": "<p>Hello</p>\n<p>World</p>",
+        "expected": 11,
+        "description": "A real editor's serialised inter-element newline is a genuine DOM text node and counts, matching a browser's textContent exactly."
+    },
+    {
+        "id": "list-items-real-editor-whitespace",
+        "html": "<ul>\n<li>One</li>\n<li>Two</li>\n</ul>",
+        "expected": 9,
+        "description": "Three inter-element newlines in a real editor's serialised list markup are each a genuine text node and count."
+    },
+    {
+        "id": "line-break-contributes-nothing",
+        "html": "<p>Line1<br>Line2</p>",
+        "expected": 10,
+        "description": "<br> contributes no character of its own, matching a browser's textContent."
+    },
+    {
+        "id": "empty-string",
+        "html": "",
+        "expected": 0,
+        "description": "Fully empty input is zero."
+    },
+    {
+        "id": "empty-paragraph-shell",
+        "html": "<p></p>",
+        "expected": 0,
+        "description": "An empty rich-text editor shell serialises to markup, not an empty string, but still counts as zero."
+    },
+    {
+        "id": "empty-paragraph-with-br-shell",
+        "html": "<p><br></p>",
+        "expected": 0,
+        "description": "The other common empty-editor shell shape also counts as zero."
+    },
+    {
+        "id": "codepoints-not-bytes",
+        "html": "<p>héllo wörld émoji 😀</p>",
+        "expected": 19,
+        "description": "Counted in Unicode code points, not bytes: multibyte accented characters and a 4-byte emoji outside the BMP each count as one character."
+    },
+    {
+        "id": "nbsp-between-words",
+        "html": "<p>Hello&nbsp;World</p>",
+        "expected": 11,
+        "description": "NBSP between two words is visible content and counts as one character - only a response that is ENTIRELY invisible characters is treated as empty."
+    },
+    {
+        "id": "unwrapped-bold-emphasis",
+        "html": "<p>Hello <b>World</b></p>",
+        "expected": 11,
+        "description": "Unwrapped bold/emphasis markup already agreed with html_to_text before this change; confirms no regression."
+    },
+    {
+        "id": "entity-ampersand",
+        "html": "<p>A &amp; B</p>",
+        "expected": 5,
+        "description": "A named HTML entity decodes to its single character in the DOM text node."
+    },
+    {
+        "id": "entity-angle-brackets",
+        "html": "<p>&lt;tag&gt;</p>",
+        "expected": 5,
+        "description": "Named entities for angle brackets decode to literal '<' and '>' characters, not markup."
+    },
+    {
+        "id": "entity-numeric",
+        "html": "<p>caf&#233;</p>",
+        "expected": 4,
+        "description": "A numeric character reference decodes to its single Unicode character."
+    },
+    {
+        "id": "malformed-unclosed-tag",
+        "html": "<p>Hello",
+        "expected": 5,
+        "description": "An unclosed tag is auto-closed by the lenient HTML parser; the visible text is unaffected."
+    },
+    {
+        "id": "malformed-mismatched-nesting",
+        "html": "<p><b>Hi</p></b>",
+        "expected": 2,
+        "description": "Mismatched closing tag order is repaired by the lenient HTML parser; only the visible text counts."
+    },
+    {
+        "id": "malformed-stray-angle-bracket",
+        "html": "Stray < bracket",
+        "expected": 15,
+        "description": "A '<' not followed by a valid tag name is literal text, not a tag start."
+    },
+    {
+        "id": "malformed-stray-ampersand",
+        "html": "Tom & Jerry",
+        "expected": 11,
+        "description": "A bare '&' not matching a known entity/character-reference pattern is literal text."
+    },
+    {
+        "id": "whitespace-only-ascii",
+        "html": "   \n\t  ",
+        "expected": 0,
+        "description": "ASCII whitespace-only input is visually empty."
+    },
+    {
+        "id": "whitespace-only-nbsp",
+        "html": "<p> </p>",
+        "expected": 0,
+        "description": "A lone NBSP renders as an invisible gap; per the new emptiness rule it does not satisfy minchars/completion on its own (regression fixture for R4-01 - this was 1, not 0, before this change)."
+    },
+    {
+        "id": "whitespace-only-multiple-nbsp",
+        "html": "   ",
+        "expected": 0,
+        "description": "Multiple NBSP characters with nothing else are still visually empty."
+    },
+    {
+        "id": "zero-width-only",
+        "html": "​‌‍⁠﻿",
+        "expected": 0,
+        "description": "Zero-width space/joiners, the word joiner, and a stray BOM never render anything and count as visually empty."
+    },
+    {
+        "id": "mixed-invisible-only",
+        "html": "  ​ \n",
+        "expected": 0,
+        "description": "A mix of ASCII whitespace, NBSP, and a zero-width character with no visible character anywhere is still visually empty."
+    },
+    {
+        "id": "visible-char-surrounded-by-invisible",
+        "html": "<p> x </p>",
+        "expected": 3,
+        "description": "One visible character surrounded by ordinary spaces is not visually empty, so the raw count (including the surrounding spaces) is returned unchanged - only the fully-empty boundary is new, not interior counting."
+    },
+    {
+        "id": "visible-char-surrounded-by-nbsp-and-zero-width",
+        "html": " x​",
+        "expected": 3,
+        "description": "A visible character between NBSP and a zero-width character is not visually empty either; the raw count includes all three characters."
+    }
+]
