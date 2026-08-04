@@ -8,6 +8,20 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A response consisting only of whitespace, non-breaking spaces, or
+  zero-width characters is now correctly treated as empty**, addressing
+  the R4-01 review finding. Previously, `insightjournal_visible_char_count()`
+  and the completion "has any content" check could disagree on emptiness
+  for such input (e.g. a single non-breaking space), letting it satisfy
+  `minchars` and mark the activity complete even though the response
+  looked blank. The live character counter now shows `0` for such input
+  too, matching the server exactly - proven with a shared PHP/JS fixture
+  table exercised by both PHPUnit and a real-browser Behat test, rather
+  than only asserted in a comment. Interior whitespace/NBSP next to real
+  text is unaffected. `DOMDocument` parsing also now sets `LIBXML_NONET`.
+
 ## [0.8.0-beta] - 2026-08-03
 
 ### Added
