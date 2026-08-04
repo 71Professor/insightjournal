@@ -132,4 +132,49 @@ class behat_mod_insightjournal extends behat_base {
             '/mod/insightjournal/summary.php?courseid=' . $course->id . '&userid=' . $user->id,
         ]);
     }
+
+    /**
+     * Compares the JavaScript module's visibleCharCount() against the
+     * PHP/JS shared fixture table (tests/fixtures/visible_char_fixtures.json),
+     * row by row, evaluated in the real browser driving this scenario -
+     * proves PHP/JS parity instead of only asserting it in a comment
+     * (R4-01).
+     *
+     * @Then /^the visible character count matches the shared fixtures$/
+     */
+    public function the_visible_character_count_matches_the_shared_fixtures() {
+        $fixtures = json_decode(
+            file_get_contents(__DIR__ . '/../fixtures/visible_char_fixtures.json'),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        $session = $this->getSession();
+        foreach ($fixtures as $fixture) {
+            $encodedhtml = json_encode($fixture['html'], JSON_THROW_ON_ERROR);
+            $session->executeScript(<<<JS
+                window.__ijFixtureResult = undefined;
+                require(['mod_insightjournal/autosave'], function(autosave) {
+                    window.__ijFixtureResult = autosave.visibleCharCount({$encodedhtml});
+                });
+                JS
+            );
+            $session->wait(self::get_timeout() * 1000, 'window.__ijFixtureResult !== undefined');
+            $actual = $session->evaluateScript('return window.__ijFixtureResult;');
+
+            if ((int) $actual !== (int) $fixture['expected']) {
+                throw new \Behat\Mink\Exception\ExpectationException(
+                    sprintf(
+                        'Fixture "%s" (html: %s): expected %d, got %s',
+                        $fixture['id'],
+                        $fixture['html'],
+                        $fixture['expected'],
+                        var_export($actual, true)
+                    ),
+                    $session
+                );
+            }
+        }
+    }
 }

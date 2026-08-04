@@ -98,13 +98,44 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         return [...str].length;
     };
 
+    // Zero-width space/joiners and the word joiner - native String.trim()
+    // already strips NBSP (\u00A0) and the BOM/ZWNBSP (\uFEFF) per the
+    // ECMAScript WhiteSpace production, so only these need stripping here.
+    // Order matters here beyond readability: ESLint's no-misleading-character-class
+    // rule flags \u200D (zero-width joiner) sitting strictly between two other
+    // class members as a likely-accidental "joined character sequence", even
+    // though character-class member order has no effect on what the regex
+    // matches. Keeping \u200D last avoids that false positive.
+    var INVISIBLE_CHARS_PATTERN = /[\u200B\u200C\u2060\u200D]/g;
+
+    // Mirrors insightjournal_is_visually_empty() in locallib.php: nothing
+    // but ASCII whitespace, NBSP, or a zero-width character remains after
+    // stripping. Only decides the ALL-invisible boundary case - interior
+    // whitespace/NBSP/zero-width characters next to real content still
+    // count normally in visibleCharCount() below.
+    var isVisuallyEmpty = function(str) {
+        return str.replace(INVISIBLE_CHARS_PATTERN, '').trim() === '';
+    };
+
+    // Same "visible character" definition insightjournal_visible_char_count()
+    // uses server-side (see locallib.php, R4-01): 0 for input that is
+    // visually empty, otherwise the raw DOM-textContent length including any
+    // surrounding whitespace/NBSP.
+    var visibleCharCount = function(html) {
+        var text = stripHtml(html);
+        if (isVisuallyEmpty(text)) {
+            return 0;
+        }
+        return charCount(text);
+    };
+
     var updateCounter = function(value) {
         var counter = document.querySelector('[data-insightjournal-charcounter]');
         var button = document.querySelector('[data-insightjournal-save]');
         if (!counter) {
             return;
         }
-        var current = charCount(stripHtml(value));
+        var current = visibleCharCount(value);
         var over = current > maxChars;
         counter.textContent = current + ' / ' + maxChars;
         counter.className = 'small ms-auto ' + (over ? 'text-danger fw-bold' : 'text-muted');
@@ -216,7 +247,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             return;
         }
         var value = getCurrentValue(textarea);
-        if (maxChars > 0 && charCount(stripHtml(value)) > maxChars) {
+        if (maxChars > 0 && visibleCharCount(value) > maxChars) {
             return;
         }
         if (button) {
@@ -253,7 +284,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             }
             var current = getCurrentValue(textarea);
             if (button) {
-                button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
+                button.disabled = maxChars > 0 && visibleCharCount(current) > maxChars;
             }
             currentRevision = result.revision;
             if (privatecheckbox) {
@@ -269,7 +300,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         }).catch(async function(error) {
             var current = getCurrentValue(textarea);
             if (button) {
-                button.disabled = maxChars > 0 && charCount(stripHtml(current)) > maxChars;
+                button.disabled = maxChars > 0 && visibleCharCount(current) > maxChars;
             }
             Notification.exception(error);
             var errortext = await Str.get_string('saveerror', 'mod_insightjournal');
@@ -283,6 +314,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     };
 
     return {
+        visibleCharCount: visibleCharCount,
         init: function(cmid, autosave, maxchars, initialrevision) {
             maxChars = maxchars || 0;
             currentRevision = initialrevision || 0;

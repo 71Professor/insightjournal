@@ -149,6 +149,14 @@ Feature: Insight journal activity
     And I should see "19 / 200" in the "[data-insightjournal-charcounter]" "css_element"
 
   @javascript
+  Scenario: The JavaScript character counter matches the PHP visible-character count on every shared fixture
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars | maxchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 200      |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    Then the visible character count matches the shared fixtures
+
+  @javascript
   Scenario: A learner decides per activity whether their own entry is visible to the trainer
     Given the following "activities" exist:
       | activity       | course | name            | prompttext            | minchars |
