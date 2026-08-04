@@ -154,5 +154,23 @@
         "html": " x​",
         "expected": 3,
         "description": "A visible character between NBSP and a zero-width character is not visually empty either; the raw count includes all three characters."
+    },
+    {
+        "id": "ideographic-space-only",
+        "html": "　",
+        "expected": 0,
+        "description": "A lone ideographic space (U+3000, common in CJK-input paste) is a Unicode Space_Separator stripped by JS's native String.trim(), so PHP's regex must include it too or the two sides disagree."
+    },
+    {
+        "id": "em-space-only",
+        "html": " ",
+        "expected": 0,
+        "description": "An em space (U+2003, from the U+2000-U+200A Unicode space block, realistic from a Word paste) is likewise stripped by native trim() and must be covered on the PHP side."
+    },
+    {
+        "id": "line-separator-only",
+        "html": " ",
+        "expected": 0,
+        "description": "The Unicode line separator (U+2028) is an ECMAScript LineTerminator, also stripped by native trim(), and must be covered on the PHP side."
     }
 ]

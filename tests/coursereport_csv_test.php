@@ -366,4 +366,24 @@ final class coursereport_csv_test extends advanced_testcase {
         $this->assertFalse($state['completed']);
         $this->assertFalse($state['private']);
     }
+
+    /**
+     * A response consisting only of NBSP does not count as completed,
+     * matching custom_completion.php's Unicode-aware emptiness check -
+     * this function must never disagree with the activity's own
+     * completion state.
+     */
+    public function test_cell_state_nbsp_only_entry_is_not_completed(): void {
+        $entry = $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $this->student->id,
+            '<p>&nbsp;</p>',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $state = \insightjournal_coursereport_cell_state($entry);
+
+        $this->assertFalse($state['completed']);
+        $this->assertFalse($state['private']);
+    }
 }

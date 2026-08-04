@@ -99,8 +99,12 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     };
 
     // Zero-width space/joiners and the word joiner - native String.trim()
-    // already strips NBSP (\u00A0) and the BOM/ZWNBSP (\uFEFF) per the
-    // ECMAScript WhiteSpace production, so only these need stripping here.
+    // already strips NBSP (\u00A0), the BOM/ZWNBSP (\uFEFF), and every other
+    // Unicode space separator/line terminator (e.g. em space U+2003,
+    // ideographic space U+3000, U+2028) per the ECMAScript WhiteSpace and
+    // LineTerminator productions, so only these four need stripping here.
+    // insightjournal_is_visually_empty() in locallib.php mirrors this full
+    // set explicitly, since PHP's trim() strips none of it.
     // Order matters here beyond readability: ESLint's no-misleading-character-class
     // rule flags \u200D (zero-width joiner) sitting strictly between two other
     // class members as a likely-accidental "joined character sequence", even

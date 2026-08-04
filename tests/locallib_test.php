@@ -29,7 +29,6 @@ namespace mod_insightjournal;
 
 use advanced_testcase;
 use PHPUnit\Framework\Attributes\CoversFunction;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -242,8 +241,11 @@ final class locallib_test extends advanced_testcase {
     /**
      * insightjournal_visible_char_count() matches the shared PHP/JS fixture
      * table exactly, row for row.
+     *
+     * @dataProvider visible_char_count_fixture_provider
+     * @param string $html
+     * @param int $expected
      */
-    #[DataProvider('visible_char_count_fixture_provider')]
     public function test_visible_char_count_matches_fixture(string $html, int $expected): void {
         $this->assertEquals($expected, \insightjournal_visible_char_count($html));
     }

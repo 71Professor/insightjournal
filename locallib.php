@@ -52,11 +52,12 @@ function insightjournal_html_to_text(string $html): string {
 
 /**
  * Decides whether extracted text is visually empty: nothing but ASCII
- * whitespace, a non-breaking space, or a zero-width character remains
- * after stripping. Used to give insightjournal_visible_char_count() an
- * empty result (0) for input that would show as a blank field to a
- * learner, even though DOMDocument's textContent is technically a non-empty
- * string for e.g. a lone NBSP.
+ * whitespace, a non-breaking space, another Unicode space/line-separator
+ * character, or a zero-width character remains after stripping. Used to
+ * give insightjournal_visible_char_count() an empty result (0) for input
+ * that would show as a blank field to a learner, even though
+ * DOMDocument's textContent is technically a non-empty string for e.g. a
+ * lone NBSP or ideographic space.
  *
  * Deliberately narrow: only decides the ALL-invisible boundary case.
  * Interior whitespace/NBSP/zero-width characters next to at least one
@@ -68,12 +69,19 @@ function insightjournal_html_to_text(string $html): string {
  * @return bool
  */
 function insightjournal_is_visually_empty(string $text): bool {
-    // Zero-width space/non-joiner/joiner (U+200B-U+200D), the word joiner
-    // (U+2060), and the BOM/ZWNBSP (U+FEFF) never render anything; NBSP
-    // (U+00A0) renders an invisible gap. PHP's trim() only strips ASCII
-    // whitespace, so these are stripped first; the final trim() then
-    // catches any ordinary leading/trailing ASCII whitespace around them.
-    $stripped = preg_replace('/[\x{00A0}\x{200B}\x{200C}\x{200D}\x{2060}\x{FEFF}]/u', '', $text);
+    // Mirrors every codepoint a browser's native String.trim() strips
+    // (ECMAScript WhiteSpace + LineTerminator productions: NBSP, the other
+    // Unicode space separators like em space/ideographic space, U+2028/2029,
+    // and the BOM/ZWNBSP) plus the zero-width joiners trim() does NOT strip
+    // (ZWSP/ZWNJ/ZWJ, the word joiner). PHP's own trim() strips none of
+    // this - only ASCII whitespace - so it all has to be listed explicitly
+    // here; the final trim() then catches any ordinary leading/trailing
+    // ASCII whitespace around what's left.
+    $stripped = preg_replace(
+        '/[\x{00A0}\x{1680}\x{2000}-\x{200D}\x{2028}\x{2029}\x{202F}\x{205F}\x{2060}\x{3000}\x{FEFF}]/u',
+        '',
+        $text
+    );
 
     return trim($stripped) === '';
 }
@@ -499,7 +507,7 @@ function insightjournal_entries_by_diary_and_user(array $diaryids, array $userid
  */
 function insightjournal_coursereport_cell_state(?stdClass $entry): array {
     return [
-        'completed' => $entry !== null && insightjournal_html_to_text($entry->response) !== '',
+        'completed' => $entry !== null && insightjournal_visible_char_count($entry->response) !== 0,
         'private' => $entry !== null && !insightjournal_entry_visible_to_teacher($entry),
     ];
 }
