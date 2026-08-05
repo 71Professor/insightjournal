@@ -2,7 +2,7 @@
 
 **Plugin:** `mod_insightjournal` (71Professor/moodle-mod_insightjournal)
 **Basis:** `main` · 0.8.0-beta · Moodle 4.5+
-**Stand:** 04.08.2026
+**Stand:** 05.08.2026
 
 Diese Datei führt zwei Reviews zu einer einzigen Umsetzungsliste zusammen:
 
@@ -10,6 +10,13 @@ Diese Datei führt zwei Reviews zu einer einzigen Umsetzungsliste zusammen:
 - **[CR]** – Vorheriger Code-Review von `main`. Enthält drei Befunde, die im Folgereview nicht vorkommen.
 
 Es sind **keine offenen P0-Blocker** vorhanden. Eine weitere kleine Beta ist ohne zusätzlichen Fix vertretbar. Die Liste unten definiert den Weg zu **Stable**.
+
+> ### Stand zum Fortsetzen (05.08.2026)
+> **P1 (Stable-Gate) ist vollständig abgeschlossen**: R4-01, R4-02, R4-03, R4-04, R4-05, R4-07, R4-09 und CR-01 sind alle ✅ erledigt und liegen auf `main` @ `ba4ecc6`, **gepusht nach `origin/main`** (verifiziert per `git fetch` + `git rev-parse main origin/main` → identisch; `main` läuft weiter unter `0.8.0-beta`, es wurde seither **kein neuer Tag/Release** geschnitten).
+>
+> **Nächster Schritt laut „Empfohlene Umsetzungsreihenfolge" unten:** Punkt 8, der **P2-Sammel-PR** – CR-02 (`promptcolor`-Normalisierung härten), CR-03 (`get_string`-Komponente vereinheitlichen), CR-04 (`minchars`-Doku). Danach Punkt 9 (R4-06 Release-Härtung / R4-08 Autosave-Editorvertrag / R4-10 Doku-Workflow-Hygiene), zuletzt Punkt 10 (P3-Backlog CR-05..08, nach Bedarf).
+>
+> Vor dem Weitermachen: `git status`/`git log -5` prüfen, ob der Nutzer zwischenzeitlich selbst weitere Commits/Pushes gemacht hat (in diesem Projekt schon mehrfach beobachtet) – nicht blind von diesem Stand ausgehen, neu verifizieren.
 
 ---
 
@@ -103,7 +110,7 @@ Autorisierung, Paging, Progress-Zählung und Exportselektion aus `coursereport.p
 Direkt nach `actions/checkout` `git rev-parse HEAD` mit `workflow_run.head_sha` vergleichen. Drittanbieter-Actions im privilegierten Release-Job auf vollständige Commit-SHAs pinnen.
 **Abnahme:** Ein bewegter Tag zwischen Vorprüfung und Checkout stoppt den Release; Release-Abhängigkeiten sind revisionsfest.
 
-### R4-07 · PHPStan-Baseline auf null  `[FR]` — ✅ Erledigt (2026-08-05, lokal committet, noch nicht gepusht)
+### R4-07 · PHPStan-Baseline auf null  `[FR]` — ✅ Erledigt (2026-08-05, `main` @ `2714bf9`)
 `responseformat` vor `format_text()` explizit auf `int` casten und das `standard_intro_elements`-Typing lokal sauber kapseln. Danach `tests/` zunächst in einem separaten, toleranten Analysejob aufnehmen.
 **Abnahme:** `phpstan-baseline.neon` ist leer/entfernt; Produktionscode bleibt Level 5 grün; Testanalyse erzeugt keine unbegrenzte neue Baseline.
 
@@ -118,7 +125,7 @@ Direkt nach `actions/checkout` `git rev-parse HEAD` mit `workflow_run.head_sha` 
 Das Tiny-spezifische flush/sync in einen kleinen Adapter isolieren. Für andere Editoren dokumentieren/testen, wie der Backing-Textarea-Wert synchronisiert wird; No-JS bleibt voll funktionsfähig.
 **Abnahme:** Tiny und mindestens ein zweiter Moodle-Editor speichern identischen Inhalt; unbekannte Editoren degradieren ohne Datenverlust.
 
-### R4-09 · End-to-End-Export absichern  `[FR]` — ✅ Erledigt (2026-08-05, lokal committet, noch nicht gepusht)
+### R4-09 · End-to-End-Export absichern  `[FR]` — ✅ Erledigt (2026-08-05, `main` @ `ba4ecc6`)
 Behat- oder geeigneten Integrationstest für Kurs-CSV ergänzen: zwei Groupings, private Einträge, `accessallgroups`, Sonderzeichen/Zeilenumbrüche und mehr als einen Exportchunk.
 **Abnahme:** Heruntergeladene CSV enthält nur erlaubte Daten und bleibt über Chunkgrenzen vollständig und korrekt escaped.
 
