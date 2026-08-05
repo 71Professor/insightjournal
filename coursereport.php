@@ -91,14 +91,15 @@ if ($download === 'csv') {
             break;
         }
         foreach ($provider->rows_for($chunk) as $row) {
-            foreach ($row['cells'] as $diaryid => $cell) {
+            foreach ($diaries as $diary) {
+                $cell = $row['cells'][$diary->id];
                 if (!$cell['visible']) {
                     continue;
                 }
                 $writer->add_data(insightjournal_coursereport_csv_row(
                     $course,
-                    $activities[$diaryid]->id,
-                    $diaries[$diaryid],
+                    $activities[$diary->id]->id,
+                    $diary,
                     $row['user'],
                     $cell['entry'],
                     $cell['private'],

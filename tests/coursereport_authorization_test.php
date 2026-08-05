@@ -15,8 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Integration tests wiring locallib.php's per-activity visibility
- * helpers into coursereport.php's actual query sequence.
+ * Integration tests for coursereport_provider's two-layer authorization.
  *
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
@@ -29,10 +28,8 @@ declare(strict_types=1);
 namespace mod_insightjournal;
 
 use advanced_testcase;
-use context_module;
 use mod_insightjournal\local\coursereport_provider;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\CoversFunction;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
@@ -48,7 +45,6 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
  * closed at both layers.
  */
 #[CoversClass(coursereport_provider::class)]
-#[CoversFunction('insightjournal_activity_visible_to_viewer')]
 final class coursereport_authorization_test extends advanced_testcase {
     /** @var stdClass The course. */
     protected stdClass $course;
