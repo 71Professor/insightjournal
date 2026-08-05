@@ -242,75 +242,15 @@ function insightjournal_activity_group_restricted(context_module $context, stdCl
 }
 
 /**
- * Groups belonging to the current user, per Moodle's Separate Groups
- * rules for a specific activity.
- *
- * Returns an empty array if the current user belongs to no matching
- * groups - callers must treat that as "matches nobody," not "no
- * restriction": an empty result here still means the restriction is
- * active, just that it currently excludes everyone.
- *
- * The search is scoped to $cm: only groups belonging to
- * $cm->groupingid (0 means every grouping, i.e. no restriction to a
- * specific grouping) and flagged as participation-eligible are
- * considered - matching what Moodle core's own
- * groups_get_activity_allowed_groups() resolves to for a user without
- * moodle/site:accessallgroups in Separate Groups mode.
- *
- * @param stdClass $course The course to look up group membership in.
- * @param cm_info|stdClass $cm The activity to scope the search to.
- * @return stdClass[] Group records, keyed by group id, each with a
- *     populated ->members array (per groups_get_all_groups()'s
- *     $withmembers = true).
- */
-function insightjournal_current_user_groups(stdClass $course, cm_info|stdClass $cm): array {
-    global $USER;
-
-    // Moodle's groups_get_all_groups() only applies its userid filter when $userid is
-    // non-empty ("if (!empty($userid))" in core) - a falsy id (e.g. 0, the
-    // logged-out/guest sentinel) would silently return every group's
-    // members course-wide instead of "this user's groups," inverting the
-    // "empty means matches nobody" contract this function promises. Every
-    // real caller has already gone through require_login() by the time this
-    // runs, so $USER->id is never actually 0 in practice - guard anyway,
-    // since this is a security-relevant primitive, not just an internal
-    // convenience function.
-    if (empty($USER->id)) {
-        return [];
-    }
-
-    return groups_get_all_groups($course->id, $USER->id, (int) $cm->groupingid, 'g.*', true, true);
-}
-
-/**
- * Userids of every member of every group the current user belongs to.
- *
- * Thin wrapper flattening insightjournal_current_user_groups()'s group
- * records to a deduplicated list of member userids. See that function's
- * docblock for the $cm-scoping contract.
- *
- * @param stdClass $course The course to look up group membership in.
- * @param cm_info|stdClass $cm The activity to scope the search to.
- * @return int[] Deduplicated user ids.
- */
-function insightjournal_current_user_group_userids(stdClass $course, cm_info|stdClass $cm): array {
-    $userids = [];
-    foreach (insightjournal_current_user_groups($course, $cm) as $group) {
-        $userids = array_merge($userids, array_map('intval', $group->members));
-    }
-
-    return array_values(array_unique($userids));
-}
-
-/**
  * Group ids the current user belongs to for a specific activity, per
  * Moodle's Separate Groups rules.
  *
- * Same $cm-scoping contract as insightjournal_current_user_groups() (only
- * groups in $cm->groupingid, participation-eligible only), but never
- * materialises member lists: groups_get_all_groups() is called with
- * $withmembers = false and $fields = 'g.id', so the underlying query only
- * ever fetches group ids, regardless of how large any group is.
+ * Scoped to $cm: only groups belonging to $cm->groupingid (0 means every
+ * grouping, i.e. no restriction to a specific grouping) and flagged as
+ * participation-eligible are considered. Never materialises member lists:
+ * groups_get_all_groups() is called with $withmembers = false and
+ * $fields = 'g.id', so the underlying query only ever fetches group ids,
+ * regardless of how large any group is.
  *
  * @param stdClass $course The course to look up group membership in.
  * @param cm_info|stdClass $cm The activity to scope the search to.
@@ -319,9 +259,14 @@ function insightjournal_current_user_group_userids(stdClass $course, cm_info|std
 function insightjournal_current_user_allowed_groupids(stdClass $course, cm_info|stdClass $cm): array {
     global $USER;
 
-    // Same falsy-$USER->id guard as insightjournal_current_user_groups() and
-    // for the same reason: groups_get_all_groups() only applies its userid
-    // filter when $userid is non-empty.
+    // Moodle's groups_get_all_groups() only applies its userid filter when
+    // $userid is non-empty ("if (!empty($userid))" in core) - a falsy id
+    // (e.g. 0, the logged-out/guest sentinel) would silently return every
+    // group's ids course-wide instead of "this user's groups." Every real
+    // caller has already gone through require_login() by the time this
+    // runs, so $USER->id is never actually 0 in practice - guard anyway,
+    // since this is a security-relevant primitive, not just an internal
+    // convenience function.
     if (empty($USER->id)) {
         return [];
     }

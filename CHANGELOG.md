@@ -20,6 +20,20 @@ Versions map to the `$plugin->release` value in `version.php`.
   the unused optional path closes a latent leak surface in an
   authorization-relevant primitive rather than leaving it available for a
   future caller to invoke by accident.
+- **Group-based authorization (activity report, course report, summary)
+  no longer materialises every allowed group's full member list**,
+  addressing the R4-03 review finding. `insightjournal_current_user_groups()`
+  and `insightjournal_current_user_group_userids()` fetched every member of
+  every group a viewer could see, regardless of how much of that data any
+  single request actually needed - a course report page rendering 20 rows
+  still resolved membership for every group member in the course, once per
+  activity, before pagination even started. Authorization now flows
+  through group ids: the activity report filters via a `groups_members`
+  existence subquery, summary checks a single target user via one
+  existence query, and the course report resolves membership only for the
+  userids on the current page or CSV chunk (with the allowed-group-ids
+  lookup itself cached per grouping). No change to who sees what - this is
+  a memory/query-scaling fix, not a behavior change.
 
 ### Fixed
 
