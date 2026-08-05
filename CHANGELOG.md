@@ -34,6 +34,17 @@ Versions map to the `$plugin->release` value in `version.php`.
   userids on the current page or CSV chunk (with the allowed-group-ids
   lookup itself cached per grouping). No change to who sees what - this is
   a memory/query-scaling fix, not a behavior change.
+- **The course-wide report's authorization, paging, progress-counting, and
+  export-row-selection logic now lives in one place**, addressing the
+  R4-04 review finding. `coursereport.php` previously ran the same
+  participant-x-activity authorization loop twice - once for its CSV
+  export, once for its on-screen page - with slightly different output
+  handling in each copy. Both now call a single `coursereport_provider`
+  service (`classes/local/coursereport_provider.php`) that resolves
+  participants and per-cell visibility/completion/privacy once; each
+  renderer only decides what to do with an unauthorized cell (the screen
+  masks it, the CSV export omits the row). No change to what's shown or
+  exported - this is a structural refactor, not a feature change.
 
 ### Fixed
 
