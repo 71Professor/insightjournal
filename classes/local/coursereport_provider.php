@@ -112,7 +112,7 @@ final class coursereport_provider {
 
         return count_enrolled_users(
             $this->coursecontext,
-            '',
+            'mod/insightjournal:submit',
             $this->restrictgroupids ?? 0
         );
     }
@@ -132,7 +132,7 @@ final class coursereport_provider {
 
         return get_enrolled_users(
             $this->coursecontext,
-            '',
+            'mod/insightjournal:submit',
             $this->restrictgroupids ?? 0,
             $this->userfields,
             'u.lastname,u.firstname,u.id',

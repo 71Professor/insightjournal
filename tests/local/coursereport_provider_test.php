@@ -78,7 +78,7 @@ final class coursereport_provider_test extends advanced_testcase {
 
         $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
 
-        $this->assertEquals(3, $provider->total_participants());
+        $this->assertEquals(2, $provider->total_participants());
         $participants = $provider->participants(0, 20);
         $rows = $provider->rows_for($participants);
         $this->assertTrue($rows[(int) $studenta->id]['cells'][$diary->id]['visible']);
@@ -144,7 +144,7 @@ final class coursereport_provider_test extends advanced_testcase {
 
         // Student is in no group - still shows up (open activity keeps the
         // prefilter unrestricted), but the restricted activity's cell is masked.
-        $this->assertEquals(2, $provider->total_participants());
+        $this->assertEquals(1, $provider->total_participants());
         $rows = $provider->rows_for($provider->participants(0, 20));
         $this->assertTrue($rows[(int) $student->id]['cells'][$open->id]['visible']);
         $this->assertFalse($rows[(int) $student->id]['cells'][$restricted->id]['visible']);
@@ -235,11 +235,11 @@ final class coursereport_provider_test extends advanced_testcase {
 
         $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
 
-        $this->assertEquals(6, $provider->total_participants());
+        $this->assertEquals(5, $provider->total_participants());
         $first = $provider->participants(0, 4);
         $second = $provider->participants(4, 4);
         $this->assertCount(4, $first);
-        $this->assertCount(2, $second);
+        $this->assertCount(1, $second);
         $this->assertEmpty(array_intersect(array_keys($first), array_keys($second)));
     }
 
@@ -259,9 +259,9 @@ final class coursereport_provider_test extends advanced_testcase {
 
         $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
 
-        $chunk = $provider->participants(0, 3);
-        $this->assertCount(3, $chunk);
-        $next = $provider->participants(3, 3);
+        $chunk = $provider->participants(0, 2);
+        $this->assertCount(2, $chunk);
+        $next = $provider->participants(2, 2);
         $this->assertEmpty($next);
     }
 
