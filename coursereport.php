@@ -54,7 +54,7 @@ if (empty($activities)) {
 
 // The insightjournal_coursereport_restrict_groupids() call already returns null for
 // "no restriction needed" (at least one visible activity is unrestricted); the
-// falsy-$USER->id guard now lives centrally in insightjournal_current_user_groups().
+// falsy-$USER->id guard now lives centrally in insightjournal_current_user_allowed_groupids().
 // The bare "if ($groupids)" check inside get_enrolled_users()/count_enrolled_users()
 // would otherwise treat an empty array the SAME as null ("no filter"), so
 // $blockallparticipants still catches "every visible activity is restricted, but
@@ -68,20 +68,11 @@ if ($restrictgroupids === null) {
 
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
-// Precomputed once per activity (not per participant): insightjournal_activity_group_restricted()
-// and insightjournal_current_user_group_userids() do uncached DB queries depending only on
-// ($course, $cm), never on the participant being checked - calling them inside the participant
-// loops below would repeat identical queries once per participant per restricted activity. null
-// means "no restriction, every participant is visible under this activity"; otherwise a
-// userid => true map for O(1) per-cell lookups.
-$diaryallowedusers = [];
-foreach ($diaries as $diary) {
-    $cm = $activities[$diary->id];
-    $context = context_module::instance($cm->id);
-    $diaryallowedusers[$diary->id] = insightjournal_activity_group_restricted($context, $course, $cm)
-        ? array_flip(insightjournal_current_user_group_userids($course, $cm))
-        : null;
-}
+// Allowed group ids per diary (R4-03): resolved once per distinct grouping,
+// not once per activity, and NOT the member lookup itself - that happens
+// below, scoped to only the userids in the current page/CSV chunk, never
+// the whole course at once.
+$diaryallowedgroupids = insightjournal_coursereport_allowed_groupids_by_diary($activities, $course);
 // Checked at course context, not per-activity like report_table.php - deliberately
 // coarse. A viewer reaching this branch already holds the capability course-wide,
 // so this can only ever be more permissive than a hypothetical per-activity
@@ -131,6 +122,10 @@ if ($download === 'csv') {
             break;
         }
         $chunkentries = insightjournal_entries_by_diary_and_user($diaryids, array_keys($chunk));
+        $diaryallowedusers = insightjournal_coursereport_diary_allowed_users(
+            $diaryallowedgroupids,
+            array_keys($chunk)
+        );
         foreach ($chunk as $user) {
             foreach ($diaries as $diary) {
                 $allowedusers = $diaryallowedusers[$diary->id];
@@ -171,6 +166,10 @@ $participants = $blockallparticipants
     );
 
 $entries = insightjournal_entries_by_diary_and_user($diaryids, array_keys($participants));
+$diaryallowedusers = insightjournal_coursereport_diary_allowed_users(
+    $diaryallowedgroupids,
+    array_keys($participants)
+);
 
 $PAGE->set_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id, 'page' => $page, 'perpage' => $perpage]);
 $PAGE->set_context($coursecontext);
