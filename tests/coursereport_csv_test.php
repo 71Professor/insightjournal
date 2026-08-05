@@ -100,6 +100,7 @@ final class coursereport_csv_test extends advanced_testcase {
             $this->diary,
             $this->student,
             $entry,
+            false,
             true
         );
 
@@ -133,6 +134,7 @@ final class coursereport_csv_test extends advanced_testcase {
             $this->diary,
             $this->student,
             $entry,
+            true,
             true
         );
 
@@ -158,6 +160,7 @@ final class coursereport_csv_test extends advanced_testcase {
             $this->diary,
             $this->student,
             $entry,
+            false,
             false
         );
 
@@ -175,6 +178,7 @@ final class coursereport_csv_test extends advanced_testcase {
             $this->diary,
             $this->student,
             null,
+            false,
             true
         );
 
@@ -197,6 +201,7 @@ final class coursereport_csv_test extends advanced_testcase {
             $diary,
             $this->student,
             null,
+            false,
             true
         );
 

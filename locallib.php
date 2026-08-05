@@ -511,6 +511,10 @@ function insightjournal_email_field_visible(context $context): bool {
  * @param stdClass $diary The insight journal instance.
  * @param stdClass $user The participant.
  * @param stdClass|null $entry The participant's entry for this activity, or null if they have none.
+ * @param bool $private Whether the entry's author chose to keep it private
+ *     from the trainer - the caller already has this (from
+ *     insightjournal_coursereport_cell_state() via coursereport_provider),
+ *     so it is passed in rather than recomputed here.
  * @param bool $showemail Whether the viewer may see participant email addresses.
  * @return array The 9-column row.
  */
@@ -520,10 +524,9 @@ function insightjournal_coursereport_csv_row(
     stdClass $diary,
     stdClass $user,
     ?stdClass $entry,
+    bool $private,
     bool $showemail
 ): array {
-    $private = $entry && !insightjournal_entry_visible_to_teacher($entry);
-
     return [
         $course->id,
         $course->fullname,
