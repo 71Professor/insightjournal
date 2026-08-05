@@ -82,35 +82,12 @@ if ($download === 'csv') {
     // with only that chunk's own entries, instead of the whole course's
     // participants/entries held in memory at once - keeps memory bounded
     // regardless of course size, the same property report.php already gets
-    // for free from table_sql (R2-04).
-    $csvchunksize = 500;
-    $offset = 0;
-    while (true) {
-        $chunk = $provider->participants($offset, $csvchunksize);
-        if (empty($chunk)) {
-            break;
-        }
-        foreach ($provider->rows_for($chunk) as $row) {
-            foreach ($diaries as $diary) {
-                $cell = $row['cells'][$diary->id];
-                if (!$cell['visible']) {
-                    continue;
-                }
-                $writer->add_data(insightjournal_coursereport_csv_row(
-                    $course,
-                    $activities[$diary->id]->id,
-                    $diary,
-                    $row['user'],
-                    $cell['entry'],
-                    $cell['private'],
-                    $showemail
-                ));
-            }
-        }
-        $offset += $csvchunksize;
-        if (count($chunk) < $csvchunksize) {
-            break;
-        }
+    // for free from table_sql (R2-04). The chunking/row-selection logic
+    // itself lives in coursereport_provider::csv_rows() (R4-09) so it can be
+    // exercised directly by PHPUnit without csv_export_writer's exit()-on-
+    // download() making that impossible here.
+    foreach ($provider->csv_rows($diaries, $showemail) as $row) {
+        $writer->add_data($row);
     }
     $writer->download_file(); // Sends headers, streams the file, and exit()s - same contract as the previous fclose()+exit.
 }

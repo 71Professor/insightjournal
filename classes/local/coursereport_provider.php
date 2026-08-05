@@ -202,6 +202,53 @@ final class coursereport_provider {
     }
 
     /**
+     * Yields every CSV row across every bounded chunk of enrolled
+     * participants, for exactly the visible cells - the CSV export's full
+     * row stream, without ever holding more than one chunk's participants
+     * (and their rows) in memory at once. Used by both coursereport.php's
+     * real export and this class's own tests (R4-09), so the chunking
+     * behavior under test is the same code the real export runs, not a
+     * reimplementation of it.
+     *
+     * @param \stdClass[] $diaries Diary records, keyed by insightjournal instance id, in the
+     *     order their columns should appear in the export (coursereport.php passes them
+     *     ordered by id, matching the on-screen column order).
+     * @param bool $showemail
+     * @param int $chunksize
+     * @return iterable<array> One array per CSV row, shaped like insightjournal_coursereport_csv_row()'s return value.
+     */
+    public function csv_rows(array $diaries, bool $showemail, int $chunksize = 500): iterable {
+        $offset = 0;
+        while (true) {
+            $chunk = $this->participants($offset, $chunksize);
+            if (empty($chunk)) {
+                break;
+            }
+            foreach ($this->rows_for($chunk) as $row) {
+                foreach ($diaries as $diary) {
+                    $cell = $row['cells'][$diary->id];
+                    if (!$cell['visible']) {
+                        continue;
+                    }
+                    yield insightjournal_coursereport_csv_row(
+                        $this->course,
+                        $this->activities[$diary->id]->id,
+                        $diary,
+                        $row['user'],
+                        $cell['entry'],
+                        $cell['private'],
+                        $showemail
+                    );
+                }
+            }
+            $offset += $chunksize;
+            if (count($chunk) < $chunksize) {
+                break;
+            }
+        }
+    }
+
+    /**
      * Allowed group ids for the current viewer, keyed by insightjournal
      * instance id - resolved once per distinct groupingid, not once per
      * activity (two activities sharing a grouping always resolve to the

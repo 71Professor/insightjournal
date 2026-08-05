@@ -82,6 +82,23 @@ Versions map to the `$plugin->release` value in `version.php`.
   than only asserted in a comment. Interior whitespace/NBSP next to real
   text is unaffected. `DOMDocument` parsing also now sets `LIBXML_NONET`.
 
+### Testing
+
+- **The course report's CSV export now has a real end-to-end proof**,
+  closing the R4-09 review finding: two independent groupings each stay
+  isolated for a group-restricted viewer, a private entry inside an
+  authorized cell always shows the privacy notice rather than its real
+  text, a viewer holding `moodle/site:accessallgroups` (but belonging to
+  no group at all) sees every grouping in full, a response containing a
+  comma, an embedded quote, and a real paragraph break round-trips
+  byte-for-byte through a real `csv_export_writer`, and five participants
+  exported at a chunk size of two (three chunks) all appear exactly once,
+  with none dropped or duplicated at a chunk boundary. The CSV
+  chunk-iteration loop itself moved from `coursereport.php` into a new
+  `coursereport_provider::csv_rows()` method (continuing the R4-04
+  extraction) so these tests exercise the exact same code the real export
+  runs, not a reimplementation of its chunking. No behavior change.
+
 ## [0.8.0-beta] - 2026-08-03
 
 ### Added
