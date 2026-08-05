@@ -37,10 +37,13 @@ Vor jeder Längenprüfung HTML in eine **klar definierte** Textform überführen
 - **Nachträglicher CI-Fail nach dem Push** (Ursache: der Data-Provider war als `iterable` typisiert): `moodle-plugin-ci phpcs` läuft zusätzlich mit dem `moodle-extra`-Regelset (lokales `--standard=moodle` allein reicht nicht als Vorab-Check!) – dessen `TestCaseProvider`-Sniff verlangt case-sensitiv `array`/`Generator`/`Iterable`, was das idiomatische kleine `iterable` nie erfüllt. Fix: Rückgabetyp auf `\Generator` präzisiert (Methode nutzt ohnehin `yield`). Commit `81e2e6c`.
 - Vollständig verifiziert: PHPUnit 205/205, phpcs sauber (inkl. `moodle-extra`), Behat 20/20 (324 Steps, auf echtem Chrome in CI).
 
-### R4-02 · Kursweiten Legacy-Pfad entfernen  `[FR]`
+### R4-02 · Kursweiten Legacy-Pfad entfernen  `[FR]` — ✅ Erledigt (2026-08-05, `main` @ `8d96804`, noch nicht gepusht)
 Bei `insightjournal_current_user_groups()` und `insightjournal_current_user_group_userids()` den Parameter `$cm` **verpflichtend** machen. Den `?cm = null`-Zweig mit kursweiter Legacy-Sicht entfernen und alle Aufrufer/Tests auf den aktivitätsspezifischen Vertrag umstellen.
 **Warum:** Ein optionaler Legacy-Pfad in einer autorisierungsrelevanten Primitive ist eine latente Leak-Fläche.
 **Abnahme:** Kein produktiver oder testweiser Aufruf ohne `$cm`; statische Analyse findet keinen optionalen Legacy-Pfad. Zwei Groupings bleiben vollständig isoliert.
+
+**Umsetzung:** Beide Funktionssignaturen in `locallib.php` auf `cm_info|stdClass $cm` (kein Default, kein `null` mehr) umgestellt; der interne `$cm !== null`-Ternary für `$groupingid`/`$participationonly` entfernt (`$participationonly` ist jetzt immer `true`). Docblocks entsprechend gekürzt (kein „oder kursweite Legacy-Sicht" mehr). Geprüft: **jeder** produktive Aufrufer (`report.php:46`, `coursereport.php:82` sowie die beiden internen Aufrufe in `locallib.php` selbst) übergab `$cm` bereits vor diesem Fix immer schon konkret — R3-01/R3-02 hatten den Legacy-Pfad faktisch schon totgelegt, ohne ihn zu entfernen. Einzig `tests/locallib_groups_test.php` rief noch testweise ohne `$cm` auf (vier Stellen um `$this->cm` ergänzt) und ein Test (`test_group_userids_ignores_grouping_when_cm_omitted`) prüfte exakt den jetzt entfernten Legacy-Zweig — gelöscht, inklusive seines veralteten Kommentars, der fälschlich noch von einem angeblich unveränderten `summary.php`-Aufruf sprach (der Aufruf dort läuft seit R3-02 längst über `insightjournal_visible_activities_for_user()`, nie direkt).
+**Verifiziert:** PHPUnit 204/204 (ein Test weniger als vor diesem Fix, s.o.; sonst unverändert grün), phpcs sauber (`moodle`+`moodle-extra`, `--warning-severity=1`), PHPStan 0 Fehler, Behat 20/20 (324 Steps).
 
 ### R4-03 · Gruppenautorisierung speicherbegrenzt machen  `[FR]`
 Erlaubte **Gruppen-IDs** statt aller Member-IDs repräsentieren. Activity-Report filtert über `groups_members`-Join/Subquery; Summary prüft die Zielperson per Existenzabfrage; Kursreport löst Mitgliedschaften nur für die aktuelle Seite bzw. den 500er-Exportchunk auf und cached je Gruppierung.
@@ -119,7 +122,7 @@ Im Hilfetext/README klarstellen, dass `minchars` nur den Abschluss steuert, das 
 Jede Änderung bleibt einzeln abnehmbar. Reihenfolge kombiniert die PR-Folge des Folgereviews mit den Erstreview-Befunden.
 
 1. ~~**R4-01** – Zeichensemantik + PHP/JS-Fixtures~~ — ✅ erledigt (siehe oben)
-2. **R4-02** – Legacy-Pfad entfernen
+2. ~~**R4-02** – Legacy-Pfad entfernen~~ — ✅ erledigt (siehe oben)
 3. **CR-01** – Completion-Reset (klein, P1, Datenkonsistenz)
 4. **R4-03** – Gruppenautorisierung speicherbegrenzt **+ Messung** (siehe Messplan unten)
 5. **R4-04 / R4-05** – Kursreport-Service + Template-Test
