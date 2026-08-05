@@ -244,7 +244,7 @@ final class locallib_groups_test extends advanced_testcase {
 
         $this->setUser($teacher);
 
-        $userids = insightjournal_current_user_group_userids($this->course);
+        $userids = insightjournal_current_user_group_userids($this->course, $this->cm);
 
         $this->assertContains((int) $teacher->id, $userids);
         $this->assertContains((int) $studenta->id, $userids);
@@ -259,7 +259,7 @@ final class locallib_groups_test extends advanced_testcase {
         $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
         $this->setUser($teacher);
 
-        $this->assertSame([], insightjournal_current_user_group_userids($this->course));
+        $this->assertSame([], insightjournal_current_user_group_userids($this->course, $this->cm));
     }
 
     /**
@@ -280,7 +280,7 @@ final class locallib_groups_test extends advanced_testcase {
 
         $this->setUser($teacher);
 
-        $userids = insightjournal_current_user_group_userids($this->course);
+        $userids = insightjournal_current_user_group_userids($this->course, $this->cm);
 
         $this->assertContains((int) $studenta->id, $userids);
         $this->assertContains((int) $studentb->id, $userids);
@@ -300,7 +300,7 @@ final class locallib_groups_test extends advanced_testcase {
 
         $this->setUser(0);
 
-        $this->assertSame([], insightjournal_current_user_group_userids($this->course));
+        $this->assertSame([], insightjournal_current_user_group_userids($this->course, $this->cm));
     }
 
     /**
@@ -364,41 +364,6 @@ final class locallib_groups_test extends advanced_testcase {
         $userids = insightjournal_current_user_group_userids($this->course, $this->cm);
 
         $this->assertSame([], $userids);
-    }
-
-    /**
-     * Omitting $cm preserves today's course-wide behaviour exactly -
-     * this is the exact call summary.php's untouched call site
-     * continues to make. A future accidental change here would
-     * silently alter summary.php's behaviour without summary.php itself
-     * ever being touched.
-     */
-    public function test_group_userids_ignores_grouping_when_cm_omitted(): void {
-        $generator = $this->getDataGenerator();
-        $teacher = $generator->create_and_enrol($this->course, 'teacher');
-        $studentb = $generator->create_and_enrol($this->course, 'student');
-
-        $groupinga = $generator->create_grouping(['courseid' => $this->course->id]);
-        $groupingb = $generator->create_grouping(['courseid' => $this->course->id]);
-
-        $groupa = $generator->create_group(['courseid' => $this->course->id]);
-        $groupb = $generator->create_group(['courseid' => $this->course->id]);
-        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupa->id]);
-        $generator->create_grouping_group(['groupingid' => $groupingb->id, 'groupid' => $groupb->id]);
-
-        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
-        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
-        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $studentb->id]);
-
-        $this->set_activity_grouping((int) $groupinga->id);
-        $this->setUser($teacher);
-
-        // No $cm passed - must return the union across every grouping,
-        // exactly like before this fix, even though the activity itself
-        // is now scoped to groupinga.
-        $userids = insightjournal_current_user_group_userids($this->course);
-
-        $this->assertContains((int) $studentb->id, $userids);
     }
 
     /**

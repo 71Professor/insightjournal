@@ -8,6 +8,19 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Changed
+
+- **`insightjournal_current_user_groups()` and
+  `insightjournal_current_user_group_userids()` now require an activity
+  (`$cm`)**, addressing the R4-02 review finding. Both functions
+  previously accepted an optional `$cm = null`, falling back to a
+  course-wide legacy view (every group in the course, ignoring grouping
+  and participation flags) that no production caller has needed since
+  R3-01/R3-02 scoped every real call site to a specific activity. Removing
+  the unused optional path closes a latent leak surface in an
+  authorization-relevant primitive rather than leaving it available for a
+  future caller to invoke by accident.
+
 ### Fixed
 
 - **A response consisting only of whitespace, non-breaking spaces, or

@@ -243,32 +243,27 @@ function insightjournal_activity_group_restricted(context_module $context, stdCl
 
 /**
  * Groups belonging to the current user, per Moodle's Separate Groups
- * rules for a specific activity (or the course-wide legacy set when $cm
- * is omitted).
+ * rules for a specific activity.
  *
  * Returns an empty array if the current user belongs to no matching
  * groups - callers must treat that as "matches nobody," not "no
  * restriction": an empty result here still means the restriction is
  * active, just that it currently excludes everyone.
  *
- * When $cm is given, the search is scoped to that activity: only groups
- * belonging to $cm->groupingid (0 means every grouping, i.e. no
- * restriction to a specific grouping) and flagged as
- * participation-eligible are considered - matching what Moodle core's
- * own groups_get_activity_allowed_groups() resolves to for a user
- * without moodle/site:accessallgroups in Separate Groups mode. When $cm
- * is omitted, every group in the course counts regardless of grouping
- * or participation flag - this is the pre-R3-01 behaviour, kept for
- * callers without a single natural activity to scope to.
+ * The search is scoped to $cm: only groups belonging to
+ * $cm->groupingid (0 means every grouping, i.e. no restriction to a
+ * specific grouping) and flagged as participation-eligible are
+ * considered - matching what Moodle core's own
+ * groups_get_activity_allowed_groups() resolves to for a user without
+ * moodle/site:accessallgroups in Separate Groups mode.
  *
  * @param stdClass $course The course to look up group membership in.
- * @param cm_info|stdClass|null $cm The activity to scope the search to,
- *     or null for the course-wide (unscoped) legacy behaviour.
+ * @param cm_info|stdClass $cm The activity to scope the search to.
  * @return stdClass[] Group records, keyed by group id, each with a
  *     populated ->members array (per groups_get_all_groups()'s
  *     $withmembers = true).
  */
-function insightjournal_current_user_groups(stdClass $course, cm_info|stdClass|null $cm = null): array {
+function insightjournal_current_user_groups(stdClass $course, cm_info|stdClass $cm): array {
     global $USER;
 
     // Moodle's groups_get_all_groups() only applies its userid filter when $userid is
@@ -284,10 +279,7 @@ function insightjournal_current_user_groups(stdClass $course, cm_info|stdClass|n
         return [];
     }
 
-    $groupingid = $cm !== null ? (int) $cm->groupingid : 0;
-    $participationonly = $cm !== null;
-
-    return groups_get_all_groups($course->id, $USER->id, $groupingid, 'g.*', true, $participationonly);
+    return groups_get_all_groups($course->id, $USER->id, (int) $cm->groupingid, 'g.*', true, true);
 }
 
 /**
@@ -298,11 +290,10 @@ function insightjournal_current_user_groups(stdClass $course, cm_info|stdClass|n
  * docblock for the $cm-scoping contract.
  *
  * @param stdClass $course The course to look up group membership in.
- * @param cm_info|stdClass|null $cm The activity to scope the search to,
- *     or null for the course-wide (unscoped) legacy behaviour.
+ * @param cm_info|stdClass $cm The activity to scope the search to.
  * @return int[] Deduplicated user ids.
  */
-function insightjournal_current_user_group_userids(stdClass $course, cm_info|stdClass|null $cm = null): array {
+function insightjournal_current_user_group_userids(stdClass $course, cm_info|stdClass $cm): array {
     $userids = [];
     foreach (insightjournal_current_user_groups($course, $cm) as $group) {
         $userids = array_merge($userids, array_map('intval', $group->members));
