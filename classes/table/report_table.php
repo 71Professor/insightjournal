@@ -70,9 +70,10 @@ class report_table extends table_sql {
      * @param context_module $context The activity's module context.
      * @param string $search Optional search term across participant name, and
      *     email too when the viewer is permitted to see it.
-     * @param ?array $restrictuserids When not null, only these userids' entries
-     *     are included (an empty array means "match nobody," not "no
-     *     restriction") - used to enforce Moodle's Separate Groups mode.
+     * @param ?array $restrictgroupids When not null, only entries from
+     *     members of these group ids are included (an empty array means
+     *     "match nobody," not "no restriction") - used to enforce Moodle's
+     *     Separate Groups mode.
      */
     public function __construct(
         string $uniqueid,
@@ -81,7 +82,7 @@ class report_table extends table_sql {
         stdClass $diary,
         context_module $context,
         string $search = '',
-        ?array $restrictuserids = null
+        ?array $restrictgroupids = null
     ) {
         parent::__construct($uniqueid);
 
@@ -119,10 +120,13 @@ class report_table extends table_sql {
             }
             $where .= ' AND (' . implode(' OR ', $clauses) . ')';
         }
-        if ($restrictuserids !== null) {
-            [$rinsql, $rparams] = $DB->get_in_or_equal($restrictuserids, SQL_PARAMS_NAMED, 'grp', true, -1);
-            $where .= ' AND u.id ' . $rinsql;
-            $params = array_merge($params, $rparams);
+        if ($restrictgroupids !== null) {
+            [$ginsql, $gparams] = $DB->get_in_or_equal($restrictgroupids, SQL_PARAMS_NAMED, 'grp', true, -1);
+            $where .= ' AND EXISTS (
+                SELECT 1 FROM {groups_members} gm
+                 WHERE gm.userid = u.id AND gm.groupid ' . $ginsql . '
+            )';
+            $params = array_merge($params, $gparams);
         }
 
         $this->set_sql(

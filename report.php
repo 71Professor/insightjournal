@@ -42,8 +42,8 @@ require_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/insightjournal:viewall', $context);
 
-$restrictuserids = insightjournal_activity_group_restricted($context, $course, $cm)
-    ? insightjournal_current_user_group_userids($course, $cm)
+$restrictgroupids = insightjournal_activity_group_restricted($context, $course, $cm)
+    ? insightjournal_current_user_allowed_groupids($course, $cm)
     : null;
 
 if ($wantscsv) {
@@ -58,7 +58,7 @@ $table = new report_table(
     $diary,
     $context,
     $search,
-    $restrictuserids
+    $restrictgroupids
 );
 $table->is_downloading(
     $wantscsv ? 'csv' : null,

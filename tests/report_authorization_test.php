@@ -43,18 +43,18 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
  * Reproduces report.php's actual production call sequence for
- * $restrictuserids - unlike report_table_test.php's restrict-to-userids
+ * $restrictgroupids - unlike report_table_test.php's restrict-to-userids
  * tests, which pass a hand-supplied array, and locallib_groups_test.php,
  * which tests the helper functions in isolation - proving the two are
  * correctly wired together end-to-end at the PHPUnit level. Behat already
  * covers the equivalent for coursereport.php.
  *
  * Tests for {@see \insightjournal_activity_group_restricted()} and
- * {@see \insightjournal_current_user_group_userids()}, as wired into
+ * {@see \insightjournal_current_user_allowed_groupids()}, as wired into
  * {@see report_table}.
  */
 #[CoversFunction('insightjournal_activity_group_restricted')]
-#[CoversFunction('insightjournal_current_user_group_userids')]
+#[CoversFunction('insightjournal_current_user_allowed_groupids')]
 final class report_authorization_test extends advanced_testcase {
     /** @var stdClass The course. */
     protected stdClass $course;
@@ -97,14 +97,14 @@ final class report_authorization_test extends advanced_testcase {
 
     /**
      * Builds the report_table exactly the way report.php does -
-     * computing $restrictuserids via the real production helpers, not a
+     * computing $restrictgroupids via the real production helpers, not a
      * hand-supplied array - and renders it to a string.
      *
      * @return string The rendered HTML.
      */
     protected function render_table(): string {
-        $restrictuserids = insightjournal_activity_group_restricted($this->context, $this->course, $this->cm)
-            ? insightjournal_current_user_group_userids($this->course, $this->cm)
+        $restrictgroupids = insightjournal_activity_group_restricted($this->context, $this->course, $this->cm)
+            ? insightjournal_current_user_allowed_groupids($this->course, $this->cm)
             : null;
 
         $table = new report_table(
@@ -114,7 +114,7 @@ final class report_authorization_test extends advanced_testcase {
             $this->diary,
             $this->context,
             '',
-            $restrictuserids
+            $restrictgroupids
         );
         $table->setup_columns();
         $table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $this->cm->id]));

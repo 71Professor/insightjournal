@@ -233,11 +233,13 @@ final class report_table_test extends advanced_testcase {
     }
 
     /**
-     * When restricted to a specific set of userids, only their entries render.
+     * When restricted to a specific set of groupids, only entries from
+     * members of those groups render.
      */
-    public function test_restrict_to_userids_filters_participants(): void {
-        $visible = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
-        $excluded = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+    public function test_restrict_to_groupids_filters_participants(): void {
+        $generator = $this->getDataGenerator();
+        $visible = $generator->create_and_enrol($this->course, 'student');
+        $excluded = $generator->create_and_enrol($this->course, 'student');
         $this->ij_generator()->create_entry($this->diary, (int) $visible->id, 'Included entry.', INSIGHTJOURNAL_VISIBILITY_VISIBLE);
         $this->ij_generator()->create_entry(
             $this->diary,
@@ -246,6 +248,9 @@ final class report_table_test extends advanced_testcase {
             INSIGHTJOURNAL_VISIBILITY_VISIBLE
         );
 
+        $includedgroup = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $includedgroup->id, 'userid' => $visible->id]);
+
         $table = new report_table(
             'report_table_test_restricted',
             $this->course,
@@ -253,7 +258,7 @@ final class report_table_test extends advanced_testcase {
             $this->diary,
             $this->context,
             '',
-            [(int) $visible->id]
+            [(int) $includedgroup->id]
         );
         $table->setup_columns();
         $table->define_baseurl(new moodle_url('/mod/insightjournal/report.php', ['id' => $this->cm->id]));
@@ -271,7 +276,7 @@ final class report_table_test extends advanced_testcase {
      * nobody," not "no restriction" - a user in zero groups must see zero
      * rows, never everyone.
      */
-    public function test_restrict_to_empty_userids_shows_nobody(): void {
+    public function test_restrict_to_empty_groupids_shows_nobody(): void {
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $this->ij_generator()->create_entry(
             $this->diary,
