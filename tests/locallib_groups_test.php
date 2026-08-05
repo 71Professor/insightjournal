@@ -47,6 +47,9 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
  */
 #[CoversFunction('insightjournal_activity_group_restricted')]
 #[CoversFunction('insightjournal_current_user_group_userids')]
+#[CoversFunction('insightjournal_current_user_allowed_groupids')]
+#[CoversFunction('insightjournal_groupids_contain_member')]
+#[CoversFunction('insightjournal_groupids_members_among')]
 #[CoversFunction('insightjournal_activity_visible_to_viewer')]
 #[CoversFunction('insightjournal_visible_activities_for_user')]
 #[CoversFunction('insightjournal_coursereport_restrict_groupids')]
@@ -364,6 +367,194 @@ final class locallib_groups_test extends advanced_testcase {
         $userids = insightjournal_current_user_group_userids($this->course, $this->cm);
 
         $this->assertSame([], $userids);
+    }
+
+    /**
+     * Returns exactly the current user's own group ids for this activity's
+     * grouping - not another group in the course they also belong to.
+     */
+    public function test_allowed_groupids_returns_own_groups(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+
+        $this->setUser($teacher);
+
+        $groupids = insightjournal_current_user_allowed_groupids($this->course, $this->cm);
+
+        $this->assertEquals([(int) $groupa->id], $groupids);
+        $this->assertNotContains((int) $groupb->id, $groupids);
+    }
+
+    /**
+     * A user belonging to no groups gets an empty result, not an error -
+     * callers must treat this as "matches nobody," never as "unrestricted."
+     */
+    public function test_allowed_groupids_empty_when_user_has_no_groups(): void {
+        $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'teacher');
+        $this->setUser($teacher);
+
+        $this->assertSame([], insightjournal_current_user_allowed_groupids($this->course, $this->cm));
+    }
+
+    /**
+     * A falsy $USER->id (e.g. 0, the logged-out/guest sentinel) must still
+     * produce "matches nobody," never silently fall through to
+     * groups_get_all_groups() ignoring its userid filter.
+     */
+    public function test_allowed_groupids_empty_when_user_id_is_falsy(): void {
+        $generator = $this->getDataGenerator();
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $group = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+
+        $this->setUser(0);
+
+        $this->assertSame([], insightjournal_current_user_allowed_groupids($this->course, $this->cm));
+    }
+
+    /**
+     * A grouping-scoped $cm restricts the returned group ids to only the
+     * groups belonging to that grouping - a group in a different grouping
+     * must never leak in, even if the current user also belongs to it.
+     */
+    public function test_allowed_groupids_scoped_to_activity_groupingid(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+
+        $groupinga = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupingb = $generator->create_grouping(['courseid' => $this->course->id]);
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_grouping_group(['groupingid' => $groupinga->id, 'groupid' => $groupa->id]);
+        $generator->create_grouping_group(['groupingid' => $groupingb->id, 'groupid' => $groupb->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+
+        $this->set_activity_grouping((int) $groupinga->id);
+        $this->setUser($teacher);
+
+        $groupids = insightjournal_current_user_allowed_groupids($this->course, $this->cm);
+
+        $this->assertEquals([(int) $groupa->id], $groupids);
+    }
+
+    /**
+     * A non-participating group is excluded even when it belongs to the
+     * activity's own grouping.
+     */
+    public function test_allowed_groupids_excludes_non_participating_group(): void {
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+
+        $grouping = $generator->create_grouping(['courseid' => $this->course->id]);
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'participation' => false,
+        ]);
+        $generator->create_grouping_group(['groupingid' => $grouping->id, 'groupid' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+
+        $this->set_activity_grouping((int) $grouping->id);
+        $this->setUser($teacher);
+
+        $this->assertSame([], insightjournal_current_user_allowed_groupids($this->course, $this->cm));
+    }
+
+    /**
+     * insightjournal_groupids_contain_member() finds a real member.
+     */
+    public function test_groupids_contain_member_true_when_member(): void {
+        $generator = $this->getDataGenerator();
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $group = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+
+        $this->assertTrue(
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $student->id)
+        );
+    }
+
+    /**
+     * insightjournal_groupids_contain_member() correctly reports a
+     * non-member as absent, not just "no error."
+     */
+    public function test_groupids_contain_member_false_when_not_member(): void {
+        $generator = $this->getDataGenerator();
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $other = $generator->create_and_enrol($this->course, 'student');
+        $group = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+
+        $this->assertFalse(
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $other->id)
+        );
+    }
+
+    /**
+     * An empty group id set never matches anyone - guards against a stray
+     * unrestricted IN() clause.
+     */
+    public function test_groupids_contain_member_false_when_groupids_empty(): void {
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+
+        $this->assertFalse(insightjournal_groupids_contain_member([], (int) $student->id));
+    }
+
+    /**
+     * insightjournal_groupids_members_among() returns exactly the subset of
+     * the given userids that are members of the given groups - excluding a
+     * course member who isn't in the candidate userid list at all, and one
+     * who is in the list but not in any of the given groups.
+     */
+    public function test_groupids_members_among_filters_to_matching_userids(): void {
+        $generator = $this->getDataGenerator();
+        $ingroupinlist = $generator->create_and_enrol($this->course, 'student');
+        $ingroupnotinlist = $generator->create_and_enrol($this->course, 'student');
+        $inlistnotingroup = $generator->create_and_enrol($this->course, 'student');
+        $group = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $ingroupinlist->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $ingroupnotinlist->id]);
+
+        $result = insightjournal_groupids_members_among(
+            [(int) $group->id],
+            [(int) $ingroupinlist->id, (int) $inlistnotingroup->id]
+        );
+
+        $this->assertEquals([(int) $ingroupinlist->id], $result);
+    }
+
+    /**
+     * A user in two of the given groups is returned only once.
+     */
+    public function test_groupids_members_among_deduplicates(): void {
+        $generator = $this->getDataGenerator();
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $groupa = $generator->create_group(['courseid' => $this->course->id]);
+        $groupb = $generator->create_group(['courseid' => $this->course->id]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $student->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $student->id]);
+
+        $result = insightjournal_groupids_members_among(
+            [(int) $groupa->id, (int) $groupb->id],
+            [(int) $student->id]
+        );
+
+        $this->assertEquals([(int) $student->id], $result);
+    }
+
+    /**
+     * Empty groupids or empty userids short-circuit to an empty result -
+     * no query should be built with an empty IN() list.
+     */
+    public function test_groupids_members_among_empty_inputs(): void {
+        $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
+        $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
+
+        $this->assertSame([], insightjournal_groupids_members_among([], [(int) $student->id]));
+        $this->assertSame([], insightjournal_groupids_members_among([(int) $group->id], []));
     }
 
     /**

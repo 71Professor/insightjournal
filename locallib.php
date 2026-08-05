@@ -303,6 +303,90 @@ function insightjournal_current_user_group_userids(stdClass $course, cm_info|std
 }
 
 /**
+ * Group ids the current user belongs to for a specific activity, per
+ * Moodle's Separate Groups rules.
+ *
+ * Same $cm-scoping contract as insightjournal_current_user_groups() (only
+ * groups in $cm->groupingid, participation-eligible only), but never
+ * materialises member lists: groups_get_all_groups() is called with
+ * $withmembers = false and $fields = 'g.id', so the underlying query only
+ * ever fetches group ids, regardless of how large any group is.
+ *
+ * @param stdClass $course The course to look up group membership in.
+ * @param cm_info|stdClass $cm The activity to scope the search to.
+ * @return int[] Group ids.
+ */
+function insightjournal_current_user_allowed_groupids(stdClass $course, cm_info|stdClass $cm): array {
+    global $USER;
+
+    // Same falsy-$USER->id guard as insightjournal_current_user_groups() and
+    // for the same reason: groups_get_all_groups() only applies its userid
+    // filter when $userid is non-empty.
+    if (empty($USER->id)) {
+        return [];
+    }
+
+    $groups = groups_get_all_groups($course->id, $USER->id, (int) $cm->groupingid, 'g.id', false, true);
+    return array_map('intval', array_keys($groups));
+}
+
+/**
+ * Whether $userid is a member of any group in $groupids.
+ *
+ * A single existence query against groups_members, bounded by
+ * count($groupids) - never by any group's member count. Intended for a
+ * single-target-user check (e.g. summary.php's "is this one learner
+ * visible to me") instead of materialising every allowed group's full
+ * membership just to run in_array() over it.
+ *
+ * @param int[] $groupids Candidate group ids.
+ * @param int $userid The user to check.
+ * @return bool
+ */
+function insightjournal_groupids_contain_member(array $groupids, int $userid): bool {
+    global $DB;
+
+    if (empty($groupids) || empty($userid)) {
+        return false;
+    }
+
+    [$insql, $params] = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'grp');
+    $params['userid'] = $userid;
+    return $DB->record_exists_select('groups_members', "userid = :userid AND groupid $insql", $params);
+}
+
+/**
+ * The subset of $userids that are members of any group in $groupids.
+ *
+ * A single groups_members query bounded by count($groupids) x
+ * count($userids) - never by full course or group size. Intended for a
+ * caller that already has a small, page/chunk-bounded candidate userid
+ * list (e.g. coursereport.php's current screen page or CSV chunk), never
+ * the whole course's participants at once.
+ *
+ * @param int[] $groupids Candidate group ids.
+ * @param int[] $userids Candidate user ids to filter down.
+ * @return int[] The subset of $userids found in any of $groupids.
+ */
+function insightjournal_groupids_members_among(array $groupids, array $userids): array {
+    global $DB;
+
+    if (empty($groupids) || empty($userids)) {
+        return [];
+    }
+
+    [$ginsql, $gparams] = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'grp');
+    [$uinsql, $uparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'usr');
+    $ids = $DB->get_fieldset_select(
+        'groups_members',
+        'DISTINCT userid',
+        "groupid $ginsql AND userid $uinsql",
+        array_merge($gparams, $uparams)
+    );
+    return array_map('intval', $ids);
+}
+
+/**
  * Whether $targetuserid is visible to the current user under this
  * specific activity's own Separate Groups restriction.
  *
@@ -331,7 +415,10 @@ function insightjournal_activity_visible_to_viewer(
         return true;
     }
 
-    return in_array($targetuserid, insightjournal_current_user_group_userids($course, $cm), true);
+    return insightjournal_groupids_contain_member(
+        insightjournal_current_user_allowed_groupids($course, $cm),
+        $targetuserid
+    );
 }
 
 /**
