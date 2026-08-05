@@ -25,10 +25,17 @@ Es sind **keine offenen P0-Blocker** vorhanden. Eine weitere kleine Beta ist ohn
 
 ## P1 – Stable-Gate
 
-### R4-01 · Sichtbare Zeichen semantisch definieren  `[FR]`
+### R4-01 · Sichtbare Zeichen semantisch definieren  `[FR]` — ✅ Erledigt (2026-08-04, `main` @ `81e2e6c`, noch nicht gepusht)
 Vor jeder Längenprüfung HTML in eine **klar definierte** Textform überführen: Unicode-Whitespace normalisieren, trimmen und das Verhalten für `<br>`, Blockgrenzen, NBSP und Zero-Width-Zeichen festlegen. **Dieselbe Fixture-Tabelle in PHP und JS** verwenden; bei `DOMDocument` `LIBXML_NONET` setzen. Browser-Parität nicht pauschal behaupten, sondern nachweisen.
 **Warum:** Die Parität von `insightjournal_visible_char_count` und dem JS-`stripHtml` ist bisher nur kommentiert, nicht getestet – PHP-`textContent` und JS-`DOMParser` können bei Randfällen divergieren. Whitespace-only kann als Inhalt zählen, obwohl die Anzeige ihn als leer behandelt.
 **Abnahme:** Whitespace-only erfüllt weder `minchars` noch Completion. Gemeinsame PHP-/JS-Fixtures für `p/br/li`, Entities, Unicode, malformed HTML und Randfälle liefern identische Ergebnisse.
+
+**Umsetzung:** `insightjournal_visible_char_count()`/neue `insightjournal_is_visually_empty()` in `locallib.php` liefern `0` für Antworten, die **ausschließlich** aus ASCII-Whitespace, NBSP, weiteren Unicode-Space-/Zeilentrenner-Zeichen (Em Space, Ideographic Space, U+2028 …) oder Zero-Width-Zeichen (ZWSP/ZWNJ/ZWJ/Word Joiner/BOM) bestehen – innerer Whitespace neben echtem Inhalt zählt weiterhin roh mit (bewusst enger Scope, per Rückfrage bestätigt). `LIBXML_NONET` ergänzt. Vereinheitlicht auf diese eine Funktion: `custom_completion.php`s Completion-Gate **und** (erst im finalen Review gefunden und mit aufgenommen) `insightjournal_coursereport_cell_state()`s „erledigt"-Spalte im Kursbericht, die sonst nach dem Completion-Fix eine neue, in sich widersprüchliche Abweichung gezeigt hätte. `view.php:59` (`$haveentry`, reine View/Edit-Panel-Weiche) bewusst **nicht** angefasst – reines UI-Detail, kein Autorisierungs-/Datenintegritätsproblem. Neue Fixture-Tabelle `tests/fixtures/visible_char_fixtures.json` (29 Zeilen) ist Single Source of Truth für einen PHPUnit-Data-Provider-Test **und** ein neues Behat-Szenario, das die echte, jetzt exportierte `visibleCharCount()` aus `autosave.js` in einem echten Browser aufruft (lokal Firefox, in CI Chrome – 20/20 grün) – Parität also nachgewiesen statt nur behauptet.
+
+**Zu beachten / Stolpersteine:**
+- Der finale Whole-Branch-Review (nicht die Task-Reviews) fand zwei echte Bugs, die isoliert unauffällig aussahen: (1) `#[DataProvider]`-Attribut läuft auf PHPUnit 9.6 (Moodle-4.5-CI-Leg) ins Leere → `ArgumentCountError`; behoben durch die klassische `@dataProvider`-Docblock-Annotation (funktioniert 9.6–11.5, so wie Moodle-Core es selbst durchgängig macht). (2) JS' natives `String.trim()` deckt mehr Unicode-Leerzeichen ab als die ursprünglich auf 6 Zeichen gepinnte PHP-Regex – PHP-Regex entsprechend erweitert (kein JS-Change nötig).
+- **Nachträglicher CI-Fail nach dem Push** (Ursache: der Data-Provider war als `iterable` typisiert): `moodle-plugin-ci phpcs` läuft zusätzlich mit dem `moodle-extra`-Regelset (lokales `--standard=moodle` allein reicht nicht als Vorab-Check!) – dessen `TestCaseProvider`-Sniff verlangt case-sensitiv `array`/`Generator`/`Iterable`, was das idiomatische kleine `iterable` nie erfüllt. Fix: Rückgabetyp auf `\Generator` präzisiert (Methode nutzt ohnehin `yield`). Commit `81e2e6c`.
+- Vollständig verifiziert: PHPUnit 205/205, phpcs sauber (inkl. `moodle-extra`), Behat 20/20 (324 Steps, auf echtem Chrome in CI).
 
 ### R4-02 · Kursweiten Legacy-Pfad entfernen  `[FR]`
 Bei `insightjournal_current_user_groups()` und `insightjournal_current_user_group_userids()` den Parameter `$cm` **verpflichtend** machen. Den `?cm = null`-Zweig mit kursweiter Legacy-Sicht entfernen und alle Aufrufer/Tests auf den aktivitätsspezifischen Vertrag umstellen.
@@ -111,7 +118,7 @@ Im Hilfetext/README klarstellen, dass `minchars` nur den Abschluss steuert, das 
 
 Jede Änderung bleibt einzeln abnehmbar. Reihenfolge kombiniert die PR-Folge des Folgereviews mit den Erstreview-Befunden.
 
-1. **R4-01** – Zeichensemantik + PHP/JS-Fixtures
+1. ~~**R4-01** – Zeichensemantik + PHP/JS-Fixtures~~ — ✅ erledigt (siehe oben)
 2. **R4-02** – Legacy-Pfad entfernen
 3. **CR-01** – Completion-Reset (klein, P1, Datenkonsistenz)
 4. **R4-03** – Gruppenautorisierung speicherbegrenzt **+ Messung** (siehe Messplan unten)
