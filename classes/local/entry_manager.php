@@ -177,7 +177,7 @@ class entry_manager {
             'revision' => $newrevision,
             'timemodified' => $now,
             'timestr' => $timestr,
-            'responsehtml' => format_text($response, FORMAT_HTML, ['context' => $context]),
+            'responsehtml' => format_text($response, (int) $entry->responseformat, ['context' => $context]),
             'private' => $private,
         ];
     }
@@ -240,7 +240,7 @@ class entry_manager {
                 ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
                 : '',
             'responsehtml' => $entry
-                ? format_text($entry->response, $entry->responseformat, ['context' => $context])
+                ? format_text($entry->response, (int) $entry->responseformat, ['context' => $context])
                 : '',
             'private' => $entry ? !insightjournal_entry_visible_to_teacher($entry) : false,
         ];

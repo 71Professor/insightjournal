@@ -1,6 +1,5 @@
 includes:
     - ../../vendor/micaherne/phpstan-moodle/extension.neon
-    - phpstan-baseline.neon
 
 parameters:
     level: 5

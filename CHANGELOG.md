@@ -45,6 +45,20 @@ Versions map to the `$plugin->release` value in `version.php`.
   renderer only decides what to do with an unauthorized cell (the screen
   masks it, the CSV export omits the row). No change to what's shown or
   exported - this is a structural refactor, not a feature change.
+- **PHPStan's baseline is gone; both of its two suppressed findings are now
+  resolved at their source instead**, addressing the R4-07 review finding.
+  `classes/local/entry_manager.php`'s `format_text()` calls now cast their
+  format argument to `int` explicitly (one of them read from the entry's
+  own `responseformat` instead of re-hardcoding `FORMAT_HTML` a second
+  time). `mod_form.php`'s `standard_intro_elements()` call carries a
+  narrowly-scoped, explained `@phpstan-ignore-next-line` for a genuine
+  Moodle core docblock bug (its `@param null $customlabel` is wrong; the
+  method fully supports, and core itself elsewhere passes, a string
+  label). CI also gained a second, deliberately non-blocking "PHPStan
+  (tests)" step that analyses `tests/` for the first time - it currently
+  reports ~300 findings, almost all unresolvable PHPUnit/Moodle
+  test-framework noise, which is exactly why it's non-blocking rather than
+  baselined. No behavior change.
 
 ### Fixed
 

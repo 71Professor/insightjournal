@@ -1,0 +1,23 @@
+includes:
+    - ../../vendor/micaherne/phpstan-moodle/extension.neon
+
+# Separate, deliberately non-blocking analysis job for tests/ (R4-07). Kept
+# apart from phpstan.neon's production-code config rather than folded in:
+# advanced_testcase, the generator classes, and the *_test.php base
+# fixtures are only fully resolvable inside PHPUnit's own bootstrap, which
+# this plain phpstan-moodle bridge doesn't load - so a first real run of
+# this file reports ~300 method.notFound/class.notFound findings, almost
+# all against Moodle/PHPUnit test-framework magic (e.g.
+# testing_data_generator::create_and_enrol()), not this plugin's own code.
+# Baselining that away would be exactly the "unbounded new baseline" this
+# task's acceptance criterion explicitly rules out, so this file has none -
+# the CI step that runs it is intentionally allowed to fail without
+# blocking the build (see ci.yml's "PHPStan (tests)" step).
+parameters:
+    level: 5
+    paths:
+        - tests
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    moodle:
+        rootDirectory: ../..

@@ -13,7 +13,7 @@
 # archives so the installable plugin folder contains only runtime files.
 /docs                  export-ignore
 /phpstan.neon          export-ignore
-/phpstan-baseline.neon export-ignore
+/phpstan-tests.neon    export-ignore
 /phpstan-bootstrap.php export-ignore
 /.github               export-ignore
 /.gitattributes        export-ignore

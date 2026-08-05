@@ -50,6 +50,11 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $mform->setType('name', PARAM_TEXT);
         $mform->addRule('name', null, 'required', null, 'client');
 
+        // Moodle core's own docblock for standard_intro_elements() (course/moodleform_mod.php)
+        // says "@param null $customlabel", even though the method body fully supports - and
+        // core itself elsewhere passes - a string label; this is the documented, intended use,
+        // a core docblock bug rather than a real type error.
+        // @phpstan-ignore-next-line argument.type (documented false positive).
         $this->standard_intro_elements(get_string('intro', 'insightjournal'));
 
         $mform->addElement(

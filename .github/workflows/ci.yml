@@ -127,6 +127,23 @@ jobs:
           composer require --dev --no-interaction micaherne/phpstan-moodle:1.1.0
           vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon --memory-limit=1G --no-progress
 
+      - name: PHPStan (tests)
+        if: ${{ !cancelled() && matrix.moodle-branch == 'MOODLE_500_STABLE' }}
+        # R4-07: tests/ is now analysed too, but as its own tolerant,
+        # non-gating job rather than folded into the strict step above or
+        # given a baseline - advanced_testcase and the generator classes
+        # are only fully resolvable inside PHPUnit's own bootstrap, which
+        # this plain phpstan-moodle bridge doesn't load, so this currently
+        # reports ~300 findings that are almost all PHPUnit/Moodle
+        # test-framework noise, not real issues in this plugin's tests. See
+        # phpstan-tests.neon for the full rationale. continue-on-error
+        # means this step's own failure is visible in the run summary
+        # without turning the job (or this leg's overall conclusion) red.
+        continue-on-error: true
+        run: |
+          cd moodle
+          vendor/bin/phpstan analyse -c mod/insightjournal/phpstan-tests.neon --memory-limit=1G --no-progress
+
       - name: Validating
         if: ${{ !cancelled() }}
         run: moodle-plugin-ci validate
