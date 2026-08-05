@@ -253,7 +253,7 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: nineteen scenarios cover a plain
+- **Behat coverage is limited**: twenty scenarios cover a plain
   no-JavaScript form submit, a no-JavaScript save conflict re-showing the
   learner's draft instead of discarding it, the save/reload roundtrip,
   editing a saved response, autosave, the minchars completion regression,
@@ -261,9 +261,12 @@ after `php admin/tool/behat/cli/init.php`.
   two activities in the same course, the Atto editor, the save-status
   classes, a save conflict locking further saves until reload, both
   reports' pagination, Separate Groups restriction across all three
-  report/summary surfaces, and two scenarios proving Separate Groups
-  restriction cannot leak across activities with different groupings.
-  Broader coverage (CSV export) is not yet automated.
+  report/summary surfaces, two scenarios proving Separate Groups
+  restriction cannot leak across activities with different groupings,
+  the JavaScript character counter matching the PHP visible-character
+  count on every shared fixture, and a teacher without permission to
+  view user identity seeing no participant email. Broader coverage (CSV
+  export) is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -281,17 +284,20 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (19 scenarios: save/reload roundtrip, editing a saved
+- [x] Add Behat tests (20 scenarios: save/reload roundtrip, editing a saved
       response, autosave, completion regression, save-status classes, a
       learner marking their own entry private, Atto editor, choosing
       differently across activities, save conflict locking, a plain
       no-JavaScript form submit, a no-JavaScript save conflict re-showing
       the learner's draft, activity report pagination,
       course-wide report pagination, Separate Groups restriction across
-      all three report/summary surfaces, and Separate Groups restriction
-      cannot leak across activities with different groupings) — 2026-07-09,
-      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28, 2026-07-31,
-      2026-08-03
+      all three report/summary surfaces, Separate Groups restriction
+      cannot leak across activities with different groupings, a teacher
+      without permission to view user identity seeing no participant
+      email, and the JavaScript character counter matching the PHP
+      visible-character count on every shared fixture) — 2026-07-09,
+      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28, 2026-07-29,
+      2026-07-31, 2026-08-03, 2026-08-04
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory
