@@ -43,7 +43,7 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
  * Reproduces report.php's actual production call sequence for
- * $restrictgroupids - unlike report_table_test.php's restrict-to-userids
+ * $restrictgroupids - unlike report_table_test.php's restrict-to-groupids
  * tests, which pass a hand-supplied array, and locallib_groups_test.php,
  * which tests the helper functions in isolation - proving the two are
  * correctly wired together end-to-end at the PHPUnit level. Behat already

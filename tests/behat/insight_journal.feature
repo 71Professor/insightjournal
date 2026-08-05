@@ -395,8 +395,9 @@ Feature: Insight journal activity
   # the failure) and by grepping the entire Moodle core test suite for any
   # precedent of asserting text on an expected-exception page via Behat -
   # there is none. The denial path itself is still covered: Task 1's
-  # PHPUnit tests exercise insightjournal_current_user_group_userids()'s
-  # exact "is this userid in the set" semantics directly, summary.php's own
+  # PHPUnit tests exercise insightjournal_groupids_contain_member() /
+  # insightjournal_current_user_allowed_groupids()'s exact "is this userid in
+  # the set" semantics directly, summary.php's own
   # three-line wiring was verified line-by-line in Task 4's code review,
   # and the equivalent "restricted teacher cannot see the other group's
   # participant" property is proven end-to-end for coursereport.php in the

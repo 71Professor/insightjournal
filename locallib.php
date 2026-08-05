@@ -455,7 +455,8 @@ function insightjournal_coursereport_diary_allowed_users(array $diaryallowedgrou
  * matches any group in this union is guaranteed authorized for at least
  * the one activity that contributed that group, so this can only ever
  * be a safe (not over-permissive) SQL-level prefilter; per-cell masking
- * (insightjournal_activity_visible_to_viewer(), applied per activity in
+ * (insightjournal_coursereport_allowed_groupids_by_diary() +
+ * insightjournal_coursereport_diary_allowed_users(), applied per activity in
  * the render loop) still determines exactly which of that participant's
  * cells are actually shown.
  *
