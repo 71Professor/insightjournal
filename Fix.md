@@ -58,11 +58,14 @@ Autorisierung, Paging, Progress-Zählung und Exportselektion aus `coursereport.p
 `tests/report_template_test.php` entweder auf Shell-Verantwortung (Titel, Links, Container) reduzieren oder löschen. Datenschutz-/Zeilentests in `report_table_test.php` bzw. den neuen Kursreport-Provider verschieben und anschließend **bewusst committen** (aktuell untracked mit fachlich falschen Erwartungen).
 **Abnahme:** Kein Test erwartet Datenzeilen aus `report.mustache`. Ein absichtlich übergebener Geheimtext beweist am tatsächlichen Renderer/Provider, dass er unautorisiert nie ausgegeben wird.
 
-### CR-01 · Completion beim Kursreset zurücksetzen  `[CR]`
+### CR-01 · Completion beim Kursreset zurücksetzen  `[CR]` — ✅ Erledigt (2026-08-05, `main` @ `f96d4e0`, noch nicht gepusht)
 `insightjournal_reset_course_userdata` löscht die Einträge, setzt aber die zugehörigen Completion-States **nicht** zurück. Nach dem Reset stehen gelöschte Einträge weiterhin auf „abgeschlossen". Pro betroffener Instanz die Completion neu berechnen (z. B. `completion_info::reset_all_state($cm)` nach dem Löschen der Einträge).
 **Warum:** Echte Dateninkonsistenz nach Kursreset – gehört vor Stable.
 **Abnahme:** Nach „Alle Einträge löschen" im Kursreset zeigt keine zurückgesetzte Aktivität mehr einen Abschluss für die betroffenen Lernenden.
 > Nur im Erstreview aufgetaucht, im Folgereview nicht abgedeckt.
+
+**Umsetzung:** Per TDD (vier neue Tests in `tests/lib_test.php`, zuerst rot verifiziert: die beiden Completion-Tests scheiterten exakt mit „1 matches expected 0", die beiden reinen Entries-Tests liefen schon vorher grün). `insightjournal_reset_course_userdata()` in `lib.php` baut jetzt einmalig `$course`/`completion_info` auf und ruft pro betroffener Instanz nach dem Löschen der Einträge `get_coursemodule_from_instance()` + `$completion->reset_all_state($cm)` (nur wenn `is_enabled($cm)`) — exakt dieselbe Methode, mit der Moodle-Core selbst Completion-Daten nach einer Regeländerung neu berechnet (`completion/classes/manager.php:369`). Kein Sonderfall für `COMPLETION_TRACKING_MANUAL` nötig (dieser Fall wird von `reset_all_state()` selbst korrekt behandelt). Kein Behat nötig – rein serverseitige Logik ohne neues JS-beobachtbares Verhalten, kein bestehendes Szenario deckt den Kursreset-Flow ab.
+**Verifiziert:** PHPUnit 208/208 (4 neue Tests), phpcs sauber (`moodle`+`moodle-extra`), PHPStan 0 Fehler.
 
 ---
 
@@ -123,7 +126,7 @@ Jede Änderung bleibt einzeln abnehmbar. Reihenfolge kombiniert die PR-Folge des
 
 1. ~~**R4-01** – Zeichensemantik + PHP/JS-Fixtures~~ — ✅ erledigt (siehe oben)
 2. ~~**R4-02** – Legacy-Pfad entfernen~~ — ✅ erledigt (siehe oben)
-3. **CR-01** – Completion-Reset (klein, P1, Datenkonsistenz)
+3. ~~**CR-01** – Completion-Reset (klein, P1, Datenkonsistenz)~~ — ✅ erledigt (siehe oben)
 4. **R4-03** – Gruppenautorisierung speicherbegrenzt **+ Messung** (siehe Messplan unten)
 5. **R4-04 / R4-05** – Kursreport-Service + Template-Test
 6. **R4-07** – PHPStan-Baseline auf null
