@@ -40,9 +40,8 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 
 /**
  * Tests for {@see \insightjournal_activity_group_restricted()},
- * {@see \insightjournal_activity_visible_to_viewer()},
- * {@see \insightjournal_visible_activities_for_user()}, and
- * {@see \insightjournal_coursereport_restrict_groupids()}.
+ * {@see \insightjournal_activity_visible_to_viewer()}, and
+ * {@see \insightjournal_visible_activities_for_user()}.
  */
 #[CoversFunction('insightjournal_activity_group_restricted')]
 #[CoversFunction('insightjournal_current_user_allowed_groupids')]
@@ -50,7 +49,6 @@ require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 #[CoversFunction('insightjournal_groupids_members_among')]
 #[CoversFunction('insightjournal_activity_visible_to_viewer')]
 #[CoversFunction('insightjournal_visible_activities_for_user')]
-#[CoversFunction('insightjournal_coursereport_restrict_groupids')]
 final class locallib_groups_test extends advanced_testcase {
     /** @var stdClass The course. */
     protected stdClass $course;
@@ -509,46 +507,5 @@ final class locallib_groups_test extends advanced_testcase {
 
         $this->assertArrayNotHasKey($this->cm->instance, $visible);
         $this->assertArrayHasKey($cmb->instance, $visible);
-    }
-
-    /**
-     * At least one visible activity is unrestricted - no SQL-level
-     * group filter is safe, since that activity alone could show every
-     * enrolled participant a visible cell.
-     */
-    public function test_restrict_groupids_null_when_any_activity_unrestricted(): void {
-        $generator = $this->getDataGenerator();
-        $teacher = $generator->create_and_enrol($this->course, 'teacher');
-        $this->set_activity_groupmode(NOGROUPS);
-        $this->setUser($teacher);
-
-        $this->assertNull(
-            insightjournal_coursereport_restrict_groupids([$this->cm->instance => $this->cm], $this->course)
-        );
-    }
-
-    /**
-     * Every visible activity is restricted - returns the union of the
-     * viewer's own allowed groups across all of them.
-     */
-    public function test_restrict_groupids_unions_across_restricted_activities(): void {
-        $generator = $this->getDataGenerator();
-        $teacher = $generator->create_and_enrol($this->course, 'teacher');
-        $this->set_activity_groupmode(SEPARATEGROUPS);
-        $cmb = $this->create_second_restricted_activity(0);
-
-        $groupa = $generator->create_group(['courseid' => $this->course->id]);
-        $groupb = $generator->create_group(['courseid' => $this->course->id]);
-        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
-        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
-
-        $this->setUser($teacher);
-
-        $groupids = insightjournal_coursereport_restrict_groupids(
-            [$this->cm->instance => $this->cm, $cmb->instance => $cmb],
-            $this->course
-        );
-
-        $this->assertEqualsCanonicalizing([(int) $groupa->id, (int) $groupb->id], $groupids);
     }
 }

@@ -27,6 +27,8 @@ require_once('../../config.php');
 require_once($CFG->dirroot . '/mod/insightjournal/lib.php');
 require_once($CFG->dirroot . '/mod/insightjournal/locallib.php');
 
+use mod_insightjournal\local\coursereport_provider;
+
 $courseid = required_param('courseid', PARAM_INT);
 $download = optional_param('download', '', PARAM_ALPHA);
 $page = max(0, optional_param('page', 0, PARAM_INT));
@@ -52,40 +54,15 @@ if (empty($activities)) {
     throw new required_capability_exception($coursecontext, 'mod/insightjournal:viewall', 'nopermissions', '');
 }
 
-// The insightjournal_coursereport_restrict_groupids() call already returns null for
-// "no restriction needed" (at least one visible activity is unrestricted); the
-// falsy-$USER->id guard now lives centrally in insightjournal_current_user_allowed_groupids().
-// The bare "if ($groupids)" check inside get_enrolled_users()/count_enrolled_users()
-// would otherwise treat an empty array the SAME as null ("no filter"), so
-// $blockallparticipants still catches "every visible activity is restricted, but
-// the union of the viewer's own allowed groups is empty" explicitly, before that
-// ambiguity can matter.
-$restrictgroupids = insightjournal_coursereport_restrict_groupids($activities, $course);
-$blockallparticipants = $restrictgroupids !== null && empty($restrictgroupids);
-if ($restrictgroupids === null) {
-    $restrictgroupids = 0;
-}
-
 $diaryids = array_keys($activities);
 $diaries = $DB->get_records_list('insightjournal', 'id', $diaryids, 'id ASC');
-// Allowed group ids per diary (R4-03): resolved once per distinct grouping,
-// not once per activity, and NOT the member lookup itself - that happens
-// below, scoped to only the userids in the current page/CSV chunk, never
-// the whole course at once.
-$diaryallowedgroupids = insightjournal_coursereport_allowed_groupids_by_diary($activities, $course);
+$provider = new coursereport_provider($course, $activities);
+
 // Checked at course context, not per-activity like report_table.php - deliberately
 // coarse. A viewer reaching this branch already holds the capability course-wide,
 // so this can only ever be more permissive than a hypothetical per-activity
 // override, never less.
 $showemail = insightjournal_email_field_visible($coursecontext);
-$namefields = \core_user\fields::for_name()->including('id');
-if ($showemail) {
-    $namefields->including('email');
-}
-// Only ->selects is used below: for_name()/including('id'|'email') can never add
-// a custom profile field, so ->joins and ->params are always empty here - revisit
-// this assumption if a with_identity()/custom-field include is ever added.
-$userfields = $namefields->get_sql('u', false, '', '', false)->selects;
 
 if ($download === 'csv') {
     foreach ($activities as $cm) {
@@ -108,36 +85,23 @@ if ($download === 'csv') {
     // for free from table_sql (R2-04).
     $csvchunksize = 500;
     $offset = 0;
-    while (!$blockallparticipants) {
-        $chunk = get_enrolled_users(
-            $coursecontext,
-            'mod/insightjournal:submit',
-            $restrictgroupids,
-            $userfields,
-            'u.lastname,u.firstname,u.id',
-            $offset,
-            $csvchunksize
-        );
+    while (true) {
+        $chunk = $provider->participants($offset, $csvchunksize);
         if (empty($chunk)) {
             break;
         }
-        $chunkentries = insightjournal_entries_by_diary_and_user($diaryids, array_keys($chunk));
-        $diaryallowedusers = insightjournal_coursereport_diary_allowed_users(
-            $diaryallowedgroupids,
-            array_keys($chunk)
-        );
-        foreach ($chunk as $user) {
-            foreach ($diaries as $diary) {
-                $allowedusers = $diaryallowedusers[$diary->id];
-                if ($allowedusers !== null && !isset($allowedusers[(int) $user->id])) {
+        foreach ($provider->rows_for($chunk) as $row) {
+            foreach ($row['cells'] as $diaryid => $cell) {
+                if (!$cell['visible']) {
                     continue;
                 }
                 $writer->add_data(insightjournal_coursereport_csv_row(
                     $course,
-                    $activities[$diary->id]->id,
-                    $diary,
-                    $user,
-                    $chunkentries[$user->id][$diary->id] ?? null,
+                    $activities[$diaryid]->id,
+                    $diaries[$diaryid],
+                    $row['user'],
+                    $cell['entry'],
+                    $cell['private'],
                     $showemail
                 ));
             }
@@ -150,26 +114,8 @@ if ($download === 'csv') {
     $writer->download_file(); // Sends headers, streams the file, and exit()s - same contract as the previous fclose()+exit.
 }
 
-$totalparticipants = $blockallparticipants
-    ? 0
-    : count_enrolled_users($coursecontext, 'mod/insightjournal:submit', $restrictgroupids);
-$participants = $blockallparticipants
-    ? []
-    : get_enrolled_users(
-        $coursecontext,
-        'mod/insightjournal:submit',
-        $restrictgroupids,
-        $userfields,
-        'u.lastname,u.firstname,u.id',
-        $page * $perpage,
-        $perpage
-    );
-
-$entries = insightjournal_entries_by_diary_and_user($diaryids, array_keys($participants));
-$diaryallowedusers = insightjournal_coursereport_diary_allowed_users(
-    $diaryallowedgroupids,
-    array_keys($participants)
-);
+$totalparticipants = $provider->total_participants();
+$participants = $provider->participants($page * $perpage, $perpage);
 
 $PAGE->set_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id, 'page' => $page, 'perpage' => $perpage]);
 $PAGE->set_context($coursecontext);
@@ -184,51 +130,33 @@ foreach ($diaries as $diary) {
 }
 
 $rows = [];
-foreach ($participants as $user) {
-    $done = 0;
-    // Counts only the diaries this viewer is authorized to see for this
-    // learner (i.e. not group-restricted away), used as the progress
-    // denominator below - not count($diaries), which would silently
-    // understate a learner's ratio by diaries the viewer cannot see any
-    // data for at all, the same "authorization-invisible activities don't
-    // count" principle already applied everywhere else on this page.
-    $visiblecount = 0;
+foreach ($provider->rows_for($participants) as $userid => $row) {
+    if ($row['visiblecount'] === 0) {
+        continue;
+    }
     $cells = [];
     foreach ($diaries as $diary) {
-        $allowedusers = $diaryallowedusers[$diary->id];
-        if ($allowedusers !== null && !isset($allowedusers[(int) $user->id])) {
-            $cells[] = ['private' => true];
-            continue;
-        }
-        $visiblecount++;
-        $entry = $entries[$user->id][$diary->id] ?? null;
-        $state = insightjournal_coursereport_cell_state($entry);
-        if ($state['completed']) {
-            $done++;
-        }
-        if ($state['private']) {
+        $cell = $row['cells'][$diary->id];
+        if (!$cell['visible'] || $cell['private']) {
             $cells[] = ['private' => true];
             continue;
         }
         $cells[] = [
             'private' => false,
-            'completed' => $state['completed'],
-            'status' => get_string($state['completed'] ? 'submitted' : 'notsubmitted', 'insightjournal'),
-            'timemodified' => $state['completed']
-                ? userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
+            'completed' => $cell['completed'],
+            'status' => get_string($cell['completed'] ? 'submitted' : 'notsubmitted', 'insightjournal'),
+            'timemodified' => $cell['completed']
+                ? userdate($cell['entry']->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
                 : '',
         ];
     }
-    if ($visiblecount === 0) {
-        continue;
-    }
     $rows[] = [
-        'fullname' => fullname($user),
+        'fullname' => fullname($row['user']),
         'summaryurl' => (new moodle_url(
             '/mod/insightjournal/summary.php',
             [
                 'courseid' => $course->id,
-                'userid' => $user->id,
+                'userid' => $userid,
                 'returnurl' => (new moodle_url(
                     '/mod/insightjournal/coursereport.php',
                     ['courseid' => $course->id]
@@ -236,7 +164,7 @@ foreach ($participants as $user) {
             ]
         ))->out(false),
         'cells' => $cells,
-        'progress' => $done . ' / ' . $visiblecount,
+        'progress' => $row['done'] . ' / ' . $row['visiblecount'],
     ];
 }
 
