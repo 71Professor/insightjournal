@@ -45,6 +45,7 @@ require_once($CFG->libdir . '/completionlib.php');
 #[CoversFunction('insightjournal_get_completion_active_rule_descriptions')]
 #[CoversFunction('insightjournal_add_instance')]
 #[CoversFunction('insightjournal_update_instance')]
+#[CoversFunction('insightjournal_reset_course_userdata')]
 final class lib_test extends advanced_testcase {
     /**
      * insightjournal_supports() reports the expected feature support.
@@ -182,5 +183,166 @@ final class lib_test extends advanced_testcase {
 
         $none = (object) ['customdata' => []];
         $this->assertEmpty(insightjournal_get_completion_active_rule_descriptions($none));
+    }
+
+    /**
+     * Reads the stored completion state for a user under a given instance's cm.
+     *
+     * @param \stdClass $course The course.
+     * @param \stdClass $journal The insight journal instance (with ->cmid).
+     * @param int $userid The user to read completion for.
+     * @return int The COMPLETION_* constant.
+     */
+    protected function completionstate(\stdClass $course, \stdClass $journal, int $userid): int {
+        $cm = get_fast_modinfo($course)->get_cm($journal->cmid);
+        $completion = new \completion_info($course);
+        return (int) $completion->get_data($cm, false, $userid)->completionstate;
+    }
+
+    /**
+     * Deleting entries via course reset removes every entry for every
+     * instance in the course, not just the first.
+     */
+    public function test_reset_course_userdata_deletes_entries(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $journala = $generator->create_module('insightjournal', ['course' => $course->id]);
+        $journalb = $generator->create_module('insightjournal', ['course' => $course->id]);
+        $student = $generator->create_and_enrol($course, 'student');
+
+        /** @var \mod_insightjournal_generator $plugingenerator */
+        $plugingenerator = $generator->get_plugin_generator('mod_insightjournal');
+        $plugingenerator->create_entry($journala, (int) $student->id, 'Reflection A.');
+        $plugingenerator->create_entry($journalb, (int) $student->id, 'Reflection B.');
+
+        insightjournal_reset_course_userdata((object) [
+            'courseid' => $course->id,
+            'reset_insightjournal_entries' => 1,
+        ]);
+
+        $this->assertEquals(0, $DB->count_records('insightjournal_entries', ['insightjournalid' => $journala->id]));
+        $this->assertEquals(0, $DB->count_records('insightjournal_entries', ['insightjournalid' => $journalb->id]));
+    }
+
+    /**
+     * Without the reset flag set, entries and completion are both left alone.
+     */
+    public function test_reset_course_userdata_without_flag_changes_nothing(): void {
+        global $CFG, $DB;
+        $this->resetAfterTest();
+        require_once($CFG->libdir . '/completionlib.php');
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['enablecompletion' => 1]);
+        $journal = $generator->create_module('insightjournal', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionentries' => 1,
+            'minchars' => 1,
+        ]);
+        $student = $generator->create_and_enrol($course, 'student');
+
+        /** @var \mod_insightjournal_generator $plugingenerator */
+        $plugingenerator = $generator->get_plugin_generator('mod_insightjournal');
+        $plugingenerator->create_entry($journal, (int) $student->id, 'Reflection.');
+        $cm = get_fast_modinfo($course)->get_cm($journal->cmid);
+        (new \completion_info($course))->update_state($cm, COMPLETION_UNKNOWN, (int) $student->id);
+        $this->assertEquals(COMPLETION_COMPLETE, $this->completionstate($course, $journal, (int) $student->id));
+
+        insightjournal_reset_course_userdata((object) [
+            'courseid' => $course->id,
+            'reset_insightjournal_entries' => 0,
+        ]);
+
+        $this->assertEquals(1, $DB->count_records('insightjournal_entries', ['insightjournalid' => $journal->id]));
+        $this->assertEquals(COMPLETION_COMPLETE, $this->completionstate($course, $journal, (int) $student->id));
+    }
+
+    /**
+     * A learner whose entry was deleted by a course reset no longer shows a
+     * completed activity - completion must be recalculated per affected
+     * instance, not left pointing at data that no longer exists.
+     *
+     * Regression test (CR-01): insightjournal_reset_course_userdata()
+     * previously deleted entries without touching completion state, so a
+     * learner who had already completed the activity stayed "complete"
+     * after their entry was wiped by a course reset.
+     */
+    public function test_reset_course_userdata_resets_completion_state(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        require_once($CFG->libdir . '/completionlib.php');
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['enablecompletion' => 1]);
+        $journal = $generator->create_module('insightjournal', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionentries' => 1,
+            'minchars' => 1,
+        ]);
+        $student = $generator->create_and_enrol($course, 'student');
+
+        /** @var \mod_insightjournal_generator $plugingenerator */
+        $plugingenerator = $generator->get_plugin_generator('mod_insightjournal');
+        $plugingenerator->create_entry($journal, (int) $student->id, 'Reflection.');
+        $cm = get_fast_modinfo($course)->get_cm($journal->cmid);
+        (new \completion_info($course))->update_state($cm, COMPLETION_UNKNOWN, (int) $student->id);
+        $this->assertEquals(COMPLETION_COMPLETE, $this->completionstate($course, $journal, (int) $student->id));
+
+        insightjournal_reset_course_userdata((object) [
+            'courseid' => $course->id,
+            'reset_insightjournal_entries' => 1,
+        ]);
+
+        $this->assertEquals(COMPLETION_INCOMPLETE, $this->completionstate($course, $journal, (int) $student->id));
+    }
+
+    /**
+     * The completion reset applies per affected instance - a course with two
+     * insight journal activities must not leave the second one's completion
+     * stale after only the first is recalculated.
+     */
+    public function test_reset_course_userdata_resets_completion_for_every_instance(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        require_once($CFG->libdir . '/completionlib.php');
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course(['enablecompletion' => 1]);
+        $journala = $generator->create_module('insightjournal', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionentries' => 1,
+            'minchars' => 1,
+        ]);
+        $journalb = $generator->create_module('insightjournal', [
+            'course' => $course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionentries' => 1,
+            'minchars' => 1,
+        ]);
+        $student = $generator->create_and_enrol($course, 'student');
+
+        /** @var \mod_insightjournal_generator $plugingenerator */
+        $plugingenerator = $generator->get_plugin_generator('mod_insightjournal');
+        $plugingenerator->create_entry($journala, (int) $student->id, 'Reflection A.');
+        $plugingenerator->create_entry($journalb, (int) $student->id, 'Reflection B.');
+        $completion = new \completion_info($course);
+        $completion->update_state(get_fast_modinfo($course)->get_cm($journala->cmid), COMPLETION_UNKNOWN, (int) $student->id);
+        $completion->update_state(get_fast_modinfo($course)->get_cm($journalb->cmid), COMPLETION_UNKNOWN, (int) $student->id);
+        $this->assertEquals(COMPLETION_COMPLETE, $this->completionstate($course, $journala, (int) $student->id));
+        $this->assertEquals(COMPLETION_COMPLETE, $this->completionstate($course, $journalb, (int) $student->id));
+
+        insightjournal_reset_course_userdata((object) [
+            'courseid' => $course->id,
+            'reset_insightjournal_entries' => 1,
+        ]);
+
+        $this->assertEquals(COMPLETION_INCOMPLETE, $this->completionstate($course, $journala, (int) $student->id));
+        $this->assertEquals(COMPLETION_INCOMPLETE, $this->completionstate($course, $journalb, (int) $student->id));
     }
 }

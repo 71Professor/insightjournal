@@ -23,6 +23,14 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ### Fixed
 
+- **Deleting all entries via course reset now also resets completion**,
+  addressing the CR-01 review finding. `insightjournal_reset_course_userdata()`
+  previously deleted the entries but left each affected learner's completion
+  state untouched, so an activity a learner had already completed stayed
+  marked complete indefinitely even though the entry that earned it was
+  gone. Completion is now recalculated (`completion_info::reset_all_state()`)
+  for every insight journal instance in the course right after its entries
+  are deleted.
 - **A response consisting only of whitespace, non-breaking spaces, or
   zero-width characters is now correctly treated as empty**, addressing
   the R4-01 review finding. Previously, `insightjournal_visible_char_count()`

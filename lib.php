@@ -208,16 +208,30 @@ function insightjournal_reset_userdata_form_definition(&$mform) {
 /**
  * Performs course reset for insight journal: deletes entries if requested.
  *
+ * Completion is recalculated per affected instance after its entries are
+ * deleted (CR-01) - otherwise a learner who had already completed the
+ * activity via the now-deleted entry would stay marked "complete"
+ * indefinitely, since nothing else ever re-evaluates completion state.
+ *
  * @param stdClass $data Reset form data.
  * @return array Status array with component, item, and error keys.
  */
 function insightjournal_reset_course_userdata($data) {
-    global $DB;
+    global $CFG, $DB;
+    require_once($CFG->libdir . '/completionlib.php');
+
     $status = [];
     if (!empty($data->reset_insightjournal_entries)) {
+        $course = get_course($data->courseid);
+        $completion = new completion_info($course);
         $instances = $DB->get_records('insightjournal', ['course' => $data->courseid], '', 'id');
         foreach ($instances as $instance) {
             $DB->delete_records('insightjournal_entries', ['insightjournalid' => $instance->id]);
+
+            $cm = get_coursemodule_from_instance('insightjournal', $instance->id, $data->courseid, false, MUST_EXIST);
+            if ($completion->is_enabled($cm)) {
+                $completion->reset_all_state($cm);
+            }
         }
         $status[] = [
             'component' => get_string('modulename', 'insightjournal'),
