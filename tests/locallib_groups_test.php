@@ -329,7 +329,7 @@ final class locallib_groups_test extends advanced_testcase {
         $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
 
         $this->assertTrue(
-            insightjournal_groupids_contain_member([(int) $group->id], (int) $student->id)
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $student->id, (int) $this->course->id)
         );
     }
 
@@ -345,7 +345,7 @@ final class locallib_groups_test extends advanced_testcase {
         $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
 
         $this->assertFalse(
-            insightjournal_groupids_contain_member([(int) $group->id], (int) $other->id)
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $other->id, (int) $this->course->id)
         );
     }
 
@@ -356,7 +356,170 @@ final class locallib_groups_test extends advanced_testcase {
     public function test_groupids_contain_member_false_when_groupids_empty(): void {
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
 
-        $this->assertFalse(insightjournal_groupids_contain_member([], (int) $student->id));
+        $this->assertFalse(
+            insightjournal_groupids_contain_member([], (int) $student->id, (int) $this->course->id)
+        );
+    }
+
+    /**
+     * R5-01 regression: a group with GROUPS_VISIBILITY_OWN lets a member see
+     * the group and their OWN membership only, never another member's -
+     * Moodle's own groups_get_all_groups(..., $withmembers = true) enforces
+     * this (via core_group\visibility), and insightjournal_current_user_allowed_groupids()
+     * correctly returns only groups the viewer already belongs to, but a
+     * raw groups_members membership check on top of that must not silently
+     * treat "is a member of an allowed group" as "is visible to the viewer"
+     * for groups with restricted visibility.
+     *
+     * moodle/course:viewhiddengroups is CAP_ALLOW for 'teacher' by default
+     * (as for 'editingteacher'/'manager') and, correctly, bypasses this
+     * restriction entirely (see test_groupids_contain_member_true_for_other_member_when_viewhiddengroups()
+     * below) - explicitly revoked here so this test actually exercises the
+     * restricted path instead of passing vacuously.
+     */
+    public function test_groupids_contain_member_false_for_other_member_when_visibility_is_own(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $viewer = $generator->create_and_enrol($this->course, 'teacher');
+        $other = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $viewer->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $other->id]);
+        $this->setUser($viewer);
+
+        $this->assertFalse(
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $other->id, (int) $this->course->id)
+        );
+    }
+
+    /**
+     * The same GROUPS_VISIBILITY_OWN group still confirms the viewer's own
+     * membership - OWN means "see the group and your own membership," not
+     * "see nothing." viewhiddengroups revoked for the same reason as above.
+     */
+    public function test_groupids_contain_member_true_for_self_when_visibility_is_own(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $viewer = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $viewer->id]);
+        $this->setUser($viewer);
+
+        $this->assertTrue(
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $viewer->id, (int) $this->course->id)
+        );
+    }
+
+    /**
+     * GROUPS_VISIBILITY_MEMBERS is the opposite case from OWN: a viewer who
+     * is themselves a member can see every other member. viewhiddengroups
+     * revoked for the same reason as above, to prove this holds on MEMBERS'
+     * own "viewer is also a member" logic, not just because the viewer
+     * happens to also be able to see hidden groups.
+     */
+    public function test_groupids_contain_member_true_for_other_member_when_visibility_is_members(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $viewer = $generator->create_and_enrol($this->course, 'teacher');
+        $other = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_MEMBERS,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $viewer->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $other->id]);
+        $this->setUser($viewer);
+
+        $this->assertTrue(
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $other->id, (int) $this->course->id)
+        );
+    }
+
+    /**
+     * R5-01 counterpart: a viewer holding moodle/course:viewhiddengroups
+     * (the default for 'teacher'/'editingteacher'/'manager') sees every
+     * member of an OWN-visibility group exactly as before the fix, not a
+     * narrower set - the fix must not regress the common case.
+     */
+    public function test_groupids_contain_member_true_for_other_member_when_viewhiddengroups(): void {
+        $generator = $this->getDataGenerator();
+        $viewer = $generator->create_and_enrol($this->course, 'teacher');
+        $other = $generator->create_and_enrol($this->course, 'teacher');
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $viewer->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $other->id]);
+        $this->setUser($viewer);
+
+        $this->assertTrue(
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $other->id, (int) $this->course->id)
+        );
+    }
+
+    /**
+     * R5-01, GROUPS_VISIBILITY_NONE case: falls out for free from reusing
+     * core's unmodified sql_member_visibility_where() predicate (none of
+     * its three OR-branches match NONE), but made explicit here rather
+     * than left implicit - a member of a NONE-visibility group is invisible
+     * to a fellow member without viewhiddengroups, same as OWN.
+     */
+    public function test_groupids_contain_member_false_for_other_member_when_visibility_is_none(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $viewer = $generator->create_and_enrol($this->course, 'teacher');
+        $other = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_NONE,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $viewer->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $other->id]);
+        $this->setUser($viewer);
+
+        $this->assertFalse(
+            insightjournal_groupids_contain_member([(int) $group->id], (int) $other->id, (int) $this->course->id)
+        );
     }
 
     /**
@@ -376,7 +539,8 @@ final class locallib_groups_test extends advanced_testcase {
 
         $result = insightjournal_groupids_members_among(
             [(int) $group->id],
-            [(int) $ingroupinlist->id, (int) $inlistnotingroup->id]
+            [(int) $ingroupinlist->id, (int) $inlistnotingroup->id],
+            (int) $this->course->id
         );
 
         $this->assertEquals([(int) $ingroupinlist->id], $result);
@@ -395,7 +559,8 @@ final class locallib_groups_test extends advanced_testcase {
 
         $result = insightjournal_groupids_members_among(
             [(int) $groupa->id, (int) $groupb->id],
-            [(int) $student->id]
+            [(int) $student->id],
+            (int) $this->course->id
         );
 
         $this->assertEquals([(int) $student->id], $result);
@@ -409,8 +574,78 @@ final class locallib_groups_test extends advanced_testcase {
         $student = $this->getDataGenerator()->create_and_enrol($this->course, 'student');
         $group = $this->getDataGenerator()->create_group(['courseid' => $this->course->id]);
 
-        $this->assertSame([], insightjournal_groupids_members_among([], [(int) $student->id]));
-        $this->assertSame([], insightjournal_groupids_members_among([(int) $group->id], []));
+        $this->assertSame(
+            [],
+            insightjournal_groupids_members_among([], [(int) $student->id], (int) $this->course->id)
+        );
+        $this->assertSame(
+            [],
+            insightjournal_groupids_members_among([(int) $group->id], [], (int) $this->course->id)
+        );
+    }
+
+    /**
+     * R5-01 regression, same property as
+     * test_groupids_contain_member_false_for_other_member_when_visibility_is_own()
+     * for the multi-user variant: a GROUPS_VISIBILITY_OWN group excludes a
+     * fellow member from the result, keeping only the viewer's own row when
+     * they're in the candidate userid list. viewhiddengroups revoked for
+     * the same reason as the _contain_member tests above.
+     */
+    public function test_groupids_members_among_excludes_other_member_when_visibility_is_own(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $viewer = $generator->create_and_enrol($this->course, 'teacher');
+        $other = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $viewer->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $other->id]);
+        $this->setUser($viewer);
+
+        $result = insightjournal_groupids_members_among(
+            [(int) $group->id],
+            [(int) $viewer->id, (int) $other->id],
+            (int) $this->course->id
+        );
+
+        $this->assertEquals([(int) $viewer->id], $result);
+    }
+
+    /**
+     * R5-01 counterpart for insightjournal_groupids_members_among(): a
+     * viewhiddengroups holder still sees every member, including of an
+     * OWN-visibility group - the fix must not regress the common case.
+     */
+    public function test_groupids_members_among_includes_other_member_when_viewhiddengroups(): void {
+        $generator = $this->getDataGenerator();
+        $viewer = $generator->create_and_enrol($this->course, 'teacher');
+        $other = $generator->create_and_enrol($this->course, 'teacher');
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $viewer->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $other->id]);
+        $this->setUser($viewer);
+
+        $result = insightjournal_groupids_members_among(
+            [(int) $group->id],
+            [(int) $viewer->id, (int) $other->id],
+            (int) $this->course->id
+        );
+
+        $this->assertEquals([(int) $viewer->id, (int) $other->id], $result);
     }
 
     /**

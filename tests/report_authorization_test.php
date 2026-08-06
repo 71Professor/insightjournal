@@ -152,6 +152,142 @@ final class report_authorization_test extends advanced_testcase {
     }
 
     /**
+     * R5-01 regression: report_table.php's own EXISTS(...groups_members...)
+     * restriction must respect a group's GROUPS_VISIBILITY_OWN setting, not
+     * just plain groupid membership. A teacher who is themselves a member
+     * of an OWN-visibility group can see the group exists and their own
+     * membership, but never another member's - including that other
+     * member's entry row, which they previously saw purely because both
+     * happened to share a groupid the teacher was already allowed to see.
+     *
+     * The visibility/participation coupling (OWN/NONE visibility forces
+     * participation=false) is enforced only inside
+     * groups_create_group()/groups_update_group(), not as a database
+     * constraint - course restore's
+     * restore_groups_structure_step::process_group() inserts group rows via
+     * a raw $DB->insert_record('groups', $data), confirmed to bypass that
+     * enforcement, so a course whose source database already held an
+     * inconsistent group can propagate it through an otherwise completely
+     * ordinary restore. The direct set_field() below simulates that
+     * resulting state, since it isn't reachable via create_group() (which
+     * correctly enforces the coupling, matching real Moodle behaviour).
+     *
+     * moodle/course:viewhiddengroups is CAP_ALLOW for 'teacher' by default
+     * and, correctly, bypasses this restriction entirely (see
+     * test_viewhiddengroups_teacher_sees_entries_despite_own_visibility()
+     * below) - explicitly revoked here so this test actually exercises the
+     * restricted path instead of passing vacuously.
+     */
+    public function test_teacher_without_accessallgroups_sees_no_entries_when_group_visibility_is_own(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $student->id,
+            'Hidden by OWN visibility.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $this->setUser($teacher);
+        $html = $this->render_table();
+
+        $this->assertStringNotContainsString('Hidden by OWN visibility.', $html);
+    }
+
+    /**
+     * R5-01 counterpart: a teacher holding moodle/course:viewhiddengroups
+     * (the default) still sees a fellow OWN-visibility group member's
+     * entry exactly as before the fix - the fix must not regress the
+     * common case for the role that primarily uses this report.
+     */
+    public function test_viewhiddengroups_teacher_sees_entries_despite_own_visibility(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $student->id,
+            'Visible to viewhiddengroups holder.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $this->setUser($teacher);
+        $html = $this->render_table();
+
+        $this->assertStringContainsString('Visible to viewhiddengroups holder.', $html);
+    }
+
+    /**
+     * R5-01, MEMBERS-visibility case through the real production call
+     * chain: unlike OWN, MEMBERS visibility means members can see each
+     * other, so a teacher without viewhiddengroups must still see a
+     * fellow member's entry - proves the fix doesn't over-restrict a
+     * group visibility level distinct from OWN.
+     */
+    public function test_teacher_without_accessallgroups_sees_entries_when_group_visibility_is_members(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_MEMBERS,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+
+        $this->ij_generator()->create_entry(
+            $this->diary,
+            (int) $student->id,
+            'Visible under MEMBERS visibility.',
+            INSIGHTJOURNAL_VISIBILITY_VISIBLE
+        );
+
+        $this->setUser($teacher);
+        $html = $this->render_table();
+
+        $this->assertStringContainsString('Visible under MEMBERS visibility.', $html);
+    }
+
+    /**
      * Control case: a manager (accessallgroups by default) sees every
      * group's entries through the same production wiring - proves the
      * restriction above is conditional on the real capability check, not

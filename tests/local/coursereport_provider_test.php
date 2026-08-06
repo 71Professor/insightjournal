@@ -114,6 +114,89 @@ final class coursereport_provider_test extends advanced_testcase {
     }
 
     /**
+     * R5-01 regression: a fellow member of a GROUPS_VISIBILITY_OWN group
+     * must stay invisible to the viewer even though they share a groupid
+     * the viewer is otherwise allowed to see - the group's own visibility
+     * setting is a further restriction on top of "shares an allowed
+     * groupid," not something the SQL-level membership check can ignore.
+     *
+     * The set_field() override below simulates a group whose inconsistent
+     * state (participation=1 despite OWN visibility) propagated in via
+     * course restore's raw insert_record() - see the longer explanation on
+     * the equivalent test in report_authorization_test.php. A plain
+     * create_group() call cannot reproduce this state, since
+     * groups_create_group()/groups_update_group() always force
+     * participation=false for OWN/NONE visibility.
+     *
+     * moodle/course:viewhiddengroups is CAP_ALLOW for 'teacher' by default
+     * and, correctly, bypasses this restriction entirely (see
+     * test_viewhiddengroups_teacher_sees_cell_despite_own_visibility()
+     * below) - explicitly revoked here so this test actually exercises the
+     * restricted path instead of passing vacuously.
+     */
+    public function test_invisible_cell_when_group_visibility_is_own(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $diary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $cm->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+        $this->setUser($teacher);
+
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+        $rows = $provider->rows_for([(int) $student->id => $student]);
+
+        $cell = $rows[(int) $student->id]['cells'][$diary->id];
+        $this->assertSame(['visible' => false], $cell);
+    }
+
+    /**
+     * R5-01 counterpart: a viewhiddengroups holder still sees the cell
+     * exactly as before the fix, despite OWN visibility - the fix must not
+     * regress the common case.
+     */
+    public function test_viewhiddengroups_teacher_sees_cell_despite_own_visibility(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $diary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $cm->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+        $this->setUser($teacher);
+
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+        $rows = $provider->rows_for([(int) $student->id => $student]);
+
+        $this->assertTrue($rows[(int) $student->id]['cells'][$diary->id]['visible']);
+    }
+
+    /**
      * Mixed group modes: one restricted activity, one unrestricted, in the
      * same course. The SQL-level prefilter must stay open (an unrestricted
      * activity alone means every enrolled participant gets a potentially

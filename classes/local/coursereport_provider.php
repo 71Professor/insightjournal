@@ -302,7 +302,7 @@ final class coursereport_provider {
             $key = implode(',', $groupids);
             if (!array_key_exists($key, $bygroupidskey)) {
                 $bygroupidskey[$key] = array_fill_keys(
-                    insightjournal_groupids_members_among($groupids, $userids),
+                    insightjournal_groupids_members_among($groupids, $userids, (int) $this->course->id),
                     true
                 );
             }

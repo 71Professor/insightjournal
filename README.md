@@ -68,7 +68,10 @@ Clone the repository into `mod/insightjournal/` and visit
 2. Enter the activity **name** (shown in the course navigation).
 3. Enter the **Task / Question** — the reflection question or task for learners.
 4. Optionally set a **Task / Question background colour** (a hex code, e.g. `#ffcc00`) to
-   set it visually apart from the learner's response, wherever it is shown.
+   set it visually apart from the learner's response, wherever it is shown. A native
+   colour-picker swatch next to the field (JavaScript required) offers a visual way to
+   pick the colour instead of typing the hex code; without it, the hex field works exactly
+   as before.
 5. Optionally enable **autosave** (response is saved after a pause in typing).
 6. Optionally set a **minimum character count** as an activity completion condition,
    and/or a **maximum character count**, enforced with a live counter as learners type.
@@ -86,7 +89,9 @@ Clone the repository into `mod/insightjournal/` and visit
 ## Learner Workflow
 
 Learners open the activity, read the task/question, write a response using Moodle's
-rich-text editor, and save manually. If autosave is enabled, the response is
+rich-text editor, and save manually. A live word count is shown next to the
+response regardless of whether a maximum character count is configured, purely
+informational. If autosave is enabled, the response is
 saved after a short pause in typing.
 Learners can reopen and edit their saved response at any time. Next to the
 response is a **"Keep this entry private (only visible to you)"** checkbox,
@@ -227,11 +232,14 @@ extension installed in the Moodle checkout being analysed
 to load a real site. Run from the Moodle root:
 `vendor/bin/phpstan analyse -c mod/insightjournal/phpstan.neon`. CI runs this
 automatically on one representative branch (`MOODLE_500_STABLE`); a new type
-error there fails the build. `phpstan-baseline.neon` currently holds two
-documented suppressions: a known false positive on `format_text()`'s `$format`
-parameter when passed the `FORMAT_HTML` constant, and one on
-`moodleform_mod::standard_intro_elements()`'s `$customlabel` docblock (wrong
-in Moodle core itself — the method fully supports a string label).
+error there fails the build. There is no baseline file — production code is
+clean at level 5 with every finding resolved at its source rather than
+suppressed (one remaining case, `moodleform_mod::standard_intro_elements()`'s
+`$customlabel` docblock being wrong in Moodle core itself, is handled with a
+narrowly-scoped, explained `@phpstan-ignore-next-line` comment at that one
+call site). A separate, non-blocking `phpstan-tests.neon` also analyses
+`tests/` in CI for visibility, without gating the build on its (currently
+unresolvable PHPUnit/Moodle test-framework) findings.
 
 Behat scenarios are in `tests/behat/insight_journal.feature` and cover a
 plain form submit with no JavaScript, a no-JavaScript save conflict
@@ -240,11 +248,16 @@ roundtrip, editing a previously saved response, autosave persisting a
 change without leaving edit mode, the minchars completion regression, a
 successful save never showing the error status, a learner marking their
 own entry private, saving/the character counter/autosave with the Atto
-editor, a learner choosing differently across two activities in the same
-course, a stale save being rejected as a conflict that locks further
-saves until the learner reloads, and both reports' pagination. Run via
+editor and with the plain textarea editor, a learner choosing differently
+across two activities in the same course, a stale save being rejected as
+a conflict that locks further saves until the learner reloads, both
+reports' pagination, the prompt colour picker staying in sync with the
+hex field, and the live word counter (including that it does not merge
+words across a `<br>`/paragraph boundary). Run via
 `php admin/tool/behat/cli/run.php --tags=@mod_insightjournal`
-after `php admin/tool/behat/cli/init.php`.
+after `php admin/tool/behat/cli/init.php --scss-deprecations` (the flag
+matters: it's what CI's own Behat run checks for deprecated CSS classes,
+and is easy to omit locally without noticing).
 
 ---
 
@@ -255,20 +268,24 @@ after `php admin/tool/behat/cli/init.php`.
   is planned for a later version.
 - **No server-side PDF export.** The summary page uses the browser print dialog.
   A direct PDF download is planned for a later version.
-- **Behat coverage is limited**: twenty scenarios cover a plain
+- **Behat coverage is limited**: twenty-four scenarios cover a plain
   no-JavaScript form submit, a no-JavaScript save conflict re-showing the
   learner's draft instead of discarding it, the save/reload roundtrip,
   editing a saved response, autosave, the minchars completion regression,
   a learner marking their own entry private, choosing differently across
-  two activities in the same course, the Atto editor, the save-status
-  classes, a save conflict locking further saves until reload, both
-  reports' pagination, Separate Groups restriction across all three
-  report/summary surfaces, two scenarios proving Separate Groups
-  restriction cannot leak across activities with different groupings,
-  the JavaScript character counter matching the PHP visible-character
-  count on every shared fixture, and a teacher without permission to
-  view user identity seeing no participant email. Broader coverage (CSV
-  export) is not yet automated.
+  two activities in the same course, the Atto editor and the plain
+  textarea editor, the save-status classes, a save conflict locking
+  further saves until reload, both reports' pagination, Separate Groups
+  restriction across all three report/summary surfaces, two scenarios
+  proving Separate Groups restriction cannot leak across activities with
+  different groupings, the JavaScript character counter matching the PHP
+  visible-character count on every shared fixture, a teacher without
+  permission to view user identity seeing no participant email, the
+  prompt colour picker staying in sync with the hex field, and the live
+  word counter (including not merging words across a line/paragraph
+  boundary). Course-wide CSV export has real end-to-end PHPUnit
+  integration coverage instead (`tests/coursereport_csv_export_test.php`);
+  Behat coverage for it specifically is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same
@@ -286,20 +303,22 @@ Beta (`MATURITY_BETA`). The plugin is feature-complete for the core workflow.
 Outstanding work before a stable release:
 
 - [x] Run PHPStan in a full Moodle checkout (level 5, clean) — 2026-07-07
-- [x] Add Behat tests (20 scenarios: save/reload roundtrip, editing a saved
+- [x] Add Behat tests (24 scenarios: save/reload roundtrip, editing a saved
       response, autosave, completion regression, save-status classes, a
-      learner marking their own entry private, Atto editor, choosing
-      differently across activities, save conflict locking, a plain
-      no-JavaScript form submit, a no-JavaScript save conflict re-showing
-      the learner's draft, activity report pagination,
-      course-wide report pagination, Separate Groups restriction across
-      all three report/summary surfaces, Separate Groups restriction
-      cannot leak across activities with different groupings, a teacher
-      without permission to view user identity seeing no participant
-      email, and the JavaScript character counter matching the PHP
-      visible-character count on every shared fixture) — 2026-07-09,
-      extended 2026-07-21, 2026-07-22, 2026-07-27, 2026-07-28, 2026-07-29,
-      2026-07-31, 2026-08-03, 2026-08-04
+      learner marking their own entry private, Atto editor and plain
+      textarea editor, choosing differently across activities, save
+      conflict locking, a plain no-JavaScript form submit, a no-JavaScript
+      save conflict re-showing the learner's draft, activity report
+      pagination, course-wide report pagination, Separate Groups
+      restriction across all three report/summary surfaces, Separate
+      Groups restriction cannot leak across activities with different
+      groupings, a teacher without permission to view user identity
+      seeing no participant email, the JavaScript character counter
+      matching the PHP visible-character count on every shared fixture,
+      the prompt colour picker staying in sync with the hex field, and
+      the live word counter including its line/paragraph boundary
+      handling) — 2026-07-09, extended 2026-07-21, 2026-07-22, 2026-07-27,
+      2026-07-28, 2026-07-29, 2026-07-31, 2026-08-03, 2026-08-04, 2026-08-06
 - [x] Execute the PHPUnit suite (moodle-docker, Moodle 5.0.8) — 2026-07-07
 - [x] Verify on Moodle 4.5 and 5.x (tested on 4.5 and 5.0.2)
 - [ ] Add screenshots for the Plugin Directory

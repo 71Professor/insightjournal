@@ -121,12 +121,32 @@ class report_table extends table_sql {
             $where .= ' AND (' . implode(' OR ', $clauses) . ')';
         }
         if ($restrictgroupids !== null) {
+            // The restrictgroupids array alone is not sufficient to prove visibility - see
+            // insightjournal_groupids_contain_member()'s docblock in locallib.php for why
+            // (R5-01): a restored course can contain an OWN-visibility group with
+            // participation=1, which insightjournal_current_user_allowed_groupids() would
+            // otherwise still include. sql_member_visibility_where() is the same predicate
+            // Moodle core applies internally for this exact purpose, gated behind the same
+            // can_view_all_groups() bypass core itself always pairs it with, so a viewer
+            // holding moodle/course:viewhiddengroups (Teacher/Editing teacher/Manager by
+            // default) still sees every member exactly as before.
             [$ginsql, $gparams] = $DB->get_in_or_equal($restrictgroupids, SQL_PARAMS_NAMED, 'grp', true, -1);
-            $where .= ' AND EXISTS (
-                SELECT 1 FROM {groups_members} gm
-                 WHERE gm.userid = u.id AND gm.groupid ' . $ginsql . '
-            )';
-            $params = array_merge($params, $gparams);
+            if (\core_group\visibility::can_view_all_groups($course->id)) {
+                $where .= ' AND EXISTS (
+                    SELECT 1 FROM {groups_members} gm
+                     WHERE gm.userid = u.id AND gm.groupid ' . $ginsql . '
+                )';
+                $params = array_merge($params, $gparams);
+            } else {
+                [$visibilitywhere, $visibilityparams] = \core_group\visibility::sql_member_visibility_where('g', 'gm', 'u');
+                $where .= ' AND EXISTS (
+                    SELECT 1 FROM {groups_members} gm
+                    JOIN {groups} g ON g.id = gm.groupid
+                     WHERE gm.userid = u.id AND gm.groupid ' . $ginsql . '
+                       AND ' . $visibilitywhere . '
+                )';
+                $params = array_merge($params, $gparams, $visibilityparams);
+            }
         }
 
         $this->set_sql(

@@ -276,7 +276,34 @@ function insightjournal_current_user_allowed_groupids(stdClass $course, cm_info|
 }
 
 /**
- * Whether $userid is a member of any group in $groupids.
+ * Whether $userid is a member of any group in $groupids, and that
+ * membership is actually visible to the current user under Moodle's own
+ * group visibility rules (GROUPS_VISIBILITY_ALL/MEMBERS/OWN/NONE).
+ *
+ * $groupids is expected to already be the current viewer's own allowed
+ * group ids (insightjournal_current_user_allowed_groupids(), which is
+ * participation-scoped) - membership in that set alone is not sufficient,
+ * though: the visibility/participation coupling is enforced only inside
+ * groups_create_group()/groups_update_group(), not as a database
+ * constraint, and at least one core write path (course restore's
+ * restore_groups_structure_step::process_group(), which inserts group rows
+ * directly) is already confirmed to bypass it - so a group with OWN/NONE
+ * visibility and participation=1 can exist without any unsupported or
+ * malicious action, purely from restoring a course whose source database
+ * already held that state. Defence in depth: read-side code must not
+ * assume the invariant holds. core_group\visibility::sql_member_visibility_where()
+ * is the same predicate Moodle core itself applies inside
+ * groups_get_all_groups(..., $withmembers = true) and
+ * groups_get_members_join() (see R5-01) - applied here behind the same
+ * core_group\visibility::can_view_all_groups() bypass core itself always
+ * pairs it with, so a viewer holding moodle/course:viewhiddengroups
+ * (Teacher/Editing teacher/Manager by default) sees every member exactly
+ * as before, not a narrower set. sql_member_visibility_where() reads
+ * global $USER internally, so both helpers evaluate visibility from the
+ * current request's logged-in user's perspective - correct for every
+ * current caller (interactive web requests), but not something a future
+ * CLI/cron/webservice caller could use to check visibility on behalf of a
+ * different, explicitly-specified viewer.
  *
  * A single existence query against groups_members, bounded by
  * count($groupids) - never by any group's member count. Intended for a
@@ -286,9 +313,10 @@ function insightjournal_current_user_allowed_groupids(stdClass $course, cm_info|
  *
  * @param int[] $groupids Candidate group ids.
  * @param int $userid The user to check.
+ * @param int $courseid The course the groups belong to.
  * @return bool
  */
-function insightjournal_groupids_contain_member(array $groupids, int $userid): bool {
+function insightjournal_groupids_contain_member(array $groupids, int $userid, int $courseid): bool {
     global $DB;
 
     if (empty($groupids) || empty($userid)) {
@@ -297,11 +325,25 @@ function insightjournal_groupids_contain_member(array $groupids, int $userid): b
 
     [$insql, $params] = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'grp');
     $params['userid'] = $userid;
-    return $DB->record_exists_select('groups_members', "userid = :userid AND groupid $insql", $params);
+    if (\core_group\visibility::can_view_all_groups($courseid)) {
+        return $DB->record_exists_select('groups_members', "userid = :userid AND groupid $insql", $params);
+    }
+    [$visibilitywhere, $visibilityparams] = \core_group\visibility::sql_member_visibility_where('g', 'gm', 'u');
+    $params = array_merge($params, $visibilityparams);
+    $sql = "SELECT 1
+              FROM {groups_members} gm
+              JOIN {groups} g ON g.id = gm.groupid
+              JOIN {user} u ON u.id = gm.userid
+             WHERE gm.userid = :userid AND gm.groupid $insql AND $visibilitywhere";
+    return $DB->record_exists_sql($sql, $params);
 }
 
 /**
- * The subset of $userids that are members of any group in $groupids.
+ * The subset of $userids that are members of any group in $groupids, and
+ * whose membership is actually visible to the current user under Moodle's
+ * own group visibility rules - see
+ * insightjournal_groupids_contain_member()'s docblock for why $groupids
+ * being participation-scoped is not sufficient on its own (R5-01).
  *
  * A single groups_members query bounded by count($groupids) x
  * count($userids) - never by full course or group size. Intended for a
@@ -311,9 +353,10 @@ function insightjournal_groupids_contain_member(array $groupids, int $userid): b
  *
  * @param int[] $groupids Candidate group ids.
  * @param int[] $userids Candidate user ids to filter down.
+ * @param int $courseid The course the groups belong to.
  * @return int[] The subset of $userids found in any of $groupids.
  */
-function insightjournal_groupids_members_among(array $groupids, array $userids): array {
+function insightjournal_groupids_members_among(array $groupids, array $userids, int $courseid): array {
     global $DB;
 
     if (empty($groupids) || empty($userids)) {
@@ -322,11 +365,24 @@ function insightjournal_groupids_members_among(array $groupids, array $userids):
 
     [$ginsql, $gparams] = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'grp');
     [$uinsql, $uparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'usr');
-    $ids = $DB->get_fieldset_select(
-        'groups_members',
-        'DISTINCT userid',
-        "groupid $ginsql AND userid $uinsql",
-        array_merge($gparams, $uparams)
+    if (\core_group\visibility::can_view_all_groups($courseid)) {
+        $ids = $DB->get_fieldset_select(
+            'groups_members',
+            'DISTINCT userid',
+            "groupid $ginsql AND userid $uinsql",
+            array_merge($gparams, $uparams)
+        );
+        return array_map('intval', $ids);
+    }
+    [$visibilitywhere, $visibilityparams] = \core_group\visibility::sql_member_visibility_where('g', 'gm', 'u');
+    $params = array_merge($gparams, $uparams, $visibilityparams);
+    $ids = $DB->get_fieldset_sql(
+        "SELECT DISTINCT gm.userid
+           FROM {groups_members} gm
+           JOIN {groups} g ON g.id = gm.groupid
+           JOIN {user} u ON u.id = gm.userid
+          WHERE gm.groupid $ginsql AND gm.userid $uinsql AND $visibilitywhere",
+        $params
     );
     return array_map('intval', $ids);
 }
@@ -362,7 +418,8 @@ function insightjournal_activity_visible_to_viewer(
 
     return insightjournal_groupids_contain_member(
         insightjournal_current_user_allowed_groupids($course, $cm),
-        $targetuserid
+        $targetuserid,
+        (int) $course->id
     );
 }
 

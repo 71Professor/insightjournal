@@ -8,6 +8,26 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Security
+
+- **Group-based authorization now respects a group's own visibility
+  setting** (`GROUPS_VISIBILITY_ALL`/`MEMBERS`/`OWN`/`NONE`), addressing
+  the R5-01 review finding. The R4-03 memory-bounded rework replaced
+  Moodle's own `groups_get_all_groups(..., $withmembers = true)` - which
+  enforces group visibility internally - with direct `groups_members`
+  queries that checked only raw group-id membership. Course backup/restore
+  inserts group rows without re-validating that a group's visibility and
+  `participation` flag are consistent (`groups_create_group()` normally
+  enforces this pairing, but restore's raw insert bypasses it), so a
+  restored course could legitimately contain a non-ALL-visibility group
+  that the affected functions treated as fully visible anyway. Fixed by
+  applying `core_group\visibility::sql_member_visibility_where()` - the
+  same predicate Moodle core itself uses - at all three affected call
+  sites, gated behind the same `moodle/course:viewhiddengroups` bypass
+  core always pairs it with, so a Teacher/Editing teacher/Manager (which
+  hold that capability by default) sees exactly what they did before this
+  fix.
+
 ### Changed
 
 - **`insightjournal_current_user_groups()` and
