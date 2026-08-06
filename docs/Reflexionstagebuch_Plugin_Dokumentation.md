@@ -1,6 +1,6 @@
 # mod_insightjournal – Insight Journal für Moodle
 
-## **1 Moodle Activity Module · Version 0.8.0-beta · August 2026**
+## **1 Moodle Activity Module · Version 0.9.0-beta · August 2026**
 
 > **Zweck:** Trainer/innen legen pro Kursabschnitt eine Insight-Journal-Aktivität mit einer gezielten Aufgabe oder Frage an. Lernende schreiben ihre Antwort direkt in Moodle, können sie jederzeit überarbeiten und am Kursende eine persönliche Gesamtübersicht drucken. Jede/r Lernende entscheidet selbst, pro Eintrag, ob Trainer/innen ihn sehen dürfen. Trainer/innen behalten den kursweiten Fortschritt im Blick und können exportieren, sehen dabei aber nur die Einträge, die die Verfassenden freigegeben haben.
 
@@ -244,4 +244,4 @@ Diese Version wird an ausgewählte Personen aus dem Bildungsbereich und der Mood
 
 ---
 
-*Erstellt: Juli 2026 · Aktualisiert: August 2026 · Plugin: mod_insightjournal v0.8.0-beta*
+*Erstellt: Juli 2026 · Aktualisiert: August 2026 · Plugin: mod_insightjournal v0.9.0-beta*

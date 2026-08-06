@@ -8,6 +8,8 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+## [0.9.0-beta] - 2026-08-06
+
 ### Security
 
 - **Group-based authorization now respects a group's own visibility
@@ -769,7 +771,8 @@ maturity `MATURITY_BETA`.
   included; restore maps user IDs and skips entries for unavailable users.
 - English and German language packs.
 
-[Unreleased]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.8.0-beta...HEAD
+[Unreleased]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.9.0-beta...HEAD
+[0.9.0-beta]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.8.0-beta...v0.9.0-beta
 [0.8.0-beta]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.7.1-beta...v0.8.0-beta
 [0.7.1-beta]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.7.0-beta...v0.7.1-beta
 [0.7.0-beta]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.6.0-beta...v0.7.0-beta
