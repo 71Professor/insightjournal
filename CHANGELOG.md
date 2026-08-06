@@ -133,6 +133,37 @@ Versions map to the `$plugin->release` value in `version.php`.
   `amd/src/autosave.js` are now named constants** at the top of the
   module, addressing the CR-06 review finding, instead of bare numeric
   literals at their two use sites.
+- **The `tests/` PHPStan check now gates the build instead of always
+  passing**, addressing the R5-07 review finding. The previous version
+  analysed the whole `tests/` directory and reported ~300-350 permanently
+  unfixable findings (PHPUnit/Moodle test-framework magic that's only
+  resolvable inside PHPUnit's own bootstrap), so CI ran it with
+  `continue-on-error` - not a real quality signal. Fixed the 3 findings
+  that were real (not framework noise: a docblock missing a leading `\`
+  before `stdClass`, and two instances of a Moodle core docblock bug -
+  `@param \int[]`, a meaningless backslash on a scalar type - already
+  worked around once before for a similar case in R4-07), then rescoped
+  the check to exactly the two files under `tests/` that don't need
+  PHPUnit's bootstrap and are genuinely 0-error at level 5 (this plugin's
+  own PHPUnit generator and Behat step definitions). A real, if narrower,
+  gate now, not noise.
+- **CI dependencies are pinned more thoroughly**, addressing the R5-11
+  review finding: `actions/checkout`, `shivammathur/setup-php`, and
+  `actions/upload-artifact` in the main CI workflow (previously only done
+  for the privileged release workflow) are now pinned to full commit SHAs,
+  and `moodle-plugin-ci`'s previously-open `^4` version range is now
+  pinned to its currently-resolved exact version, matching the existing
+  `micaherne/phpstan-moodle` pinning rationale.
+- **4 of 5 PHPUnit deprecation notices are resolved**, addressing the rest
+  of R5-11: coverage-only docblock annotations (`@covers`/`@coversNothing`,
+  in `backup_test.php` and the three template test files) migrated to
+  their PHP attribute equivalents, matching the pattern already used
+  elsewhere in this codebase. The remaining one (`locallib_test.php`'s
+  `@dataProvider`) is deliberately kept in its docblock form, documented
+  in place: unlike coverage attributes, `#[DataProvider]` controls actual
+  argument binding and silently no-ops on PHPUnit 9.6 (the
+  `MOODLE_405_STABLE` CI leg still runs it) - a real regression this
+  project already hit once, in R4-01.
 
 ### Added
 
@@ -193,11 +224,24 @@ Versions map to the `$plugin->release` value in `version.php`.
   in an earlier fix (to avoid resubmitting the no-JS conflict page's POST)
   and the actual `autosave.js` comment was updated at the time, but this
   template comment was missed. Comment only, no behavior change.
+- **`coursereport_provider::csv_rows()` now rejects a chunk size below 1**,
+  addressing the R5-09 review finding. `get_enrolled_users()` treats a
+  limit of `0` as "no limit," so a `0` chunk size would have silently
+  fetched every participant in one unbounded chunk while the loop's own
+  offset/exit-condition logic could never terminate - an infinite loop,
+  not just a theoretical edge case. Also validates every diary id passed
+  in against the provider's own activities upfront, failing with a clear
+  `coding_exception` instead of an undefined-array-key warning deep inside
+  the row-building loop if they're ever out of sync.
 
 ### Testing
 
-- **The course report's CSV export now has a real end-to-end proof**,
-  closing the R4-09 review finding: two independent groupings each stay
+- **The course report's CSV export now has a real integration-test proof**
+  (PHPUnit driving the actual `coursereport_provider::csv_rows()` code
+  path against a real `csv_export_writer`, not a full browser/HTTP
+  download - `csv_export_writer::download_file()` calls `exit()`, which
+  rules out a true browser-driven test), closing the R4-09 review finding:
+  two independent groupings each stay
   isolated for a group-restricted viewer, a private entry inside an
   authorized cell always shows the privacy notice rather than its real
   text, a viewer holding `moodle/site:accessallgroups` (but belonging to

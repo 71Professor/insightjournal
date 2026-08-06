@@ -31,16 +31,16 @@ use advanced_testcase;
 use backup;
 use backup_controller;
 use backup_setting;
+use PHPUnit\Framework\Attributes\CoversClass;
 use restore_controller;
 use restore_dbops;
 use stdClass;
 
 /**
  * Tests that a course backup/restore round-trip preserves instance settings.
- *
- * @covers \backup_insightjournal_activity_structure_step
- * @covers \restore_insightjournal_activity_structure_step
  */
+#[CoversClass(\backup_insightjournal_activity_structure_step::class)]
+#[CoversClass(\restore_insightjournal_activity_structure_step::class)]
 final class backup_test extends advanced_testcase {
     /**
      * Fixtures needed by the backup/restore subsystem.

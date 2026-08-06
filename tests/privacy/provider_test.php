@@ -169,6 +169,12 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
      */
     public function test_delete_data_for_user(): void {
         global $DB;
+        // Core's own approved_contextlist docblock declares this param as "@param \int[]
+        // $contextids" - a malformed type (a leading backslash on a scalar type is meaningless;
+        // \int does not resolve to anything), which PHPStan reports as a genuine argument-type
+        // mismatch against a plain int array literal. A core docblock bug, not a real type error -
+        // same category as the standard_intro_elements() case in mod_form.php.
+        // @phpstan-ignore-next-line argument.type (documented false positive).
         $approved = new approved_contextlist($this->user1, 'mod_insightjournal', [$this->context->id]);
         provider::delete_data_for_user($approved);
 
@@ -199,6 +205,9 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
      */
     public function test_delete_data_for_users(): void {
         global $DB;
+        // Same malformed "@param \int[] $userids" core docblock bug as
+        // approved_contextlist above.
+        // @phpstan-ignore-next-line argument.type (documented false positive).
         $approved = new approved_userlist($this->context, 'mod_insightjournal', [(int) $this->user1->id]);
         provider::delete_data_for_users($approved);
 

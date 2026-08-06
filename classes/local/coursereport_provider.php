@@ -221,12 +221,36 @@ final class coursereport_provider {
      *
      * @param \stdClass[] $diaries Diary records, keyed by insightjournal instance id, in the
      *     order their columns should appear in the export (coursereport.php passes them
-     *     ordered by id, matching the on-screen column order).
+     *     ordered by id, matching the on-screen column order). Every id must be one of this
+     *     provider's own activities (constructor's $activities) - a coding_exception otherwise.
      * @param bool $showemail
-     * @param int $chunksize
+     * @param int $chunksize Must be at least 1 - a coding_exception otherwise.
      * @return iterable<array> One array per CSV row, shaped like insightjournal_coursereport_csv_row()'s return value.
      */
     public function csv_rows(array $diaries, bool $showemail, int $chunksize = 500): iterable {
+        // Moodle's get_enrolled_users() treats a $limitnum of 0 as "no limit," so a
+        // chunksize of 0 (or, via the same downstream call, a negative one)
+        // would silently fetch every participant in one unbounded chunk
+        // while $offset never advances and the loop's own
+        // "count($chunk) < $chunksize" exit condition can never be true
+        // (a count can't be negative) - an unbounded, non-terminating chunk
+        // instead of a clear failure. R5-09.
+        if ($chunksize < 1) {
+            throw new \coding_exception('coursereport_provider::csv_rows(): $chunksize must be at least 1, '
+                . $chunksize . ' given.');
+        }
+        // A $diaries entry the provider wasn't constructed with would
+        // otherwise only surface as an undefined-array-key warning deep
+        // inside the loop below ($row['cells'][$diary->id],
+        // $this->activities[$diary->id]) - fail clearly upfront instead,
+        // regardless of whether any participant ever reaches that code
+        // path. R5-09.
+        foreach ($diaries as $diary) {
+            if (!array_key_exists((int) $diary->id, $this->activities)) {
+                throw new \coding_exception('coursereport_provider::csv_rows(): diary id ' . $diary->id
+                    . ' is not one of this provider\'s own activities.');
+            }
+        }
         $offset = 0;
         while (true) {
             $chunk = $this->participants($offset, $chunksize);

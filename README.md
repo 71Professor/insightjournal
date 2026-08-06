@@ -289,9 +289,12 @@ and is easy to omit locally without noticing).
   permission to view user identity seeing no participant email, the
   prompt colour picker staying in sync with the hex field, and the live
   word counter (including not merging words across a line/paragraph
-  boundary). Course-wide CSV export has real end-to-end PHPUnit
-  integration coverage instead (`tests/coursereport_csv_export_test.php`);
-  Behat coverage for it specifically is not yet automated.
+  boundary). Course-wide CSV export has real PHPUnit integration coverage
+  instead (`tests/coursereport_csv_export_test.php`, driving the actual
+  export code against a real `csv_export_writer`) — not literal
+  browser-driven end-to-end coverage, since `csv_export_writer::download_file()`
+  calls `exit()`, which rules that out; Behat coverage for it specifically
+  is not yet automated.
 - **Two navigation links share the label "Insight report"**: the activity
   settings navigation link to the per-activity report (`report.php`) and the
   on-page button to the course-wide report (`coursereport.php`) use the same

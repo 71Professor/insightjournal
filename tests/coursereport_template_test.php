@@ -28,12 +28,12 @@ declare(strict_types=1);
 namespace mod_insightjournal;
 
 use advanced_testcase;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 /**
  * Tests for the mod_insightjournal/coursereport template.
- *
- * @coversNothing
  */
+#[CoversNothing]
 final class coursereport_template_test extends advanced_testcase {
     /**
      * Builds a minimal, valid template context, with overrides.

@@ -1,22 +1,37 @@
 includes:
     - ../../vendor/micaherne/phpstan-moodle/extension.neon
 
-# Separate, deliberately non-blocking analysis job for tests/ (R4-07). Kept
-# apart from phpstan.neon's production-code config rather than folded in:
-# advanced_testcase, the generator classes, and the *_test.php base
-# fixtures are only fully resolvable inside PHPUnit's own bootstrap, which
-# this plain phpstan-moodle bridge doesn't load - so a first real run of
-# this file reports ~300 method.notFound/class.notFound findings, almost
-# all against Moodle/PHPUnit test-framework magic (e.g.
-# testing_data_generator::create_and_enrol()), not this plugin's own code.
-# Baselining that away would be exactly the "unbounded new baseline" this
-# task's acceptance criterion explicitly rules out, so this file has none -
-# the CI step that runs it is intentionally allowed to fail without
-# blocking the build (see ci.yml's "PHPStan (tests)" step).
+# Separate analysis job for tests/ (R4-07, rescoped under R5-07). Kept apart
+# from phpstan.neon's production-code config because most of tests/ is not
+# resolvable this way: *_test.php classes extend advanced_testcase, and
+# generator calls like testing_data_generator::create_and_enrol() are only
+# fully resolvable inside PHPUnit's own bootstrap, which this plain
+# phpstan-moodle bridge doesn't load. An earlier version of this file
+# pointed at the whole tests/ directory and reported ~300-350 permanently
+# unfixable findings from exactly that gap - not a real quality signal, and
+# not something CI could gate on (see Fix.md's R5-07 section for the full
+# writeup).
+#
+# Rescoped to exactly the two files under tests/ that don't depend on
+# anything only loaded by PHPUnit's own runtime bootstrap and are
+# therefore fully self-contained: tests/generator/lib.php (this plugin's
+# own PHPUnit data generator - it extends testing_module_generator, but
+# that class itself lives under lib/testing/ and resolves fine without
+# PHPUnit's bootstrap, unlike advanced_testcase) and
+# tests/behat/behat_mod_insightjournal.php (custom Behat step
+# definitions). Both are already 0-error at level 5 without any bootstrap
+# magic, so this is a genuinely gating check (see ci.yml's "PHPStan
+# (tests)" step, which now blocks the build like the main phpstan.neon
+# step does) rather than a best-effort one. Add a new path here only if
+# it's independently verified 0-error without PHPUnit's bootstrap -
+# anything extending advanced_testcase or relying on classes/magic
+# methods that only exist once PHPUnit has bootstrapped belongs in a real
+# PHPUnit run instead, not here.
 parameters:
     level: 5
     paths:
-        - tests
+        - tests/generator/lib.php
+        - tests/behat/behat_mod_insightjournal.php
     bootstrapFiles:
         - phpstan-bootstrap.php
     moodle:

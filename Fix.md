@@ -76,6 +76,43 @@ Es sind **keine offenen P0-Blocker** vorhanden. Eine weitere kleine Beta ist ohn
 **Umsetzung:** Neuer Absatz im README.md-Abschnitt „Capabilities" (direkt bei den beiden bestehenden „Core-Capability betrifft dieses Plugin"-Hinweisen) sowie neuer Punkt in „Bekannte Einschränkungen (Beta)"; dieselben zwei Stellen in der deutschen Doku (Abschnitt 9, kein eigener Capabilities-Abschnitt dort vorhanden). Zusätzlich Klassen-Docblock von `coursereport_provider` in `classes/local/coursereport_provider.php` um denselben Vertrag ergänzt (entwicklerseitige Dokumentation direkt am Code, nicht nur nutzerseitig).
 **Verifiziert:** phpcs sauber; ansonsten reine Markdown-Änderung, kein Verhalten betroffen.
 
+## R5-07 · Test-PHPStan von Dauerrauschen zu Signal umbauen  `[Re-Review]` — ✅ Erledigt (06.08.2026)
+
+Der `phpstan-tests.neon`-Lauf gegen ganz `tests/` meldete konstant ~348 Findings, praktisch alle `method.notFound`/`class.notFound` gegen PHPUnit-/Moodle-Testframework-Magie (`testing_data_generator::create_and_enrol()` u. ä.), die außerhalb von PHPUnits eigenem Bootstrap nicht auflösbar ist – daher `continue-on-error: true` in CI, kein echtes Qualitätssignal.
+
+**Schritt 1 – die 3 echten Findings behoben** (nicht Framework-Rauschen):
+- `tests/locallib_test.php:170`: `make_entry()`s `@return stdClass`-Docblock ohne führenden Backslash wurde relativ zum Namespace `mod_insightjournal` aufgelöst (→ `mod_insightjournal\stdClass`, existiert nicht) statt zum globalen `\stdClass`, das die echte Signatur bereits korrekt verwendet. Fix: `@return \stdClass`.
+- `tests/privacy/provider_test.php:172,202`: Moodle-Cores eigene Docblocks für `approved_contextlist`/`approved_userlist` deklarieren `@param \int[] $contextids`/`$userids` – ein bedeutungsloser Backslash vor einem Skalartyp (`\int` löst zu nichts auf), den PHPStan als echten Typfehler gegen ein simples Int-Array meldet. Ein Core-Docblock-Bug, kein echter Typfehler – exakt dieselbe Kategorie wie der bereits in R4-07 gefundene `standard_intro_elements()`-Fall. Behoben mit demselben, dort bereits etablierten Muster: ein präzise scope­ter, begründeter `@phpstan-ignore-next-line argument.type`-Kommentar an beiden Aufrufstellen.
+
+**Schritt 2 – Pilot auf echte pure Test-Utilities begrenzt statt Stub gebaut:** Ein Moodle-Testframework-Stub (vollständige Nachbildung von `testing_data_generator`s dynamisch komponierten `create_X()`-Methoden) wäre ein großer, dauerhafter Wartungsaufwand für einen Bereich, den Moodle-Core selbst nicht als PHPStan-Stub pflegt. Stattdessen `phpstan-tests.neon`s `paths:` auf genau die zwei Dateien unter `tests/` verengt, die **nicht** von `advanced_testcase`/PHPUnit-Bootstrap-Magie abhängen und bereits jetzt 0-Fehler-sauber sind: `tests/generator/lib.php` (dieses Plugins eigener PHPUnit-Datengenerator) und `tests/behat/behat_mod_insightjournal.php` (eigene Behat-Step-Definitionen). `ci.yml`s „PHPStan (tests)"-Schritt verliert dadurch `continue-on-error: true` – ein echtes Gate wie der Produktionscode-Schritt, statt eines dauerhaft ignorierten roten Signals.
+**Verifiziert:** `phpstan-tests.neon` `[OK] No errors` (vorher: 348 Findings, non-gating). Produktions-`phpstan.neon` weiterhin `[OK] No errors` (unberührt). PHPUnit 242/242, phpcs sauber.
+
+## R5-08 · CSV-Test korrekt benennen  `[Re-Review]` — ✅ Erledigt (06.08.2026, nur Dokumentation)
+
+Mehrere Stellen (CHANGELOG, README, deutsche Doku, sowie der eigene Docblock von `tests/coursereport_csv_export_test.php`) beschrieben den R4-09-CSV-Test als „echte(s) Ende-zu-Ende" – zu stark formuliert für einen PHPUnit-Integrationstest, der zwar den echten `coursereport_provider`/`csv_export_writer`-Code treibt, aber nie durch HTTP/Browser läuft (`csv_export_writer::download_file()` ruft `exit()` auf, was das ohnehin ausschließt – bereits in R4-09 selbst so begründet).
+
+**Umsetzung:** Alle vier Stellen auf „Integrationstest" umformuliert, mit derselben `exit()`-Begründung dort ergänzt, wo sie fehlte. Der optionale HTTP-Smoke-Test aus dem Befund wurde nicht umgesetzt – die Vorbedingung dafür („wenn Downloads im Behat-Setup zuverlässig geprüft werden können") ist bereits in R4-09 selbst mit „nein" beantwortet, kein neuer Erkenntnisgewinn durch einen erneuten Versuch.
+**Verifiziert:** Reine Markdown-/Docblock-Änderung, kein Verhalten betroffen.
+
+## R5-09 · Provider-Verträge defensiv machen  `[Re-Review]` — ✅ Erledigt (06.08.2026)
+
+`coursereport_provider::csv_rows()` hatte zwei ungeprüfte Annahmen: `$chunksize` konnte 0 oder negativ sein, und `$diaries` konnte eine ID enthalten, die nicht zu den Aktivitäten gehört, mit denen der Provider konstruiert wurde.
+
+**Per TDD behoben:** Drei neue Tests zuerst rot verifiziert (`test_csv_rows_rejects_zero_chunksize`, `test_csv_rows_rejects_negative_chunksize`, `test_csv_rows_rejects_diary_not_among_activities`), dann implementiert. `$chunksize < 1` wirft jetzt eine `coding_exception` – bei `$chunksize = 0` hätte `get_enrolled_users()`s `$limitnum`-Semantik (0 = „kein Limit") sonst einen unbegrenzten Chunk geliefert, während `$offset` nie weiterrückt und die Abbruchbedingung `count($chunk) < $chunksize` (mit `$chunksize = 0`) nie wahr werden kann – eine echte Endlosschleife, kein nur theoretisches Risiko. Eine `$diaries`-ID außerhalb von `$this->activities` wird jetzt vorab per `array_key_exists()`-Schleife geprüft und wirft ebenfalls eine `coding_exception`, statt später als unauffällige „undefined array key"-Warnung tief in der Zeilen-Schleife aufzutauchen.
+**Verifiziert:** PHPUnit 242/242 (3 neue Tests), phpcs sauber, PHPStan (beide Configs) 0 Fehler.
+
+## R5-10 · Neues JavaScript schrittweise auf ESM umstellen  `[Re-Review]` — Zurückgestellt (06.08.2026)
+
+Der Befund selbst empfiehlt explizit „bei der nächsten fachlichen Änderung" zu migrieren, nicht als eigenständigen Umbau. Eine reine ESM-Migration von `autosave.js`/`summary.js` ohne begleitende fachliche Änderung wäre ein Refactor ohne konkreten Anlass – widerspricht sowohl der eigenen Empfehlung des Befunds als auch diesem Projekts genereller Zurückhaltung gegenüber anlasslosen Refactors. Bewusst nicht jetzt umgesetzt; bei der nächsten `autosave.js`/`summary.js`-Änderung erneut aufgreifen.
+
+## R5-11 · CI-Reproduzierbarkeit nachschärfen  `[Re-Review]` — ✅ Erledigt (06.08.2026)
+
+Zwei unabhängige Teile.
+
+**PHPUnit-Deprecations (5 → 1):** `--display-phpunit-deprecations` zeigte alle fünf konkret: vier waren `@covers`/`@coversNothing`-Docblock-Annotationen (`tests/backup_test.php`, `tests/coursereport_template_test.php`, `tests/summary_template_test.php`, `tests/view_template_test.php`) – reine Coverage-Metadaten, die (anders als `@dataProvider`, siehe unten) folgenlos auf PHP-Attribute (`#[CoversClass]`/`#[CoversNothing]`) migriert werden können, exakt das bereits in `tests/locallib_groups_test.php` etablierte Muster. Die fünfte (`tests/locallib_test.php`s `@dataProvider`) wurde **bewusst nicht migriert**: `#[DataProvider]` ist – anders als die Coverage-Attribute – ausführungsrelevant (steuert echtes Argument-Binding) und läuft auf PHPUnit 9.6 (der `MOODLE_405_STABLE`-CI-Leg dieses Projekts) laut R4-01s eigenem, bereits gemachtem Fund ins Leere. Stattdessen ein ausführlicher Docblock-Kommentar, der diese Entscheidung begründet – **mit einer eigenen Lehre dabei**: der erste Formulierungsversuch schrieb den literalen Text „@dataProvider" in die Fließtext-Erklärung, was PHPUnits eigenen (naiven, nicht Fließtext-von-echten-Tags unterscheidenden) Docblock-Parser dazu brachte, dies als zweite, unsinnige Provider-Referenz zu interpretieren (`Method ...::annotation, not() does not exist`) – ein echter, selbst verursachter Testlauf-Fehler, im selben Zug wieder behoben, indem der Kommentar den Tag-Namen nicht mehr wörtlich ausschreibt.
+**CI-Action-Pins:** `actions/checkout@v6`, `shivammathur/setup-php@v2`, `actions/upload-artifact@v7` in `ci.yml` (read-only, unprivilegierter Job) auf ihre per GitHub-API aufgelösten vollständigen Commit-SHAs gepinnt, mit Versions-Kommentar – dieselbe Methode wie R4-06 für den privilegierten Release-Job. Zusätzlich `composer create-project ... moodlehq/moodle-plugin-ci ci ^4` (ein offener Semver-Range) auf die aktuell aufgelöste exakte Version `4.5.10` gepinnt, mit derselben Begründung wie das bereits bestehende `micaherne/phpstan-moodle:1.1.0`-Pinning aus R3-11.
+**Verifiziert:** PHPUnit 242/242 (Deprecations: 5 → 1, die verbleibende bewusst und dokumentiert), phpcs sauber, PHPStan (beide Configs) 0 Fehler, YAML-Syntax von `ci.yml` validiert.
+
 ---
 
 ## Priorisierungslegende

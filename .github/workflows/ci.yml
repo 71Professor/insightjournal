@@ -65,13 +65,13 @@ jobs:
 
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           path: plugin
           persist-credentials: false
 
       - name: Setup PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2 (2.37.2)
         with:
           php-version: ${{ matrix.php }}
           extensions: ${{ matrix.extensions }}
@@ -81,8 +81,12 @@ jobs:
           coverage: none
 
       - name: Initialise moodle-plugin-ci
+        # Pinned exactly (R5-11), matching the same rationale as
+        # micaherne/phpstan-moodle below (R3-11): an open ^4 range would
+        # silently pick up whatever 4.x release is newest on the day CI
+        # happens to run. Bump deliberately when needed.
         run: |
-          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci 4.5.10
           echo $(cd ci/bin; pwd) >> $GITHUB_PATH
           echo $(cd ci/vendor/bin; pwd) >> $GITHUB_PATH
           sudo locale-gen en_AU.UTF-8
@@ -144,17 +148,17 @@ jobs:
 
       - name: PHPStan (tests)
         if: ${{ !cancelled() && matrix.moodle-branch == 'MOODLE_500_STABLE' }}
-        # R4-07: tests/ is now analysed too, but as its own tolerant,
-        # non-gating job rather than folded into the strict step above or
-        # given a baseline - advanced_testcase and the generator classes
-        # are only fully resolvable inside PHPUnit's own bootstrap, which
-        # this plain phpstan-moodle bridge doesn't load, so this currently
-        # reports ~300 findings that are almost all PHPUnit/Moodle
-        # test-framework noise, not real issues in this plugin's tests. See
-        # phpstan-tests.neon for the full rationale. continue-on-error
-        # means this step's own failure is visible in the run summary
-        # without turning the job (or this leg's overall conclusion) red.
-        continue-on-error: true
+        # R4-07 introduced this step against the whole tests/ directory,
+        # non-gating, because most of it isn't resolvable without PHPUnit's
+        # own bootstrap (advanced_testcase, generator magic methods like
+        # testing_data_generator::create_and_enrol()) - that produced
+        # ~300-350 permanently unfixable findings, no real signal. R5-07
+        # rescoped phpstan-tests.neon to exactly the two files under tests/
+        # that don't need that bootstrap and are genuinely 0-error at level
+        # 5 (this plugin's own PHPUnit generator and Behat step
+        # definitions) - see phpstan-tests.neon's own comment for the full
+        # rationale. That makes this a real gate now, same as the
+        # production step above, instead of continue-on-error.
         run: |
           cd moodle
           vendor/bin/phpstan analyse -c mod/insightjournal/phpstan-tests.neon --memory-limit=1G --no-progress
@@ -186,7 +190,7 @@ jobs:
 
       - name: Upload Behat Faildump
         if: ${{ failure() && steps.behat.outcome == 'failure' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Behat Faildump (${{ join(matrix.*, ', ') }})
           path: ${{ github.workspace }}/moodledata/behat_dump

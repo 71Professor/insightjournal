@@ -15,11 +15,12 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * End-to-end integration tests for the course-wide report's CSV export
- * (R4-09): coursereport_provider::csv_rows() feeding a real
- * csv_export_writer, with the resulting bytes parsed back and checked -
- * the same real production code coursereport.php itself calls, not a
- * reimplementation of its chunking/authorization logic.
+ * Integration tests for the course-wide report's CSV export (R4-09):
+ * coursereport_provider::csv_rows() feeding a real csv_export_writer, with
+ * the resulting bytes parsed back and checked - the same real production
+ * code coursereport.php itself calls, not a reimplementation of its
+ * chunking/authorization logic. Not a browser-driven end-to-end test:
+ * csv_export_writer::download_file() calls exit(), which rules that out.
  *
  * @package    mod_insightjournal
  * @copyright  2026 Michael Kohl
@@ -356,5 +357,61 @@ final class coursereport_csv_export_test extends advanced_testcase {
         foreach ($students as $student) {
             $this->assertContains((int) $student->id, $seenuserids);
         }
+    }
+
+    /**
+     * R5-09: a chunksize of 0 must be rejected outright, not silently
+     * accepted. get_enrolled_users()'s $limitnum treats 0 as "no limit," so
+     * a 0 chunksize would fetch every participant in one unbounded chunk
+     * while $offset never advances (it only ever grows by $chunksize) -
+     * the loop's own "count($chunk) < $chunksize" exit condition can then
+     * never be true either (a count can't be negative), so the same
+     * unbounded chunk would be re-fetched forever instead of terminating.
+     */
+    public function test_csv_rows_rejects_zero_chunksize(): void {
+        $diary = $this->getDataGenerator()->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+
+        $this->expectException(\coding_exception::class);
+        // Generator bodies don't run until iterated - force that here.
+        iterator_to_array($provider->csv_rows([], true, 0));
+    }
+
+    /**
+     * R5-09: a negative chunksize must be rejected outright too.
+     */
+    public function test_csv_rows_rejects_negative_chunksize(): void {
+        $diary = $this->getDataGenerator()->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+
+        $this->expectException(\coding_exception::class);
+        iterator_to_array($provider->csv_rows([], true, -5));
+    }
+
+    /**
+     * R5-09: a diary id in $diaries that isn't one of the provider's own
+     * activities must fail with a clear exception, not an undefined-array-key
+     * warning from the internal $row['cells'][$diary->id]/$this->activities[$diary->id]
+     * lookups - a caller passing $diaries out of sync with the activities the
+     * provider was constructed with is a programming error, not something to
+     * silently tolerate or crash obscurely on.
+     */
+    public function test_csv_rows_rejects_diary_not_among_activities(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $diary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $otherdiary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $this->setUser($teacher);
+
+        // Provider only knows about $diary, not $otherdiary.
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+        $diaries = $DB->get_records_list('insightjournal', 'id', [$otherdiary->id], 'id ASC');
+
+        $this->expectException(\coding_exception::class);
+        iterator_to_array($provider->csv_rows($diaries, true, 500));
     }
 }

@@ -165,7 +165,7 @@ final class locallib_test extends advanced_testcase {
      * Builds a minimal entry stdClass with a given trainer visibility.
      *
      * @param int $visibility One of the INSIGHTJOURNAL_VISIBILITY_* constants.
-     * @return stdClass
+     * @return \stdClass
      */
     protected function make_entry(int $visibility = INSIGHTJOURNAL_VISIBILITY_VISIBLE): \stdClass {
         return (object) ['visibility' => $visibility];
@@ -243,6 +243,21 @@ final class locallib_test extends advanced_testcase {
     /**
      * insightjournal_visible_char_count() matches the shared PHP/JS fixture
      * table exactly, row for row.
+     *
+     * Deliberately kept as the legacy docblock-style provider annotation
+     * below, not migrated to the PHP attribute form (R5-11): unlike the
+     * coverage attributes (coverage-only metadata, harmless if ignored -
+     * safely migrated elsewhere in this codebase), the provider attribute
+     * controls actual argument binding and silently no-ops on PHPUnit 9.6,
+     * which this project's CI matrix still runs (MOODLE_405_STABLE) - the
+     * test would receive 0 arguments instead of 2 and fail with
+     * ArgumentCountError there. Confirmed the hard way in R4-01; PHPUnit
+     * only reports this docblock form as deprecated (removed in PHPUnit 12),
+     * not yet actually broken, so keeping it is the correct trade-off until
+     * MOODLE_405_STABLE/PHPUnit 9.6 leaves the support matrix. (Deliberately
+     * not spelling out the literal tag name in this comment - PHPUnit's
+     * legacy docblock parser is naive enough to match it as a second,
+     * bogus provider reference even inside plain prose.)
      *
      * @dataProvider visible_char_count_fixture_provider
      * @param string $html
