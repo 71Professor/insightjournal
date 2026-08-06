@@ -89,7 +89,7 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         // escaping into this markup at all.
         $mform->addElement(
             'html',
-            '<div class="form-group row"><div class="col-md-3"></div><div class="col-md-9">'
+            '<div class="mb-3 row"><div class="col-md-3"></div><div class="col-md-9">'
                 . '<input type="color" id="id_promptcolor_picker" '
                 . 'style="width: 2.5rem; height: 2.1rem; padding: 0.1rem;" '
                 . 'aria-label="' . s(get_string('promptcolorpicker', 'mod_insightjournal')) . '">'
