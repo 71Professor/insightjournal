@@ -72,6 +72,8 @@ Clone the repository into `mod/insightjournal/` and visit
 5. Optionally enable **autosave** (response is saved after a pause in typing).
 6. Optionally set a **minimum character count** as an activity completion condition,
    and/or a **maximum character count**, enforced with a live counter as learners type.
+   The minimum only gates completion — learners can always save a shorter response,
+   it simply will not count as complete yet.
 7. In the **Activity completion** settings, keep *Learner must save an Insight Journal
    response* enabled when saved responses should mark the activity complete.
 8. After the course runs, open the **activity report** to review entries for one task/question,

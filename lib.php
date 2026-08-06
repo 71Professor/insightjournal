@@ -59,12 +59,17 @@ function insightjournal_supports($feature) {
 /**
  * Normalise a stored promptcolor value to a lowercase hex code with a leading hash.
  *
+ * Uses the same validity pattern as {@see insightjournal_prompt_style()}, so a value
+ * that fails that pattern is rejected here too instead of being written to the
+ * database - this guards every write path (form submission, restore, programmatic
+ * calls), not just {@see moodleform::validation()}, which only covers the form.
+ *
  * @param string $promptcolor Raw colour value, as submitted by the form.
- * @return string Normalised colour (e.g. "#ffcc00"), or '' if blank.
+ * @return string Normalised colour (e.g. "#ffcc00"), or '' if blank or invalid.
  */
 function insightjournal_normalise_promptcolor(string $promptcolor): string {
     $promptcolor = trim($promptcolor);
-    if ($promptcolor === '') {
+    if ($promptcolor === '' || !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $promptcolor)) {
         return '';
     }
     if ($promptcolor[0] !== '#') {
@@ -174,7 +179,7 @@ function insightjournal_extend_settings_navigation(settings_navigation $settings
     global $PAGE;
     if (has_capability('mod/insightjournal:viewall', $PAGE->cm->context)) {
         $url = new moodle_url('/mod/insightjournal/report.php', ['id' => $PAGE->cm->id]);
-        $node->add(get_string('report', 'insightjournal'), $url, navigation_node::TYPE_SETTING);
+        $node->add(get_string('report', 'mod_insightjournal'), $url, navigation_node::TYPE_SETTING);
     }
 }
 
@@ -186,7 +191,7 @@ function insightjournal_extend_settings_navigation(settings_navigation $settings
  */
 function insightjournal_get_completion_active_rule_descriptions($cm) {
     if (!empty($cm->customdata['customcompletionrules']['completionentries'])) {
-        return [get_string('completionentries', 'insightjournal')];
+        return [get_string('completionentries', 'mod_insightjournal')];
     }
     return [];
 }
@@ -201,7 +206,7 @@ function insightjournal_reset_userdata_form_definition(&$mform) {
     $mform->addElement(
         'checkbox',
         'reset_insightjournal_entries',
-        get_string('deleteallentries', 'insightjournal')
+        get_string('deleteallentries', 'mod_insightjournal')
     );
 }
 
@@ -234,8 +239,8 @@ function insightjournal_reset_course_userdata($data) {
             }
         }
         $status[] = [
-            'component' => get_string('modulename', 'insightjournal'),
-            'item'      => get_string('deleteallentries', 'insightjournal'),
+            'component' => get_string('modulename', 'mod_insightjournal'),
+            'item'      => get_string('deleteallentries', 'mod_insightjournal'),
             'error'     => false,
         ];
     }

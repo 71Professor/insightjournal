@@ -169,6 +169,45 @@ final class lib_test extends advanced_testcase {
     }
 
     /**
+     * An invalid promptcolor is normalised to an empty string on instance creation,
+     * rather than being stored verbatim.
+     */
+    public function test_add_instance_rejects_invalid_promptcolor(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $journal = $this->getDataGenerator()->create_module('insightjournal', [
+            'course' => $course->id,
+            'promptcolor' => 'not-a-color',
+        ]);
+
+        $stored = $DB->get_record('insightjournal', ['id' => $journal->id]);
+        $this->assertSame('', $stored->promptcolor);
+    }
+
+    /**
+     * An invalid promptcolor is normalised to an empty string on instance update,
+     * rather than being stored verbatim.
+     */
+    public function test_update_instance_rejects_invalid_promptcolor(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $journal = $this->getDataGenerator()->create_module('insightjournal', ['course' => $course->id]);
+
+        $update = (object) [
+            'instance' => $journal->id,
+            'promptcolor' => 'not-a-color',
+        ];
+        insightjournal_update_instance($update);
+
+        $stored = $DB->get_record('insightjournal', ['id' => $journal->id]);
+        $this->assertSame('', $stored->promptcolor);
+    }
+
+    /**
      * The active rule description is returned only when the rule is enabled.
      */
     public function test_get_completion_active_rule_descriptions(): void {

@@ -55,36 +55,36 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         // core itself elsewhere passes - a string label; this is the documented, intended use,
         // a core docblock bug rather than a real type error.
         // @phpstan-ignore-next-line argument.type (documented false positive).
-        $this->standard_intro_elements(get_string('intro', 'insightjournal'));
+        $this->standard_intro_elements(get_string('intro', 'mod_insightjournal'));
 
         $mform->addElement(
             'editor',
             'prompttext_editor',
-            get_string('prompttext', 'insightjournal'),
+            get_string('prompttext', 'mod_insightjournal'),
             null,
             ['maxfiles' => 0, 'trusttext' => false, 'subdirs' => false]
         );
         $mform->setType('prompttext_editor', PARAM_RAW);
         $mform->addRule('prompttext_editor', null, 'required', null, 'client');
-        $mform->addHelpButton('prompttext_editor', 'prompttext', 'insightjournal');
+        $mform->addHelpButton('prompttext_editor', 'prompttext', 'mod_insightjournal');
 
-        $mform->addElement('text', 'promptcolor', get_string('promptcolor', 'insightjournal'), ['size' => 10]);
+        $mform->addElement('text', 'promptcolor', get_string('promptcolor', 'mod_insightjournal'), ['size' => 10]);
         $mform->setType('promptcolor', PARAM_RAW);
-        $mform->addHelpButton('promptcolor', 'promptcolor', 'insightjournal');
+        $mform->addHelpButton('promptcolor', 'promptcolor', 'mod_insightjournal');
 
-        $mform->addElement('advcheckbox', 'autosave', get_string('autosave', 'insightjournal'));
+        $mform->addElement('advcheckbox', 'autosave', get_string('autosave', 'mod_insightjournal'));
         $mform->setDefault('autosave', 1);
-        $mform->addHelpButton('autosave', 'autosave', 'insightjournal');
+        $mform->addHelpButton('autosave', 'autosave', 'mod_insightjournal');
 
-        $mform->addElement('text', 'minchars', get_string('minchars', 'insightjournal'), ['size' => 6]);
+        $mform->addElement('text', 'minchars', get_string('minchars', 'mod_insightjournal'), ['size' => 6]);
         $mform->setType('minchars', PARAM_INT);
         $mform->setDefault('minchars', 0);
-        $mform->addHelpButton('minchars', 'minchars', 'insightjournal');
+        $mform->addHelpButton('minchars', 'minchars', 'mod_insightjournal');
 
-        $mform->addElement('text', 'maxchars', get_string('maxchars', 'insightjournal'), ['size' => 6]);
+        $mform->addElement('text', 'maxchars', get_string('maxchars', 'mod_insightjournal'), ['size' => 6]);
         $mform->setType('maxchars', PARAM_INT);
         $mform->setDefault('maxchars', 0);
-        $mform->addHelpButton('maxchars', 'maxchars', 'insightjournal');
+        $mform->addHelpButton('maxchars', 'maxchars', 'mod_insightjournal');
 
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
@@ -108,18 +108,18 @@ class mod_insightjournal_mod_form extends moodleform_mod {
             $errors['maxchars'] = get_string('err_numeric', 'form');
         }
         if ($maxchars > 0 && $minchars > $maxchars) {
-            $errors['minchars'] = get_string('err_mingtmax', 'insightjournal');
+            $errors['minchars'] = get_string('err_mingtmax', 'mod_insightjournal');
         }
         $promptcolor = trim((string) ($data['promptcolor'] ?? ''));
         if ($promptcolor !== '' && !preg_match('/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/', $promptcolor)) {
-            $errors['promptcolor'] = get_string('err_invalidcolor', 'insightjournal');
+            $errors['promptcolor'] = get_string('err_invalidcolor', 'mod_insightjournal');
         }
         // Client-side 'required' rule on prompttext_editor is not enough on its own -
         // it can be bypassed by posting directly to this form, and an editor can also
         // serialise an empty entry as markup like "<p></p>" rather than "".
         $prompttext = $data['prompttext_editor']['text'] ?? '';
         if (insightjournal_html_to_text($prompttext) === '') {
-            $errors['prompttext_editor'] = get_string('err_emptyprompt', 'insightjournal');
+            $errors['prompttext_editor'] = get_string('err_emptyprompt', 'mod_insightjournal');
         }
         return $errors;
     }
@@ -151,8 +151,8 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $mform->addElement(
             'checkbox',
             $name,
-            get_string('completionentriesgroup', 'insightjournal'),
-            get_string('completionentries', 'insightjournal')
+            get_string('completionentriesgroup', 'mod_insightjournal'),
+            get_string('completionentries', 'mod_insightjournal')
         );
         $mform->setDefault($name, 1);
 

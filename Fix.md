@@ -11,13 +11,13 @@ Diese Datei führt zwei Reviews zu einer einzigen Umsetzungsliste zusammen:
 
 Es sind **keine offenen P0-Blocker** vorhanden. Eine weitere kleine Beta ist ohne zusätzlichen Fix vertretbar. Die Liste unten definiert den Weg zu **Stable**.
 
-> ### Stand zum Fortsetzen (05.08.2026)
+> ### Stand zum Fortsetzen (06.08.2026)
 > 
-> **P1 (Stable-Gate) ist vollständig abgeschlossen**: R4-01, R4-02, R4-03, R4-04, R4-05, R4-07, R4-09 und CR-01 sind alle ✅ erledigt und liegen auf `main` @ `ba4ecc6`, **gepusht nach `origin/main`** (verifiziert per `git fetch` + `git rev-parse main origin/main` → identisch; `main` läuft weiter unter `0.8.0-beta`, es wurde seither **kein neuer Tag/Release** geschnitten).
+> **P1 (Stable-Gate) ist vollständig abgeschlossen**: R4-01, R4-02, R4-03, R4-04, R4-05, R4-07, R4-09 und CR-01 sind alle ✅ erledigt und lagen bereits auf `origin/main` @ `ba4ecc6` (Stand 05.08.2026).
 > 
-> **Nächster Schritt laut „Empfohlene Umsetzungsreihenfolge" unten:** Punkt 8, der **P2-Sammel-PR** – CR-02 (`promptcolor`-Normalisierung härten), CR-03 (`get_string`-Komponente vereinheitlichen), CR-04 (`minchars`-Doku). Danach Punkt 9 (R4-06 Release-Härtung / R4-08 Autosave-Editorvertrag / R4-10 Doku-Workflow-Hygiene), zuletzt Punkt 10 (P3-Backlog CR-05..08, nach Bedarf).
+> **Punkt 8, der P2-Sammel-PR (CR-02/CR-03/CR-04), ist jetzt ebenfalls ✅ erledigt** (diese Session, 06.08.2026) – **im Arbeitsbaum, noch nicht committet/gepusht** (der Nutzer committet/pusht in diesem Projekt üblicherweise selbst; vor dem Weitermachen `git status`/`git log -5` prüfen statt blind von diesem Stand auszugehen). Alle drei Punkte einzeln per TDD/gezieltem Grep umgesetzt, vollständig verifiziert (PHPUnit 227/227, phpcs `moodle`+`moodle-extra` mit `--warning-severity=1` sauber, PHPStan 0 Fehler, Grunt/ESLint sauber). Details je Punkt oben unter CR-02/CR-03/CR-04.
 > 
-> Vor dem Weitermachen: `git status`/`git log -5` prüfen, ob der Nutzer zwischenzeitlich selbst weitere Commits/Pushes gemacht hat (in diesem Projekt schon mehrfach beobachtet) – nicht blind von diesem Stand ausgehen, neu verifizieren.
+> **Nächster Schritt laut „Empfohlene Umsetzungsreihenfolge" unten:** Punkt 9 (R4-06 Release nach Checkout erneut verifizieren / R4-08 Autosave-Editorvertrag klären / R4-10 Doku-Workflow-Hygiene), zuletzt Punkt 10 (P3-Backlog CR-05..08, nach Bedarf).
 
 ---
 
@@ -160,7 +160,7 @@ Behat- oder geeigneten Integrationstest für Kurs-CSV ergänzen: zwei Groupings,
 CHANGELOG-`[Unreleased]` auf `v0.8.0-beta...HEAD` korrigieren, veralteten `reload()`-Kommentar anpassen und unnötige übersprungene Release-Läufe bzw. doppelte PR-Push-CI reduzieren.
 **Abnahme:** Links und Kommentare entsprechen dem Code; normale main-/PR-Läufe erzeugen keine irreführende Release-Historie.
 
-### CR-02 · `promptcolor`-Normalisierung härten  `[CR]`
+### CR-02 · `promptcolor`-Normalisierung härten  `[CR]` — ✅ Erledigt (2026-08-06)
 
 `insightjournal_normalise_promptcolor` prependet nur `#` und lowercased, ohne zu validieren – die Gültigkeitsprüfung liegt allein in `mod_form::validation`. Dieselbe Regex wie in `insightjournal_prompt_style` in die Normalisierung ziehen; ungültige Werte auf `''` abbilden.
 **Warum:** Bei programmatischem Aufruf/Restore könnte ungültiger Inhalt in das `CHAR(7)`-Feld gelangen (DB-Fehler/Truncation).
@@ -168,19 +168,28 @@ CHANGELOG-`[Unreleased]` auf `v0.8.0-beta...HEAD` korrigieren, veralteten `reloa
 
 > Nur im Erstreview.
 
-### CR-03 · `get_string`-Komponente vereinheitlichen  `[CR]`
+**Umsetzung:** Per TDD. Zwei neue Tests (`tests/lib_test.php::test_add_instance_rejects_invalid_promptcolor`/`test_update_instance_rejects_invalid_promptcolor`) zuerst rot verifiziert – und zwar nicht nur mit einer falschen Assertion, sondern mit einem echten `dml_write_exception` beim Insert/Update, weil `'not-a-color'` (mit vorangestelltem `#`) den `CHAR(7)`-Spaltentyp sprengt: genau das im Abnahmekriterium beschriebene Risiko, live reproduziert. `insightjournal_normalise_promptcolor()` in `lib.php` validiert jetzt vor dem Präfigieren/Lowercasing gegen dieselbe Regex wie `insightjournal_prompt_style()` (`/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/`) und gibt bei Nichterfüllung `''` zurück – guarded also jeden Schreibpfad (`insightjournal_add_instance()`/`insightjournal_update_instance()`), nicht nur den Formularpfad.
+**Verifiziert:** PHPUnit 227/227 (2 neue Tests, vorher 225), phpcs sauber (`moodle`+`moodle-extra`, `--warning-severity=1`), PHPStan 0 Fehler, Grunt/ESLint sauber (keine JS-Änderung).
+
+### CR-03 · `get_string`-Komponente vereinheitlichen  `[CR]` — ✅ Erledigt (2026-08-06)
 
 Gemischte Nutzung von `'insightjournal'` (31×) und `'mod_insightjournal'` (28×) auf den vollen Frankenstyle-Namen `mod_insightjournal` vereinheitlichen.
 **Abnahme:** Ein einziger Komponentenname im gesamten Code; Greps und spätere Reviews werden eindeutig.
 
 > Nur im Erstreview.
 
-### CR-04 · `minchars` als reines Completion-Gate dokumentieren  `[CR]`
+**Umsetzung:** Scope bewusst eng auf die String-API gehalten (`get_string()`/`addHelpButton()`, inkl. eines mehrzeiligen `get_string()`-Aufrufs in `view.php`, den ein erster zeilenbasierter `sed`-Durchlauf übersehen hatte – per gezieltem Nachfolge-Grep über mehrzeilige Aufrufe gefunden und einzeln nachgezogen) – 33 Fundstellen in 13 Dateien (10 Produktiv-, 3 Testdateien) von `'insightjournal'` auf `'mod_insightjournal'` umgestellt. Amd/JS nutzte bereits durchgängig `mod_insightjournal` (keine Änderung nötig). **Bewusst nicht angefasst**, weil es sich um eine andere Art von String handelt, nicht um eine get_string-Komponente: der Tabellenname `insightjournal` in `$DB->get_record()`/`get_coursemodule_from_id()`/`xmldb_table` etc., das `mod/insightjournal:*`-Capability-Präfix, sowie – am wichtigsten – die in `db/upgrade.php`/`tests/upgradelib_test.php` noch vorhandenen `get_config('insightjournal', ...)`/`set_config(..., 'insightjournal')`-Aufrufe für die längst entfernte `entriesvisibletoteacher`-Einstellung: dort steht der String für den tatsächlich historisch in der `config_plugins`-Tabelle gespeicherten Komponentennamen realer Bestandsinstallationen – ein Umstellen hätte die Migration für echte Upgrades stillschweigend gebrochen, kein Cleanup-Fall.
+**Verifiziert:** PHPUnit 227/227 (unverändert grün nach der Umstellung – Moodle löst beide Komponentenformen für die eigenen Strings eines Plugins identisch auf), phpcs sauber, PHPStan 0 Fehler, Grunt/ESLint sauber.
+
+### CR-04 · `minchars` als reines Completion-Gate dokumentieren  `[CR]` — ✅ Erledigt (2026-08-06)
 
 Im Hilfetext/README klarstellen, dass `minchars` nur den Abschluss steuert, das Speichern aber nicht blockiert.
 **Abnahme:** Trainer-Doku beschreibt das Verhalten explizit; keine offenen Support-Fragen dazu.
 
 > Nur im Erstreview.
+
+**Umsetzung:** Vier Stellen ergänzt, alle mit derselben Kernaussage: `lang/en/insightjournal.php`s/`lang/de/insightjournal.php`s `minchars_help`-String (an der Stelle, die Trainer beim Anlegen der Aktivität direkt am Formularfeld sehen – die naheliegendste Fundstelle), README.md (Abschnitt „Set up an activity"), und die deutsche Nutzerdokumentation (`docs/Reflexionstagebuch_Plugin_Dokumentation.md`, Glossar-Eintrag „Abschlussregel" sowie der Einrichtungs-Schritt-für-Schritt-Abschnitt). Reine Doku-Änderung, kein Code betroffen.
+**Verifiziert:** phpcs sauber (Sprachdateien sind PHP, mitgeprüft); README/deutsche Doku sind Markdown, kein Linter dafür in diesem Projekt.
 
 ---
 
@@ -206,7 +215,7 @@ Jede Änderung bleibt einzeln abnehmbar. Reihenfolge kombiniert die PR-Folge des
 5. ~~**R4-04** – Kursreport-Service~~ — ✅ erledigt (siehe oben) / ~~**R4-05** – Template-Test bereinigen~~ — ✅ erledigt (siehe oben, keine Codeänderung nötig)
 6. ~~**R4-07** – PHPStan-Baseline auf null~~ — ✅ erledigt (siehe oben)
 7. ~~**R4-09** – E2E-Export-Test~~ — ✅ erledigt (siehe oben)
-8. **P2-Sammel-PR** – CR-02 (promptcolor), CR-03 (get_string), CR-04 (Doku)
+8. ~~**P2-Sammel-PR** – CR-02 (promptcolor), CR-03 (get_string), CR-04 (Doku)~~ — ✅ erledigt (siehe oben)
 9. **R4-06 / R4-08 / R4-10** – Release-Härtung, Editorvertrag, Doku/Workflow
 10. **P3-Backlog** – CR-05 bis CR-08 nach Bedarf
 

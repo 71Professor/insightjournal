@@ -104,7 +104,7 @@ $records = $DB->get_records_sql(
 
 $PAGE->set_url('/mod/insightjournal/summary.php', ['courseid' => $courseid, 'userid' => $viewuserid]);
 $PAGE->set_context($coursecontext);
-$PAGE->set_title(get_string('mysummary', 'insightjournal'));
+$PAGE->set_title(get_string('mysummary', 'mod_insightjournal'));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->requires->js_call_amd('mod_insightjournal/summary', 'init');
 
@@ -132,7 +132,7 @@ foreach ($records as $record) {
 }
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('mysummaryfor', 'insightjournal', fullname($viewuser)));
+echo $OUTPUT->heading(get_string('mysummaryfor', 'mod_insightjournal', fullname($viewuser)));
 $templatecontext = [
     'backurl' => (new moodle_url('/course/view.php', ['id' => $courseid]))->out(false),
     'items' => $items,

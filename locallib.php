@@ -446,7 +446,7 @@ function insightjournal_coursereport_csv_row(
         fullname($user),
         $showemail ? ($user->email ?? '') : '',
         $private
-            ? get_string('entriesprivatenotice', 'insightjournal')
+            ? get_string('entriesprivatenotice', 'mod_insightjournal')
             : insightjournal_html_to_text($entry->response ?? ''),
         (!$private && $entry) ? userdate($entry->timemodified) : '',
     ];

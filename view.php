@@ -101,7 +101,7 @@ if ($canwrite) {
             $conflict = $result;
             $mform->force_expected_revision((int) $result['revision']);
         } else {
-            \core\notification::success(get_string('savedat', 'insightjournal', $result['timestr']));
+            \core\notification::success(get_string('savedat', 'mod_insightjournal', $result['timestr']));
             redirect(new moodle_url('/mod/insightjournal/view.php', ['id' => $id]));
         }
     } else {
@@ -141,7 +141,7 @@ $templatecontext = [
     'lastsaved' => $entry
         ? get_string(
             'lastsaved',
-            'insightjournal',
+            'mod_insightjournal',
             userdate($entry->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
         )
         : '',
@@ -151,7 +151,7 @@ $templatecontext = [
     'sectionurl' => (new moodle_url('/course/view.php', ['id' => $course->id, 'section' => $sectionnum]))->out(false),
     'canviewall' => $canviewall,
     'conflict' => (bool) $conflict,
-    'conflictmessage' => $conflict ? get_string('saveconflict', 'insightjournal') : '',
+    'conflictmessage' => $conflict ? get_string('saveconflict', 'mod_insightjournal') : '',
     'conflictcontent' => $conflict ? $conflict['responsehtml'] : '',
     'viewurl' => (new moodle_url('/mod/insightjournal/view.php', ['id' => $id]))->out(false),
 ];

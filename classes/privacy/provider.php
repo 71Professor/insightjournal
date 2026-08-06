@@ -116,7 +116,7 @@ class provider implements
                     'timemodified'   => \core_privacy\local\request\transform::datetime($entry->timemodified),
                 ];
                 \core_privacy\local\request\writer::with_context($context)->export_data(
-                    [get_string('pluginname', 'insightjournal')],
+                    [get_string('pluginname', 'mod_insightjournal')],
                     $data
                 );
             }

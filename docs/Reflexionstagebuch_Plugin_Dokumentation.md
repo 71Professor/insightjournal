@@ -20,7 +20,7 @@ Insight Journal eignet sich besonders für begleitetes Lernen, Kompetenzreflexio
 
 **Persönliche Zusammenfassung (`summary.php`)** – Lernende sehen alle ihre Antworten auf einer druckbaren Seite. Trainer/innen können die Zusammenfassung eines bestimmten Teilnehmenden aufrufen.
 
-**Abschlussregel** – Optional: Aktivität gilt erst als abgeschlossen, wenn die Antwort eine bestimmte Mindestzeichenzahl erreicht.
+**Abschlussregel** – Optional: Aktivität gilt erst als abgeschlossen, wenn die Antwort eine bestimmte Mindestzeichenzahl erreicht. Das Speichern selbst wird dadurch nie blockiert – auch eine kürzere Antwort wird gespeichert, zählt dann nur noch nicht als abgeschlossen.
 
 ---
 
@@ -100,7 +100,7 @@ E-Mail-Adresse der Teilnehmenden an.
 3. **Aufgabe / Frage** formulieren – das ist die Reflexionsfrage oder -aufgabe für die Lernenden.
 4. Optional: **Hintergrundfarbe für Aufgabe / Frage** als Hex-Code festlegen (z. B. `#ffcc00`), um Aufgabe/Frage überall dort, wo sie angezeigt wird, optisch von der Antwort der/des Lernenden abzuheben.
 5. Optional: **Automatisches Speichern** aktivieren (Antwort wird nach einer Tippause gespeichert, ohne dass Lernende auf „Speichern" klicken).
-6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird.
+6. Optional: **Mindestzeichenzahl für Abschluss** festlegen – die Aktivität gilt erst als abgeschlossen, wenn die Antwort diese Zeichenzahl erreicht – und/oder eine **maximale Zeichenzahl**, die während der Eingabe mit einem Live-Zähler durchgesetzt wird. Die Mindestzeichenzahl blockiert nur den Abschluss, nie das Speichern selbst – eine kürzere Antwort lässt sich jederzeit speichern.
 7. In den **Aktivitätsabschluss-Einstellungen** sicherstellen, dass „Lernende/r muss eine Insight-Journal-Antwort gespeichert haben" aktiviert ist (sofern Abschluss gewünscht).
 8. Nach dem Kurs: **Aktivitätsbericht** öffnen, um die freigegebenen Antworten zu sehen. **Kursbericht** für eine kursweite Fortschrittsübersicht. Jede/r Lernende entscheidet selbst für den eigenen Eintrag, ob Trainer/innen ihn sehen dürfen – siehe Abschnitt 7 „Datenschutz".
 

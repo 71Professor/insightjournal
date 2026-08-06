@@ -59,6 +59,22 @@ Versions map to the `$plugin->release` value in `version.php`.
   reports ~300 findings, almost all unresolvable PHPUnit/Moodle
   test-framework noise, which is exactly why it's non-blocking rather than
   baselined. No behavior change.
+- **Every `get_string()`/`addHelpButton()` call now uses the full
+  `mod_insightjournal` frankenstyle component name**, addressing the CR-03
+  review finding. The codebase previously mixed the short `insightjournal`
+  form (33 call sites) with the full `mod_insightjournal` form (already
+  used elsewhere, e.g. throughout `amd/src/autosave.js`); Moodle accepts
+  both interchangeably for a module's own strings, so this is purely a
+  consistency cleanup, not a behavior change. Unrelated uses of the bare
+  `insightjournal` string (the DB table name, the `mod/insightjournal:*`
+  capability prefix, the retired site setting's stored config key read by
+  the upgrade migration) were deliberately left untouched.
+- **The `minchars` help text and trainer docs now say explicitly that it
+  only gates completion, never saving**, addressing the CR-04 review
+  finding. A learner can always save a shorter response; it simply will
+  not count as complete until it reaches the configured length. No
+  behavior change - documentation only (form help text, README, German
+  user guide).
 
 ### Fixed
 
@@ -81,6 +97,17 @@ Versions map to the `$plugin->release` value in `version.php`.
   table exercised by both PHPUnit and a real-browser Behat test, rather
   than only asserted in a comment. Interior whitespace/NBSP next to real
   text is unaffected. `DOMDocument` parsing also now sets `LIBXML_NONET`.
+- **An invalid `promptcolor` value can no longer reach the database**,
+  addressing the CR-02 review finding.
+  `insightjournal_normalise_promptcolor()`
+  only prepended `#` and lowercased its input, relying entirely on
+  `mod_form::validation()` to reject bad values - a programmatic caller
+  (e.g. restore, or a future admin script) bypassing the form could send
+  something like `not-a-color` straight through to the `CHAR(7)` column,
+  overflowing it and throwing a `dml_write_exception` instead of failing
+  gracefully. The normaliser now applies the same regex as
+  `insightjournal_prompt_style()` and maps anything that fails it to `''`,
+  so every write path is guarded, not just the form.
 
 ### Testing
 

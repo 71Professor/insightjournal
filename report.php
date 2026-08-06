@@ -78,11 +78,11 @@ if ($table->is_downloading()) {
 
 $PAGE->set_url('/mod/insightjournal/report.php', ['id' => $id, 'search' => $search]);
 $PAGE->set_context($context);
-$PAGE->set_title(get_string('report', 'insightjournal'));
+$PAGE->set_title(get_string('report', 'mod_insightjournal'));
 $PAGE->set_heading(format_string($course->fullname));
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('reportfor', 'insightjournal', format_string($diary->name)));
+echo $OUTPUT->heading(get_string('reportfor', 'mod_insightjournal', format_string($diary->name)));
 echo $OUTPUT->render_from_template('mod_insightjournal/report', [
     'backurl' => (new moodle_url('/mod/insightjournal/view.php', ['id' => $cm->id]))->out(false),
     'downloadurl' => (new moodle_url(

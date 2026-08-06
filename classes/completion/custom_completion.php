@@ -91,7 +91,7 @@ class custom_completion extends activity_custom_completion {
      */
     public function get_custom_rule_descriptions(): array {
         return [
-            'completionentries' => get_string('completionentries', 'insightjournal'),
+            'completionentries' => get_string('completionentries', 'mod_insightjournal'),
         ];
     }
 

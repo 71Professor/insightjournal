@@ -97,7 +97,7 @@ $participants = $provider->participants($page * $perpage, $perpage);
 
 $PAGE->set_url('/mod/insightjournal/coursereport.php', ['courseid' => $course->id, 'page' => $page, 'perpage' => $perpage]);
 $PAGE->set_context($coursecontext);
-$PAGE->set_title(get_string('coursereport', 'insightjournal'));
+$PAGE->set_title(get_string('coursereport', 'mod_insightjournal'));
 $PAGE->set_heading(format_string($course->fullname));
 
 $activityheaders = [];
@@ -122,7 +122,7 @@ foreach ($provider->rows_for($participants) as $userid => $row) {
         $cells[] = [
             'private' => false,
             'completed' => $cell['completed'],
-            'status' => get_string($cell['completed'] ? 'submitted' : 'notsubmitted', 'insightjournal'),
+            'status' => get_string($cell['completed'] ? 'submitted' : 'notsubmitted', 'mod_insightjournal'),
             'timemodified' => $cell['completed']
                 ? userdate($cell['entry']->timemodified, get_string('strftimedatetimeshort', 'langconfig'))
                 : '',
@@ -147,7 +147,7 @@ foreach ($provider->rows_for($participants) as $userid => $row) {
 }
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('coursereport', 'insightjournal'));
+echo $OUTPUT->heading(get_string('coursereport', 'mod_insightjournal'));
 echo $OUTPUT->render_from_template('mod_insightjournal/coursereport', [
     'backurl' => (new moodle_url('/course/view.php', ['id' => $course->id]))->out(false),
     'downloadurl' => (new moodle_url(

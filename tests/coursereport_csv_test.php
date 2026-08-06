@@ -138,7 +138,7 @@ final class coursereport_csv_test extends advanced_testcase {
             true
         );
 
-        $this->assertSame(get_string('entriesprivatenotice', 'insightjournal'), $row[7]);
+        $this->assertSame(get_string('entriesprivatenotice', 'mod_insightjournal'), $row[7]);
         $this->assertSame('', $row[8]);
     }
 

@@ -150,7 +150,7 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         ]);
 
         $this->export_context_data_for_user((int) $this->user1->id, $this->context, 'mod_insightjournal');
-        $data = writer::with_context($this->context)->get_data([get_string('pluginname', 'insightjournal')]);
+        $data = writer::with_context($this->context)->get_data([get_string('pluginname', 'mod_insightjournal')]);
 
         $this->assertSame((int) $entry->revision, $data->revision);
     }

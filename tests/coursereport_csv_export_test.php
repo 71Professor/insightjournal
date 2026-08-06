@@ -209,7 +209,7 @@ final class coursereport_csv_export_test extends advanced_testcase {
         // teacher may see that it exists), but the response column is the
         // privacy notice, never the real text.
         $privaterow = $this->find_row($rows, (int) $studentaprivate->id);
-        $this->assertSame(get_string('entriesprivatenotice', 'insightjournal'), $privaterow[7]);
+        $this->assertSame(get_string('entriesprivatenotice', 'mod_insightjournal'), $privaterow[7]);
         $this->assertStringNotContainsString('secret', $privaterow[7]);
 
         // Group B's student never appears at all - a different grouping the

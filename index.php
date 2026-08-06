@@ -31,11 +31,11 @@ require_login($course);
 $context = context_course::instance($course->id);
 
 $PAGE->set_url('/mod/insightjournal/index.php', ['id' => $id]);
-$PAGE->set_title(get_string('modulenameplural', 'insightjournal'));
+$PAGE->set_title(get_string('modulenameplural', 'mod_insightjournal'));
 $PAGE->set_heading(format_string($course->fullname));
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('modulenameplural', 'insightjournal'));
+echo $OUTPUT->heading(get_string('modulenameplural', 'mod_insightjournal'));
 
 $modinfo = get_fast_modinfo($course);
 $items = [];
