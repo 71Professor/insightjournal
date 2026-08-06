@@ -39,6 +39,7 @@
     * data-insightjournal-private
     * data-insightjournal-save
     * data-insightjournal-status
+    * data-insightjournal-wordcounter
     * data-insightjournal-conflict-banner
     * data-insightjournal-conflict-message
     * data-insightjournal-conflict-content
@@ -128,7 +129,8 @@
                     {{{entryformhtml}}}
                     <div class="d-flex align-items-center gap-2 mt-2">
                         <span data-insightjournal-status role="status" aria-live="polite">{{lastsaved}}</span>
-                        {{#maxchars}}<span data-insightjournal-charcounter class="small text-muted ms-auto" aria-live="polite"></span>{{/maxchars}}
+                        <span data-insightjournal-wordcounter class="small text-muted ms-auto" aria-live="polite"></span>
+                        {{#maxchars}}<span data-insightjournal-charcounter class="small text-muted" aria-live="polite"></span>{{/maxchars}}
                     </div>
                     {{#minchars}}<p id="insightjournal-minchars-note" class="small text-muted mt-2">{{#str}}mincharsnote, mod_insightjournal, {{minchars}}{{/str}}</p>{{/minchars}}
                 </div>

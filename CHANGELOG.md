@@ -108,6 +108,36 @@ Versions map to the `$plugin->release` value in `version.php`.
   the tag. As a side effect this also cuts down on the release workflow
   firing (and immediately no-op-skipping) for every redundant CI
   completion.
+- **The response poll's `setInterval` is now stopped once a save conflict
+  occurs**, addressing the CR-05 review finding. Previously it kept
+  ticking every second for as long as the tab stayed open after a
+  conflict, even though every tick from then on was a guaranteed no-op
+  (recovery requires a full page reload via the conflict banner). No
+  user-visible behavior change.
+- **The autosave debounce (3000ms) and poll interval (1000ms) in
+  `amd/src/autosave.js` are now named constants** at the top of the
+  module, addressing the CR-06 review finding, instead of bare numeric
+  literals at their two use sites.
+
+### Added
+
+- **A native colour picker next to the prompt colour hex field on the
+  activity settings form**, addressing the CR-07 review finding, kept in
+  sync with the hex text field by a new small `mod_insightjournal/promptcolor`
+  AMD module: picking a colour fills the hex field, typing a valid hex
+  updates the picker. The picker is never itself submitted (no `name`
+  attribute) and a browser without colour-input support - or JS disabled
+  entirely - simply shows the hex text field alone, unchanged.
+- **A live word count next to the character counter** while writing a
+  response, addressing the CR-08 review finding - purely informational,
+  shown regardless of whether a maximum character limit is configured
+  (unlike the character counter, which only appears when one is set). The
+  count correctly treats a `<br>` or paragraph boundary as a word
+  separator (e.g. a Shift+Enter line break) rather than merging the
+  adjacent words together - deliberately not reusing the character
+  counter's own HTML-to-text extraction, which collapses such boundaries
+  to nothing as an accepted, tested PHP/JS parity trade-off that a word
+  count has no reason to inherit.
 
 ### Fixed
 

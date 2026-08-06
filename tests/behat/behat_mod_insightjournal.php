@@ -177,4 +177,42 @@ class behat_mod_insightjournal extends behat_base {
             }
         }
     }
+
+    /**
+     * Evaluates the JavaScript module's wordCount() against a raw HTML
+     * string in the real browser driving this scenario - proves the
+     * <br>/paragraph block-boundary handling (deliberately different from
+     * visibleCharCount()'s PHP-parity trade-off, see the comment on
+     * htmlToSpacedText() in amd/src/autosave.js) against the actual
+     * DOM/text-extraction behavior, not just asserted in a comment.
+     *
+     * @Then /^the word count for "((?:[^"]|\\")*)" should be "(\d+)"$/
+     * @param string $html
+     * @param string $expectedcount
+     */
+    public function the_word_count_for_should_be($html, $expectedcount) {
+        $session = $this->getSession();
+        $encodedhtml = json_encode($html, JSON_THROW_ON_ERROR);
+        $session->executeScript(<<<JS
+            window.__ijWordCountResult = undefined;
+            require(['mod_insightjournal/autosave'], function(autosave) {
+                window.__ijWordCountResult = autosave.wordCount({$encodedhtml});
+            });
+            JS
+        );
+        $session->wait(self::get_timeout() * 1000, 'window.__ijWordCountResult !== undefined');
+        $actual = $session->evaluateScript('return window.__ijWordCountResult;');
+
+        if ((int) $actual !== (int) $expectedcount) {
+            throw new \Behat\Mink\Exception\ExpectationException(
+                sprintf(
+                    'Word count for %s: expected %s, got %s',
+                    $html,
+                    $expectedcount,
+                    var_export($actual, true)
+                ),
+                $session
+            );
+        }
+    }
 }

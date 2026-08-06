@@ -17,9 +17,11 @@ Es sind **keine offenen P0-Blocker** vorhanden. Eine weitere kleine Beta ist ohn
 > 
 > **Punkt 8, der P2-Sammel-PR (CR-02/CR-03/CR-04), wurde in derselben Session (06.08.2026) fertiggestellt, vom Nutzer selbst committet (`8a63d5f`) und nach einer unabhängigen Subagent-Codereview (Verdict: Ready to merge, keine Critical/Important Findings) inklusive zweier Minor-Doku-Nachbesserungen gepusht (`a009e4b`, auf `origin/main`)**.
 > 
-> **Punkt 9 (R4-06/R4-08/R4-10) ist jetzt ebenfalls ✅ erledigt** (diese Session, 06.08.2026) – **im Arbeitsbaum, noch nicht committet/gepusht** (der Nutzer committet/pusht in diesem Projekt üblicherweise selbst; vor dem Weitermachen `git status`/`git log -5` prüfen statt blind von diesem Stand auszugehen). Vollständig verifiziert: PHPUnit 227/227, phpcs sauber, PHPStan 0 Fehler, Grunt/ESLint sauber, volle Behat-Suite 21/21 (339 Steps, wegen R4-08s `autosave.js`-Änderung erneut komplett gelaufen). Details je Punkt oben unter R4-06/R4-08/R4-10.
+> **Punkt 9 (R4-06/R4-08/R4-10) wurde in derselben Session fertiggestellt und vom Nutzer selbst committet (`f2d0ef8` „r4 fixes")**, nach einer unabhängigen Subagent-Codereview (Verdict: Ready to merge, keine Critical/Important Findings – u. a. gegen die echte GitHub-API für die R4-06-SHA-Pins geprüft).
 > 
-> **Nächster Schritt laut „Empfohlene Umsetzungsreihenfolge" unten:** Punkt 10, der P3-Backlog (CR-05 Autosave-Poll-Cleanup, CR-06 Magic Numbers im JS, CR-07 Farbwahl-UX, CR-08 Wortzählung) – alles P3/Politur, nach Bedarf statt zwingend in Reihenfolge.
+> **Punkt 10, der komplette P3-Backlog (CR-05 bis CR-08), ist jetzt ebenfalls ✅ erledigt** (diese Session, 06.08.2026) – **im Arbeitsbaum, noch nicht committet/gepusht**. CR-07/CR-08 hatten beide echte Umfangs-Alternativen, die per `AskUserQuestion` mit dem Nutzer geklärt wurden, bevor implementiert wurde. Eine unabhängige Subagent-Codereview über den kompletten Diff fand einen echten Bug in CR-08 (`wordCount()` verschmolz Wörter über `<br>`/Absatzgrenzen hinweg – erbte ungewollt einen für die Zeichenzählung bewusst akzeptierten, aber für Wortzählung nicht zutreffenden Kompromiss) – behoben, mit eigenem Behat-Grenzfall-Test + Mutationsprobe, die den ursprünglichen Bug exakt reproduziert. Details je Punkt oben unter CR-05/CR-06/CR-07/CR-08. Vollständig verifiziert: PHPUnit 227/227, phpcs sauber, PHPStan 0 Fehler, Grunt/ESLint sauber, volle Behat-Suite 24/24 (365 Steps).
+> 
+> **Damit ist die gesamte in Fix.md verzeichnete Umsetzungsreihenfolge (Punkte 1–10) erledigt.** Für eine nächste Session: `git status`/`git log -5` prüfen (der Nutzer committet/pusht in diesem Projekt üblicherweise selbst, oft mid-session) statt blind von diesem Stand auszugehen; danach ggf. neue Findings/Reviews von vorn aufnehmen, da der bestehende Backlog vollständig abgearbeitet ist.
 
 ---
 
@@ -206,12 +208,49 @@ Im Hilfetext/README klarstellen, dass `minchars` nur den Abschluss steuert, das 
 
 ## P3 – Politur / Optional
 
-| ID        | Thema                 | Quelle | Änderung                                                                                                                     |
-| --------- | --------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| **CR-05** | Autosave-Poll-Cleanup | `[CR]` | `setInterval`-ID speichern und via `clearInterval` bei Konflikt/Teardown stoppen (aktuell läuft die 1-s-Schleife dauerhaft). |
-| **CR-06** | Magic Numbers im JS   | `[CR]` | 3000 ms Debounce und 1000 ms Poll-Intervall als benannte Konstanten am Modulkopf.                                            |
-| **CR-07** | Farbwahl-UX           | `[CR]` | Vorschaufeld oder `type="color"`-Fallback neben dem Hex-Textfeld für Trainer.                                                |
-| **CR-08** | Wortzählung           | `[CR]` | Optionale Wortzählung als Alternative zu Zeichen für Reflexionstexte.                                                        |
+Alle vier Punkte ✅ erledigt (2026-08-06). Umfang je Punkt per `AskUserQuestion` mit dem Nutzer abgestimmt, bevor implementiert wurde (CR-07/CR-08 hatten beide echte Umfangs-Alternativen, die der ursprüngliche Befund offen ließ).
+
+### CR-05 · Autosave-Poll-Cleanup  `[CR]` — ✅ Erledigt (2026-08-06)
+
+`setInterval`-ID speichern und via `clearInterval` bei Konflikt/Teardown stoppen (aktuell läuft die 1-s-Schleife dauerhaft).
+
+**Umsetzung:** `pollTimerId` als neue Modulvariable in `amd/src/autosave.js`, der `setInterval(...)`-Rückgabewert wird dort gespeichert. `clearInterval(pollTimerId)` direkt an der Stelle in `save()` ergänzt, an der ein Konflikt erkannt wird (`result.conflict`) – ab dann ist jeder weitere Tick ohnehin nur noch ein sofortiger No-op (der `conflicted`-Guard greift), da sich der Zustand erst nach einem echten Seiten-Reload über den Konfliktbanner-Link ändern kann. Kein echtes SPA-Teardown-Ereignis existiert in diesem Seiten-Lebenszyklus (volle Seitenneuladung bei Navigation), daher kein zusätzlicher `beforeunload`/`pagehide`-Handler ergänzt – der Browser räumt Intervalle beim Unload ohnehin auf.
+**Verifiziert:** Volle Behat-Suite grün (siehe CR-08 unten für die kombinierte Abschlusszahl), phpcs sauber, `amd/build/autosave.min.js`+`.map` neu gebaut.
+
+### CR-06 · Magic Numbers im JS  `[CR]` — ✅ Erledigt (2026-08-06)
+
+3000 ms Debounce und 1000 ms Poll-Intervall als benannte Konstanten am Modulkopf.
+
+**Umsetzung:** `AUTOSAVE_DEBOUNCE_MS = 3000` und `POLL_INTERVAL_MS = 1000` als neue Konstanten direkt unter `RESPONSE_ID` in `amd/src/autosave.js`; beide bisherigen Literale (im `setTimeout(...)`-Aufruf und im `setInterval(...)`-Aufruf) darauf umgestellt. Grep bestätigt: keine weiteren `3000`/`1000`-Literale im Modul übrig (der einzige verbleibende Treffer für „3000" ist der unverwandte Unicode-Codepoint-Kommentar „U+3000" zur Ideographic Space).
+
+### CR-07 · Farbwahl-UX  `[CR]` — ✅ Erledigt (2026-08-06)
+
+Vorschaufeld oder `type="color"`-Fallback neben dem Hex-Textfeld für Trainer.
+
+**Umgesetzter Umfang (per Rückfrage entschieden):** natives `<input type="color">`, zweiseitig mit dem Hex-Textfeld synchronisiert – deckt beide im Befund genannten Alternativen gleichzeitig ab, da ein Browser ohne Farbfeld-Unterstützung das Element schlicht nicht rendert (kein kaputtes UI) und JS-Ausfall zum unveränderten reinen Hex-Textfeld degradiert.
+
+**Umsetzung:** Neues, kleines AMD-Modul `amd/src/promptcolor.js` (`init()`, zwei Event-Listener: Hex-Feld → Picker bei `input`, Picker → Hex-Feld bei `input`) synct beide Felder; das Picker-Element wird nie selbst submittet (kein `name`-Attribut). **Ein erster Implementierungsversuch gruppierte** das Hex-Textfeld und den Picker per `$mform->addGroup(...)`, um sie in derselben Zeile zu platzieren – **verworfen**, nachdem der neue Behat-Test das Feld über sein Label nicht mehr fand: Moodles Gruppen-Renderer (`lib/form/templates/element-group.mustache`) verschiebt das sichtbare Label in ein `<fieldset>`/`<legend>` (die eigentliche `<p aria-hidden="true">`-Kopie ist bewusst nicht die zugängliche Bezeichnung) statt ein direktes `<label for="...">` auf das Textfeld zu setzen – das hätte die bestehende Barrierefreiheits-/Label-Zuordnung des Hex-Feldes uneingeschränkt gebrochen, für keinen echten Gegenwert. Stattdessen: `promptcolor` bleibt als eigenständiges Textfeld unverändert (Label/Hilfe-Button/Barrierefreiheit 1:1 wie vorher), der Picker wird als separates `html`-Element direkt darunter ergänzt (eigene, kompakte Zeile statt exakt gleicher Zeile). `$PAGE->requires->js_call_amd('mod_insightjournal/promptcolor', 'init')` in `mod_form.php::definition()` lädt das Modul.
+**Verifiziert – inklusive Mutationsprobe:** Neues Behat-Szenario („The prompt colour picker … stays in sync with the hex field") tippt einen gültigen Hex-Wert ins Textfeld und prüft den synchronisierten Picker-Wert; grün. Mutationsprobe (nur im `~/moodle-dev`-Container, Hex→Picker-Listener zeitweise deaktiviert, danach per Re-Sync zurückgesetzt) schlägt exakt mit dem erwarteten Diff fehl (`#000000` statt `#ffcc00`) – bestätigt, dass der Test einen echten Sync-Ausfall erkennen würde, nicht nur tautologisch grün ist. phpcs sauber, PHPStan 0 Fehler, Grunt/ESLint sauber, `amd/build/promptcolor.min.js`+`.map` neu erzeugt.
+
+**Zu beachten / Stolpersteine:**
+
+- Der Standard-Behat-Schritt `I add a "<activity>" activity to course "..." section "..."` erwartet den rohen, kleingeschriebenen Plugin-Namen (`insightjournal`) als `:activity`-Parameter, nicht den Anzeigenamen („Insight Journal") – Letzteres führte zu `Invalid component used in plugin_supports(): mod_InsightJournal` (eine naive Groß-/Kleinschreibungs-Fehlableitung tief in Moodle-Core, kein Bug in diesem Plugin).
+- Dies ist der erste Behat-Test in diesem Projekt, der die Aktivitätseinstellungsseite (`course/modedit.php`) über die UI treibt, statt Aktivitäten ausschließlich über den Daten-Generator anzulegen – bisher unberührtes Testterrain für diese Suite.
+
+### CR-08 · Wortzählung  `[CR]` — ✅ Erledigt (2026-08-06)
+
+Optionale Wortzählung als Alternative zu Zeichen für Reflexionstexte.
+
+**Umgesetzter Umfang (per Rückfrage entschieden):** reine Anzeige neben dem bestehenden Zeichenzähler – keine neuen `minwords`/`maxwords`-Einstellungen, keine Abschluss-/Validierungs-Semantik, kein Schema-Wechsel.
+
+**Umsetzung:** Neue `wordCount()`-Funktion in `amd/src/autosave.js` (zählt Whitespace-getrennte Tokens im visuell nicht-leeren Text, `isVisuallyEmpty()` wiederverwendet) plus `updateWordCounter()`, aufgerufen sowohl beim initialen Rendern als auch in jedem Poll-Tick – **bewusst unabhängig von `maxChars`**, anders als der bestehende Zeichenzähler (der nur erscheint, wenn eine maximale Zeichenzahl konfiguriert ist): eine Wortzahl ist auch ohne konfiguriertes Zeichenlimit nützlich. Neuer, unbedingt gerenderter `data-insightjournal-wordcounter`-Span in `templates/view.mustache`, mit `ms-auto` versehen (vom Zeichenzähler-Span entfernt, der jetzt direkt danach folgt – beide zusammen werden so gemeinsam an den rechten Rand der Flex-Zeile geschoben). Neue Sprachstrings `words`/`Wörter` (en/de) – wie beim bestehenden Zeichenzähler bewusst ohne Pluralisierungslogik (`N Wörter` unabhängig vom Wert von N, konsistent mit der bereits bestehenden Vereinfachung bei `maxcharsnote`). Das Label wird einmalig beim Laden per `Str.get_string()` geholt (nicht bei jedem Tick neu), die Anzeige wird erneut aufgefrischt, sobald der String eintrifft, damit das allererste Rendern (das vor Auflösung des Promise passieren kann) nicht dauerhaft ohne Label hängen bleibt.
+
+**Nachgebesserter Bug, gefunden von der Abschluss-Codereview (siehe unten):** die erste Implementierung ließ `wordCount()` `stripHtml()` mitbenutzen – dieselbe Funktion, die `visibleCharCount()` verwendet. `stripHtml()`s `DOMParser`+`textContent`-Ansatz fügt an Block-/Zeilengrenzen **keinerlei** Trennzeichen ein (belegt durch die projekteigene `tests/fixtures/visible_char_fixtures.json`, z. B. `<p>Hello</p><p>World</p>` → `"HelloWorld"`) – für die Zeichenzählung ein bewusster, getesteter, dokumentierter Kompromiss zugunsten der PHP/JS-Paritätsanforderung (ein Zeichen an der Grenze zu verlieren ist vernachlässigbar). Für eine Wortzählung ist dieselbe Grenzbehandlung aber kein Rundungsfehler, sondern ein echter, alltäglicher Zählfehler: eine Umschalt+Enter-Zeilenschaltung mitten in einer Reflexion (in Atto wie in TinyMCE ganz normale Eingabe) verschmilzt das letzte Wort der einen Zeile mit dem ersten der nächsten zu einem Token. Es gibt keine PHP-Gegenstelle, zu der Wortzählung Parität halten müsste – der Kompromiss war also unbegründet mitgeerbt, nicht bewusst getroffen. **Behoben** durch eine eigene, nur von `wordCount()` genutzte `htmlToSpacedText()`-Funktion: ersetzt vor dem `DOMParser`-Durchlauf jedes Tag durch ein Leerzeichen (`html.replace(/<[^>]+>/g, ' ')`), sodass jede Block-/`<br>`-Grenze zu echtem Whitespace wird, statt zu verschwinden – als Entity kodierte, vom Lernenden tatsächlich eingegebene spitze Klammern (`&lt;`/`&gt;`) bleiben davon unberührt (kein echtes Tag-Muster) und werden weiterhin korrekt durch den nachfolgenden `DOMParser`-Durchlauf dekodiert. `stripHtml()`/`visibleCharCount()` selbst bewusst **nicht** angefasst (weiterhin PHP/JS-paritätsgetestet, kein Grund zur Änderung). `wordCount` zusätzlich aus dem Modul-Rückgabeobjekt exportiert (wie `visibleCharCount` bereits), damit es direkt aus Behat heraus mit rohen HTML-Fixtures aufrufbar ist. Neuer Behat-Schritt `the word count for "<html>" should be "<count>"` in `tests/behat/behat_mod_insightjournal.php` (spiegelt exakt das bestehende `the visible character count matches the shared fixtures`-Muster: `$session->executeScript()` ruft `autosave.wordCount(...)` im echten Browser auf). Neues Szenario „The word count does not merge words across a line break or paragraph boundary" mit fünf Fällen (`<p>`, `<br>`, zwei `<p>`, `<ul><li>`, leeres `<p></p>`).
+**Verifiziert – inklusive zweier Mutationsproben:** (1) Ursprüngliches Szenario: „One two three four five" ohne `maxchars` → „5 words", Mutationsprobe (`wordCount()` fest auf `0`) schlägt exakt mit „5 words nicht gefunden" fehl. (2) Neues Grenzfall-Szenario: alle fünf Fälle grün; Mutationsprobe (nur im `~/moodle-dev`-Container, `wordCount()` testweise wieder auf `stripHtml()` statt `htmlToSpacedText()` umgestellt, danach per Re-Sync zurückgesetzt) schlägt exakt am `<br>`-Fall fehl („expected 2, got 1") – reproduziert den ursprünglich von der Review gefundenen Bug exakt und bestätigt, dass der neue Test ihn tatsächlich fängt. Zusätzlich: `aria-label` des Farbwählers (CR-07) auf einen eigenen, unterscheidbaren String (`promptcolorpicker`, neu in en/de) umgestellt statt denselben Text wie das Hex-Feld zu duplizieren (Minor-Finding der Review). **Volle Behat-Suite nach CR-05 bis CR-08 inkl. Fix: 24/24 Szenarien (365 Steps)**, PHPUnit 227/227, phpcs sauber, PHPStan 0 Fehler, Grunt/ESLint sauber.
+
+**Zu beachten / Stolpersteine:**
+
+- Eine unabhängige Subagent-Codereview über den kompletten CR-05..08-Diff fand diesen Bug – keiner der beiden neuen, zum Zeitpunkt der Review bereits grünen Tests (weder das ursprüngliche Wortzähler-Szenario noch die bestehende Zeichen-Paritätsprüfung) deckte ihn ab, da ersteres nur einzeiligen Text tippte und Letzteres nie `wordCount()` aufrief. Klassischer Fall für eine Abschluss-Review über den ganzen Diff statt nur Task-für-Task-Prüfung.
 
 ---
 
@@ -228,7 +267,7 @@ Jede Änderung bleibt einzeln abnehmbar. Reihenfolge kombiniert die PR-Folge des
 7. ~~**R4-09** – E2E-Export-Test~~ — ✅ erledigt (siehe oben)
 8. ~~**P2-Sammel-PR** – CR-02 (promptcolor), CR-03 (get_string), CR-04 (Doku)~~ — ✅ erledigt (siehe oben)
 9. ~~**R4-06 / R4-08 / R4-10** – Release-Härtung, Editorvertrag, Doku/Workflow~~ — ✅ erledigt (siehe oben)
-10. **P3-Backlog** – CR-05 bis CR-08 nach Bedarf
+10. ~~**P3-Backlog** – CR-05 bis CR-08 nach Bedarf~~ — ✅ erledigt (siehe oben)
 
 ---
 

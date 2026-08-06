@@ -517,3 +517,33 @@ Feature: Insight journal activity
     And I should not see "student2@example.com"
     When I am on the course insight report for "Course 1" with "20" per page
     Then I should see "Student 2"
+
+  @javascript
+  Scenario: The prompt colour picker on the activity settings form stays in sync with the hex field
+    Given I log in as "teacher1"
+    And I am on "Course 1" course homepage with editing mode on
+    When I add a "insightjournal" activity to course "Course 1" section "1"
+    And I set the field "Task / Question background colour" to "ffcc00"
+    Then the field "id_promptcolor_picker" matches value "#ffcc00"
+
+  @javascript
+  Scenario: The word counter updates live as a learner types, even with no maximum character limit set
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "One two three four five"
+    And I wait "2" seconds
+    Then I should see "5 words" in the "[data-insightjournal-wordcounter]" "css_element"
+
+  @javascript
+  Scenario: The word count does not merge words across a line break or paragraph boundary
+    Given the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    Then the word count for "<p>One two three</p>" should be "3"
+    And the word count for "Line1<br>Line2" should be "2"
+    And the word count for "<p>Hello</p><p>World</p>" should be "2"
+    And the word count for "<ul><li>One</li><li>Two</li></ul>" should be "2"
+    And the word count for "<p></p>" should be "0"

@@ -43,6 +43,7 @@ class mod_insightjournal_mod_form extends moodleform_mod {
      * @return void
      */
     public function definition(): void {
+        global $PAGE;
         $mform = $this->_form;
 
         $mform->addElement('header', 'general', get_string('general', 'form'));
@@ -71,6 +72,30 @@ class mod_insightjournal_mod_form extends moodleform_mod {
         $mform->addElement('text', 'promptcolor', get_string('promptcolor', 'mod_insightjournal'), ['size' => 10]);
         $mform->setType('promptcolor', PARAM_RAW);
         $mform->addHelpButton('promptcolor', 'promptcolor', 'mod_insightjournal');
+
+        // A native <input type="color"> is added directly below the hex field,
+        // kept in sync with it by amd/src/promptcolor.js, as a purely optional
+        // UI convenience - never itself submitted (no name attribute), so a
+        // browser without colour-input support (or with JS disabled) simply
+        // shows the hex text field alone, exactly as before. Deliberately a
+        // plain 'html' element rather than grouped with the text field above:
+        // moodleform's group renderer moves a group's label into a
+        // <fieldset>/<legend> instead of a direct <label for>, which would
+        // have broken the hex field's existing accessible name/label
+        // association for no real benefit (a swatch immediately below reads
+        // as clearly attached without that trade-off). The picker's initial
+        // value is set client-side from the hex field's own (already
+        // populated) value, not injected here, so no colour data needs
+        // escaping into this markup at all.
+        $mform->addElement(
+            'html',
+            '<div class="form-group row"><div class="col-md-3"></div><div class="col-md-9">'
+                . '<input type="color" id="id_promptcolor_picker" '
+                . 'style="width: 2.5rem; height: 2.1rem; padding: 0.1rem;" '
+                . 'aria-label="' . s(get_string('promptcolorpicker', 'mod_insightjournal')) . '">'
+                . '</div></div>'
+        );
+        $PAGE->requires->js_call_amd('mod_insightjournal/promptcolor', 'init');
 
         $mform->addElement('advcheckbox', 'autosave', get_string('autosave', 'mod_insightjournal'));
         $mform->setDefault('autosave', 1);

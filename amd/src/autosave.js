@@ -36,7 +36,13 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     // is located by its standard Moodle-generated id rather than a data
     // attribute like the other controls below.
     var RESPONSE_ID = 'id_response';
+    // How long to wait after the last detected change before autosaving.
+    var AUTOSAVE_DEBOUNCE_MS = 3000;
+    // How often to poll the editor for changes - see the setInterval() call
+    // in init() for why polling is used instead of a live editor event.
+    var POLL_INTERVAL_MS = 1000;
     var timer = null;
+    var pollTimerId = null;
     var maxChars = 0;
     var lastSeenValue = null;
     var currentRevision = 0;
@@ -153,6 +159,69 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         return charCount(text);
     };
 
+    // Deliberately NOT reusing stripHtml() here: DOMParser's textContent
+    // inserts no separator at a block/line boundary at all (confirmed by
+    // this project's own tests/fixtures/visible_char_fixtures.json, e.g.
+    // "<p>Hello</p><p>World</p>" -> "HelloWorld"), which visibleCharCount()
+    // above deliberately accepts as a documented, tested trade-off for
+    // PHP/JS character-count parity - losing one character at a boundary is
+    // negligible. A word count has no such parity requirement (there is no
+    // PHP equivalent to match) and merging adjacent words across every
+    // <br>/paragraph boundary would be a routine, everyday miscount: a
+    // learner pressing Shift+Enter mid-reflection would silently lose a
+    // word from the count on both sides of the break. Replacing every tag
+    // with a space before parsing turns each such boundary into real
+    // whitespace instead. Entities (e.g. a literal "<" a learner typed,
+    // stored as "&lt;") are untouched by this regex - it only matches real
+    // "<...>" tag syntax - and are still correctly decoded by the
+    // subsequent DOMParser pass.
+    var htmlToSpacedText = function(html) {
+        var doc = new DOMParser().parseFromString(html.replace(/<[^>]+>/g, ' '), 'text/html');
+        return doc.body.textContent || '';
+    };
+
+    // Purely informational alternative to the character counter - no
+    // completion/validation semantics of its own (no minwords/maxwords),
+    // just a live count next to it. Counts whitespace-delimited tokens,
+    // treating a visually-empty response (see isVisuallyEmpty() above) as
+    // zero words rather than counting stray whitespace as a "word".
+    var wordCount = function(html) {
+        var text = htmlToSpacedText(html);
+        if (isVisuallyEmpty(text)) {
+            return 0;
+        }
+        var words = text.trim().split(/\s+/).filter(function(word) {
+            return word !== '';
+        });
+        return words.length;
+    };
+
+    var wordsLabel = '';
+
+    var updateWordCounter = function(value) {
+        var counter = document.querySelector('[data-insightjournal-wordcounter]');
+        if (!counter) {
+            return;
+        }
+        counter.textContent = wordCount(value) + ' ' + wordsLabel;
+    };
+
+    // Fetched once here rather than per update: this label never changes for
+    // the lifetime of the page, and updateWordCounter() runs on every poll
+    // tick, so resolving it via a fresh Str.get_string() call each time would
+    // mean an unnecessary repeated async round trip for unchanging text. The
+    // display is refreshed once the label arrives so the very first render
+    // (which may happen before this resolves) doesn't stay stuck without it.
+    Str.get_string('words', 'mod_insightjournal').then(function(text) {
+        wordsLabel = text;
+        updateWordCounter(lastSeenValue);
+        return text;
+    }).catch(function() {
+        // Leave wordsLabel as '' - the count itself still displays, just
+        // without a trailing label.
+        return null;
+    });
+
     var updateCounter = function(value) {
         var counter = document.querySelector('[data-insightjournal-charcounter]');
         var button = document.querySelector('[data-insightjournal-save]');
@@ -162,7 +231,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
         var current = visibleCharCount(value);
         var over = current > maxChars;
         counter.textContent = current + ' / ' + maxChars;
-        counter.className = 'small ms-auto ' + (over ? 'text-danger fw-bold' : 'text-muted');
+        counter.className = 'small ' + (over ? 'text-danger fw-bold' : 'text-muted');
         if (button) {
             button.disabled = over || conflicted;
         }
@@ -295,6 +364,13 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                 pendingSave = null;
                 saving = false;
                 clearTimeout(timer);
+                // Nothing left for the poll below to usefully do once
+                // conflicted: every tick would just re-check the conflicted
+                // guard and return immediately until the page is reloaded
+                // via the conflict banner's link. Stop it instead of
+                // leaving it ticking for however long the learner leaves
+                // the tab open.
+                clearInterval(pollTimerId);
                 if (button) {
                     button.disabled = true;
                 }
@@ -339,6 +415,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
 
     return {
         visibleCharCount: visibleCharCount,
+        wordCount: wordCount,
         init: function(cmid, autosave, maxchars, initialrevision) {
             maxChars = maxchars || 0;
             currentRevision = initialrevision || 0;
@@ -359,6 +436,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             }
             TinyAdapter.init();
             lastSeenValue = getCurrentValue(textarea);
+            updateWordCounter(lastSeenValue);
             if (maxChars > 0) {
                 updateCounter(lastSeenValue);
             }
@@ -406,7 +484,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             // textarea on blur, not per keystroke. One second is frequent
             // enough for a responsive character counter/autosave trigger
             // without meaningfully loading the page.
-            setInterval(function() {
+            pollTimerId = setInterval(function() {
                 var panel = document.querySelector('[data-insightjournal-edit-panel]');
                 if (!panel || panel.classList.contains('d-none') || conflicted) {
                     return;
@@ -416,6 +494,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                     return;
                 }
                 lastSeenValue = value;
+                updateWordCounter(value);
                 if (maxChars > 0) {
                     updateCounter(value);
                 }
@@ -423,9 +502,9 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
                     clearTimeout(timer);
                     timer = setTimeout(function() {
                         save(cmid, false);
-                    }, 3000);
+                    }, AUTOSAVE_DEBOUNCE_MS);
                 }
-            }, 1000);
+            }, POLL_INTERVAL_MS);
         }
     };
 });
