@@ -149,6 +149,24 @@ Feature: Insight journal activity
     And I should see "19 / 200" in the "[data-insightjournal-charcounter]" "css_element"
 
   @javascript
+  Scenario: Saving, the character counter, and autosave all work with the plain textarea editor
+    Given the following config values are set as admin:
+      | texteditors | textarea |
+    And the following "activities" exist:
+      | activity       | course | name       | prompttext           | minchars | maxchars | autosave |
+      | insightjournal  | C1     | My Journal | What did you learn?  | 0        | 200      | 1        |
+    When I am on the "My Journal" "insightjournal activity" page logged in as student1
+    And I set the field "Response" to "Written with the plain textarea editor."
+    And I press "Save"
+    Then I should see "Written with the plain textarea editor." in the "[data-insightjournal-view]" "css_element"
+    When I press "Edit"
+    And I set the field "Response" to "Drafting with the plain textarea."
+    And I wait "6" seconds
+    Then I should see "Saved at" in the "[data-insightjournal-status]" "css_element"
+    And "[data-insightjournal-status].text-danger" "css_element" should not exist
+    And I should see "33 / 200" in the "[data-insightjournal-charcounter]" "css_element"
+
+  @javascript
   Scenario: The JavaScript character counter matches the PHP visible-character count on every shared fixture
     Given the following "activities" exist:
       | activity       | course | name       | prompttext           | minchars | maxchars |

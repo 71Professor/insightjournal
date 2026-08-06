@@ -15,9 +15,11 @@ Es sind **keine offenen P0-Blocker** vorhanden. Eine weitere kleine Beta ist ohn
 > 
 > **P1 (Stable-Gate) ist vollständig abgeschlossen**: R4-01, R4-02, R4-03, R4-04, R4-05, R4-07, R4-09 und CR-01 sind alle ✅ erledigt und lagen bereits auf `origin/main` @ `ba4ecc6` (Stand 05.08.2026).
 > 
-> **Punkt 8, der P2-Sammel-PR (CR-02/CR-03/CR-04), ist jetzt ebenfalls ✅ erledigt** (diese Session, 06.08.2026) – **im Arbeitsbaum, noch nicht committet/gepusht** (der Nutzer committet/pusht in diesem Projekt üblicherweise selbst; vor dem Weitermachen `git status`/`git log -5` prüfen statt blind von diesem Stand auszugehen). Alle drei Punkte einzeln per TDD/gezieltem Grep umgesetzt, vollständig verifiziert (PHPUnit 227/227, phpcs `moodle`+`moodle-extra` mit `--warning-severity=1` sauber, PHPStan 0 Fehler, Grunt/ESLint sauber). Details je Punkt oben unter CR-02/CR-03/CR-04.
+> **Punkt 8, der P2-Sammel-PR (CR-02/CR-03/CR-04), wurde in derselben Session (06.08.2026) fertiggestellt, vom Nutzer selbst committet (`8a63d5f`) und nach einer unabhängigen Subagent-Codereview (Verdict: Ready to merge, keine Critical/Important Findings) inklusive zweier Minor-Doku-Nachbesserungen gepusht (`a009e4b`, auf `origin/main`)**.
 > 
-> **Nächster Schritt laut „Empfohlene Umsetzungsreihenfolge" unten:** Punkt 9 (R4-06 Release nach Checkout erneut verifizieren / R4-08 Autosave-Editorvertrag klären / R4-10 Doku-Workflow-Hygiene), zuletzt Punkt 10 (P3-Backlog CR-05..08, nach Bedarf).
+> **Punkt 9 (R4-06/R4-08/R4-10) ist jetzt ebenfalls ✅ erledigt** (diese Session, 06.08.2026) – **im Arbeitsbaum, noch nicht committet/gepusht** (der Nutzer committet/pusht in diesem Projekt üblicherweise selbst; vor dem Weitermachen `git status`/`git log -5` prüfen statt blind von diesem Stand auszugehen). Vollständig verifiziert: PHPUnit 227/227, phpcs sauber, PHPStan 0 Fehler, Grunt/ESLint sauber, volle Behat-Suite 21/21 (339 Steps, wegen R4-08s `autosave.js`-Änderung erneut komplett gelaufen). Details je Punkt oben unter R4-06/R4-08/R4-10.
+> 
+> **Nächster Schritt laut „Empfohlene Umsetzungsreihenfolge" unten:** Punkt 10, der P3-Backlog (CR-05 Autosave-Poll-Cleanup, CR-06 Magic Numbers im JS, CR-07 Farbwahl-UX, CR-08 Wortzählung) – alles P3/Politur, nach Bedarf statt zwingend in Reihenfolge.
 
 ---
 
@@ -119,10 +121,13 @@ Autorisierung, Paging, Progress-Zählung und Exportselektion aus `coursereport.p
 
 ## P2 – Qualität, Wartung, Lieferkette
 
-### R4-06 · Release nach Checkout erneut verifizieren  `[FR]`
+### R4-06 · Release nach Checkout erneut verifizieren  `[FR]` — ✅ Erledigt (2026-08-06)
 
 Direkt nach `actions/checkout` `git rev-parse HEAD` mit `workflow_run.head_sha` vergleichen. Drittanbieter-Actions im privilegierten Release-Job auf vollständige Commit-SHAs pinnen.
 **Abnahme:** Ein bewegter Tag zwischen Vorprüfung und Checkout stoppt den Release; Release-Abhängigkeiten sind revisionsfest.
+
+**Umsetzung:** Nur `.github/workflows/release.yml` betroffen. **(1)** Neuer Schritt „Re-verify the checked-out commit against the CI-validated SHA" direkt nach dem Checkout: vergleicht das reale `git rev-parse HEAD` gegen `workflow_run.head_sha` und bricht mit `exit 1` ab, falls sie abweichen. Schließt ein reales TOCTOU-Fenster: der bestehende „Verify the tag..."-Schritt davor prüft per `git ls-remote` (ohne Checkout) *vor* dem eigentlichen `actions/checkout`, der seinerseits `refs/tags/$TAG` erneut per Name auflöst statt die schon geprüfte SHA zu verwenden – ein zwischen diesen beiden Schritten verschobener Tag wäre bisher unbemerkt ausgecheckt und released worden. **(2)** `actions/checkout@v6` und `softprops/action-gh-release@v2` auf ihre tatsächlich aufgelösten vollständigen Commit-SHAs gepinnt (`d23441a48e516b6c34aea4fa41551a30e30af803` = v6.1.0 bzw. `3bb12739c298aeb8a4eeaf626c5b8d85266b0e65` = v2.6.2, beide per GitHub-API direkt gegen die echten Tag-Referenzen aufgelöst, nicht geraten), mit Versions-Kommentar für Lesbarkeit. Kein Versions-Upgrade (z. B. auf das inzwischen verfügbare `action-gh-release@v3`) – das wäre Scope-Creep, nicht Teil dieses Findings.
+**Verifiziert:** YAML-Syntax validiert (`python3 -c "import yaml; yaml.safe_load(...)"`). Der eigentliche Ablauf (ein während des Laufs verschobener Tag) lässt sich nur durch einen echten Release-Lauf beweisen, nicht lokal simulieren – wie schon bei R2-08 ist der nächste echte getaggte Release der erste reale Test dieses Pfads.
 
 ### R4-07 · PHPStan-Baseline auf null  `[FR]` — ✅ Erledigt (2026-08-05, `main` @ `2714bf9`)
 
@@ -137,10 +142,13 @@ Direkt nach `actions/checkout` `git rev-parse HEAD` mit `workflow_run.head_sha` 
 - Der PHPStan-`stubFiles`-Fehlversuch (siehe oben) ist der eigentliche Lernpunkt dieser Aufgabe: ein Teil-Stub für eine Vendor-Klasse ist **nicht** automatisch additiv/mergend gegenüber der echten Klassendeklaration – wer nur eine Methode korrigieren will, muss entweder die komplette reale Klasse im Stub nachbilden (aufwendig, divergiert leicht von Core) oder – wie hier – einen gezielten Inline-Ignore am Aufrufort setzen. Für zukünftige „Core hat einen falschen Docblock"-Fälle in diesem Projekt: Inline-Ignore ist der Standardweg, `stubFiles` nur für tatsächlich vollständig nachgebildete Klassen/Funktionen erwägen.
 - `.gitattributes` `export-ignore`-Liste bereinigt: `phpstan-baseline.neon`-Zeile entfernt (Datei existiert nicht mehr), `phpstan-tests.neon` neu ergänzt (dieselbe Dev-only-Behandlung wie `phpstan.neon`).
 
-### R4-08 · Autosave-Editorvertrag klären  `[FR]`
+### R4-08 · Autosave-Editorvertrag klären  `[FR]` — ✅ Erledigt (2026-08-06)
 
 Das Tiny-spezifische flush/sync in einen kleinen Adapter isolieren. Für andere Editoren dokumentieren/testen, wie der Backing-Textarea-Wert synchronisiert wird; No-JS bleibt voll funktionsfähig.
 **Abnahme:** Tiny und mindestens ein zweiter Moodle-Editor speichern identischen Inhalt; unbekannte Editoren degradieren ohne Datenverlust.
+
+**Umsetzung:** Vor der Umsetzung geprüft, was von der Abnahme bereits erfüllt war (ähnlich dem R4-05-Präzedenzfall): Tiny (Default-Editor, über die ungetaggten `@javascript`-Szenarien) und Atto (`texteditors | atto,textarea`) hatten bereits reale Behat-Abdeckung, die identisches Speichern/Wiederanzeigen beweist – die Abnahme war für „mindestens ein zweiter Editor" also schon erfüllt, nur „unbekannte Editoren degradieren ohne Datenverlust" und die Isolation selbst waren noch offen. **(1)** Neues Behat-Szenario „Saving, the character counter, and autosave all work with the plain textarea editor" (`texteditors | textarea`, erzwingt einen Lauf komplett ohne Rich-Text-Plugin) – lief bereits auf dem unveränderten Code grün, bevor der Adapter überhaupt existierte: bestätigt, dass der bestehende Fallback (`textarea.value`, wenn keine Tiny-Instanz existiert) schon korrekt war; die Abnahme „ohne Datenverlust" ist damit jetzt real bewiesen statt nur per Codelektüre angenommen. **(2)** `amd/src/autosave.js`: das bisher lose im Modul verstreute Tiny-Wissen (`tinyEditor`/`tinyEditorRequested`-Modulvariablen, `requestTinyEditor()`, sowie ein zweites, dupliziertes `tinyEditor ? tinyEditor.getInstanceForElementId(textarea.id) : null` in `showEditPanel()`) in ein einziges `TinyAdapter`-Objekt (`init()`, `instanceFor(textarea)`) gekapselt – der Rest des Moduls kennt `editor_tiny` danach an keiner Stelle mehr direkt. Neuer Kommentarblock über `TinyAdapter` dokumentiert explizit den Editorvertrag: jeder Editor muss `textarea.value` laufend synchron halten (Atto, plain textarea, und implizit jeder unbekannte Editor), Tiny ist die einzige bekannte Ausnahme (flusht nur bei Blur) und bekommt deshalb den Adapter. Reiner Refactor, keine beabsichtigte Verhaltensänderung. No-JS war bereits vorher unabhängig per Behat abgedeckt (POST-Only-Konfliktpfad) und hier nicht berührt.
+**Verifiziert:** Volle Behat-Suite grün nach dem Refactor: 21/21 Szenarien (20 vorher + 1 neu), 339 Steps (vorher 324) – Tiny-, Atto- und Plain-Textarea-Pfade alle unverändert grün, belegt Verhaltensgleichheit des Refactors. PHPUnit 227/227 (unverändert, keine PHP-Änderung), phpcs sauber (`moodle`+`moodle-extra`, `--warning-severity=1`), Grunt/ESLint sauber, `amd/build/autosave.min.js`+`.map` neu gebaut und zurückkopiert.
 
 ### R4-09 · End-to-End-Export absichern  `[FR]` — ✅ Erledigt (2026-08-05, `main` @ `ba4ecc6`)
 
@@ -155,10 +163,13 @@ Behat- oder geeigneten Integrationstest für Kurs-CSV ergänzen: zwei Groupings,
 - Ein eigener Testfehler beim ersten Lauf war lehrreich, kein Produktionsbug: der `find_row()`-Testhelfer suchte anfangs nur nach `userid`, aber bei `accessallgroups` erscheint jede Person zu Recht **einmal pro sichtbarer Aktivität** (zwei Zeilen bei zwei Tagebüchern) — der Helfer griff die erste gefundene Zeile, die zufällig zur jeweils anderen (leeren) Aktivität gehörte. Behoben durch einen optionalen `cmid`-Parameter auf `find_row()`, der bei mehrdeutigen Fällen die richtige Zeile eindeutig auswählt.
 - `insightjournal_coursereport_csv_row()`/`insightjournal_entries_by_diary_and_user()` selbst bleiben unverändert; nur der Aufrufort wandert. `coursereport_csv_test.php` (die bestehende, schmalere Unit-Testdatei für diese Funktionen isoliert) bleibt unangetastet und weiterhin komplementär, nicht redundant, zur neuen Datei.
 
-### R4-10 · Doku- und Workflow-Hygiene  `[FR]`
+### R4-10 · Doku- und Workflow-Hygiene  `[FR]` — ✅ Erledigt (2026-08-06)
 
 CHANGELOG-`[Unreleased]` auf `v0.8.0-beta...HEAD` korrigieren, veralteten `reload()`-Kommentar anpassen und unnötige übersprungene Release-Läufe bzw. doppelte PR-Push-CI reduzieren.
 **Abnahme:** Links und Kommentare entsprechen dem Code; normale main-/PR-Läufe erzeugen keine irreführende Release-Historie.
+
+**Umsetzung:** Drei unabhängige kleine Fixes. **(1)** `CHANGELOG.md`s `[Unreleased]`-Vergleichslink zeigte noch auf `v0.7.1-beta...HEAD`, obwohl `v0.8.0-beta` längst als eigener Abschnitt getaggt/released ist – auf `v0.8.0-beta...HEAD` korrigiert. **(2)** Der tatsächlich veraltete `reload()`-Kommentar steckte nicht in `autosave.js` selbst (dessen eigener Kommentar über den Klick-Handler ist bereits korrekt und beschreibt exakt das href-basierte Verhalten), sondern in `templates/view.mustache:60`: „autosave.js's own click handler (preventDefault + reload()) still attaches to it unchanged" beschrieb noch das alte, längst durch href-Navigation ersetzte Verhalten (siehe `git log` auf `autosave.js` – dieser Fix liegt bereits länger zurück). Kommentar korrigiert, um href-Navigation statt `reload()` zu beschreiben. **(3)** „Doppelte PR-Push-CI" ist das gut dokumentierte GitHub-Actions-Muster, bei dem ein Push auf einen Branch mit offenem PR sowohl einen `push`- als auch einen `pull_request`-Lauf für denselben Commit auslöst: `ci.yml`s `on: [push, pull_request]` (uneingeschränkt) auf `push: {branches: [main], tags: ['v*']}` + unverändert uneingeschränktes `pull_request` umgestellt – ein Push auf einen Feature-/PR-Branch löst danach nur noch den `pull_request`-Lauf aus, `main`-Pushes und Tag-Pushes (Letzteres nötig, weil `release.yml`s `workflow_run`-Trigger einen push-getriggerten CI-Lauf für den Tag selbst braucht) bleiben unverändert abgedeckt. Als Nebeneffekt reduziert das auch „unnötige übersprungene Release-Läufe": jeder vermiedene doppelte CI-Lauf ist auch ein vermiedener, sofort geskippter `workflow_run`-Trigger von `release.yml`. **Bewusst nicht versucht:** `release.yml`s eigenen `workflow_run`-Trigger direkt per `branches:`-Filter auf Tag-Läufe einzuschränken – per GitHub-Doku-Recherche (WebFetch) bestätigt, dass `workflow_run.branches`/`branches-ignore` ausschließlich Branch-Namen matcht, nicht Tags; ungetestet auf einem echten Tag-Push riskiert das, den Release-Trigger für Tags komplett stillzulegen. Der bestehende Job-Level-`if:`-Gate bleibt daher der einzige Filter für den eigentlichen Release-Job (kostet ohnehin keine Runner-Zeit für geskippte Jobs, nur die kosmetische „skipped"-Zeile in der Actions-Historie).
+**Verifiziert:** YAML-Syntax beider geänderter Workflow-Dateien validiert. Grunt (inkl. Mustache-Kontext) sauber nach der `view.mustache`-Änderung, PHPUnit 227/227 unverändert grün (reine Kommentar-/Link-/Workflow-Änderungen, keine Laufzeitlogik betroffen).
 
 ### CR-02 · `promptcolor`-Normalisierung härten  `[CR]` — ✅ Erledigt (2026-08-06)
 
@@ -216,7 +227,7 @@ Jede Änderung bleibt einzeln abnehmbar. Reihenfolge kombiniert die PR-Folge des
 6. ~~**R4-07** – PHPStan-Baseline auf null~~ — ✅ erledigt (siehe oben)
 7. ~~**R4-09** – E2E-Export-Test~~ — ✅ erledigt (siehe oben)
 8. ~~**P2-Sammel-PR** – CR-02 (promptcolor), CR-03 (get_string), CR-04 (Doku)~~ — ✅ erledigt (siehe oben)
-9. **R4-06 / R4-08 / R4-10** – Release-Härtung, Editorvertrag, Doku/Workflow
+9. ~~**R4-06 / R4-08 / R4-10** – Release-Härtung, Editorvertrag, Doku/Workflow~~ — ✅ erledigt (siehe oben)
 10. **P3-Backlog** – CR-05 bis CR-08 nach Bedarf
 
 ---

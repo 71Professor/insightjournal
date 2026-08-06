@@ -1,6 +1,19 @@
 name: Moodle Plugin CI
 
-on: [push, pull_request]
+# R4-10: restricting the push trigger to main + version tags (rather than
+# every branch) avoids a duplicate run whenever a feature/PR branch is
+# pushed - previously that fired both a `push`-event run and a
+# `pull_request`-event run for the identical commit. `main` is still
+# covered for direct pushes/merges, and `tags: ['v*']` is still covered
+# because release.yml's `workflow_run` trigger specifically needs a
+# push-triggered CI run for the tag itself (see release.yml's own
+# comments); `pull_request` stays unrestricted so every PR, from any
+# branch or fork, still gets CI.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
 
 permissions:
   contents: read

@@ -75,6 +75,39 @@ Versions map to the `$plugin->release` value in `version.php`.
   not count as complete until it reaches the configured length. No
   behavior change - documentation only (form help text, README, German
   user guide).
+- **The release workflow now re-verifies the checked-out commit and pins
+  its third-party actions to full commit SHAs**, addressing the R4-06
+  review finding. The existing pre-checkout tag verification resolves
+  `refs/tags/$TAG` by name again during the actual `actions/checkout`
+  step rather than reusing the already-verified SHA, leaving a narrow
+  window where a tag force-moved in between would have been silently
+  checked out and released; a new step right after checkout re-compares
+  the real `git rev-parse HEAD` against the CI-validated SHA and fails
+  closed on any mismatch. `actions/checkout` and
+  `softprops/action-gh-release` are now pinned to their exact resolved
+  commit SHAs (with a version comment) rather than movable major-version
+  tags.
+- **`amd/src/autosave.js`'s TinyMCE-specific logic is now isolated behind
+  a small `TinyAdapter` object**, addressing the R4-08 review finding.
+  The module previously reached into `editor_tiny`-specific state and its
+  `getInstanceForElementId()` API from two separate places; both now go
+  through `TinyAdapter.instanceFor()`, and every other editor's contract
+  (keep the backing textarea's `.value` continuously in sync) is
+  documented in one place instead of implied. Pure refactor, no intended
+  behavior change - confirmed by the full Behat suite passing unchanged
+  across Tiny, Atto, and the plain textarea editor.
+- **CI no longer runs twice for the same commit on a branch with an open
+  PR**, addressing the rest of the R4-10 review finding. `ci.yml`'s push
+  trigger was unrestricted, so pushing to a feature branch that already
+  had a PR open against it fired both a `push`-event run and a
+  `pull_request`-event run for the identical commit. The push trigger is
+  now restricted to `main` and version tags (`v*`); `pull_request` stays
+  unrestricted so every PR still gets CI regardless of branch or fork.
+  Tag pushes are still covered directly, since `release.yml`'s
+  `workflow_run` trigger specifically needs a push-triggered CI run for
+  the tag. As a side effect this also cuts down on the release workflow
+  firing (and immediately no-op-skipping) for every redundant CI
+  completion.
 
 ### Fixed
 
@@ -108,6 +141,13 @@ Versions map to the `$plugin->release` value in `version.php`.
   gracefully. The normaliser now applies the same regex as
   `insightjournal_prompt_style()` and maps anything that fails it to `''`,
   so every write path is guarded, not just the form.
+- **A stale template comment describing the conflict-reload link's click
+  handler is now accurate**, addressing part of the R4-10 review finding.
+  `templates/view.mustache` still said the handler called
+  `window.location.reload()`; that was replaced by href-based navigation
+  in an earlier fix (to avoid resubmitting the no-JS conflict page's POST)
+  and the actual `autosave.js` comment was updated at the time, but this
+  template comment was missed. Comment only, no behavior change.
 
 ### Testing
 
@@ -125,6 +165,14 @@ Versions map to the `$plugin->release` value in `version.php`.
   `coursereport_provider::csv_rows()` method (continuing the R4-04
   extraction) so these tests exercise the exact same code the real export
   runs, not a reimplementation of its chunking. No behavior change.
+- **A new Behat scenario proves autosave, manual save, and the character
+  counter all work with the plain textarea editor** (no rich-text plugin
+  active at all), addressing the R4-08 review finding's "unknown editors
+  degrade without data loss" acceptance criterion with a real end-to-end
+  proof rather than code inspection alone - it already passed before the
+  `TinyAdapter` refactor, confirming the existing fallback behavior was
+  correct. Tiny (the default, untagged editor in every other
+  `@javascript` scenario) and Atto already had equivalent coverage.
 
 ## [0.8.0-beta] - 2026-08-03
 
@@ -632,7 +680,7 @@ maturity `MATURITY_BETA`.
   included; restore maps user IDs and skips entries for unavailable users.
 - English and German language packs.
 
-[Unreleased]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.7.1-beta...HEAD
+[Unreleased]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.8.0-beta...HEAD
 [0.8.0-beta]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.7.1-beta...v0.8.0-beta
 [0.7.1-beta]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.7.0-beta...v0.7.1-beta
 [0.7.0-beta]: https://github.com/71Professor/moodle-mod_insightjournal/compare/v0.6.0-beta...v0.7.0-beta

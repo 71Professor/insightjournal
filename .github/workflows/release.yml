@@ -32,6 +32,17 @@ name: Release
 # that verified tag ref (not a bare SHA) checked out, so every later step
 # operates on a commit provably reachable via a real tag, not merely a
 # same-named branch or a tag that moved after CI ran.
+#
+# R4-06 hardening: the ls-remote check above happens before checkout, so a
+# tag forced to move in the gap between that check and the actual
+# actions/checkout step would previously have been fetched and released
+# without complaint (checkout resolves refs/tags/$TAG by name again, not by
+# the already-verified SHA). A step right after checkout now re-compares
+# the real `git rev-parse HEAD` against head_sha and fails closed on any
+# mismatch. Third-party actions in this privileged (`contents: write`) job
+# are pinned to full commit SHAs rather than movable version tags, so a
+# compromised/rewritten tag on an action's own repo can't silently change
+# what runs here.
 on:
   workflow_run:
     workflows: ["Moodle Plugin CI"]
@@ -74,10 +85,28 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
 
       - name: Check out the verified tag
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: refs/tags/${{ github.event.workflow_run.head_branch }}
           persist-credentials: false
+
+      - name: Re-verify the checked-out commit against the CI-validated SHA
+        # R4-06 hardening: the previous step re-resolves refs/tags/$TAG by
+        # name, not by the SHA the "Verify the tag..." step above already
+        # confirmed - if the tag were force-moved in the gap between that
+        # ls-remote check and this checkout, actions/checkout would silently
+        # fetch the new commit instead of the one CI actually validated.
+        # Comparing the real checked-out HEAD closes that window instead of
+        # only trusting the pre-checkout resolution.
+        run: |
+          actual=$(git rev-parse HEAD)
+          if [ "${actual}" != "${HEAD_SHA}" ]; then
+            echo "::error::Checked-out HEAD is ${actual}, but the CI run that triggered this release validated ${HEAD_SHA} - the tag moved between verification and checkout. Refusing to release."
+            exit 1
+          fi
+          echo "Verified: checked-out HEAD ${actual} matches the CI-validated commit."
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
 
       - name: Check tag matches version.php release
         run: |
@@ -100,7 +129,7 @@ jobs:
           TAG: ${{ github.event.workflow_run.head_branch }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ github.event.workflow_run.head_branch }}
           files: mod_insightjournal-${{ github.event.workflow_run.head_branch }}.zip

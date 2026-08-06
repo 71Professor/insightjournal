@@ -57,7 +57,9 @@
     point is not to silently discard it), and conflictcontent holding the
     server's actual current content alongside it. The reload control is a
     real <a href> to viewurl so it works without JS; autosave.js's own click
-    handler (preventDefault + reload()) still attaches to it unchanged.
+    handler (preventDefault + navigating via the link's own href, not
+    window.location.reload() - a reload would resubmit the no-JS conflict
+    page's POST) still attaches to it unchanged.
 
     Context variables required for this template:
     * cmid - Course module id.

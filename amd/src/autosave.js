@@ -43,33 +43,53 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
     var saving = false;
     var pendingSave = null;
     var conflicted = false;
-    var tinyEditor = null;
-    var tinyEditorRequested = false;
 
-    // The editor_tiny plugin is optional, not a guaranteed dependency: a
-    // site may run Atto or the plain textarea editor instead, in which case
-    // this module must not fail to load along with it. Request it lazily and
-    // tolerate failure; getCurrentValue() below falls back to the textarea's
-    // own value when no live Tiny instance is found for it.
-    var requestTinyEditor = function() {
-        if (tinyEditorRequested) {
-            return;
+    // Editor contract this module relies on: whatever editor is active on
+    // RESPONSE_ID, its current content must be obtainable as this textarea's
+    // own .value - either because the editor keeps it continuously in sync
+    // (true of Atto and the plain textarea editor, and the assumed default
+    // for any editor this module has no specific knowledge of; proven by a
+    // Behat scenario per editor, not just asserted here), or, for the one
+    // known exception, via a small dedicated adapter below. An editor this
+    // module doesn't recognise therefore still autosaves/saves correctly by
+    // falling through to the textarea's own value - it just can't benefit
+    // from an editor-specific flush like the one TinyAdapter provides.
+    //
+    // TinyAdapter isolates the one known exception: TinyMCE only copies its
+    // content into the backing textarea on blur, not on every keystroke, so
+    // its live content has to be read from the editor instance directly
+    // in between. All editor_tiny-specific knowledge (the module name, its
+    // getInstanceForElementId API, and tolerating the plugin being absent
+    // entirely) is contained here; the rest of this file only ever calls
+    // TinyAdapter.instanceFor() and never touches editor_tiny itself.
+    var TinyAdapter = {
+        editor: null,
+        requested: false,
+        // The editor_tiny plugin is optional, not a guaranteed dependency: a
+        // site may run Atto or the plain textarea editor instead, in which
+        // case this module must not fail to load along with it. Requested
+        // lazily and tolerates failure; instanceFor() below falls back to
+        // null (and callers fall back to the textarea's own value) when no
+        // live Tiny instance is found.
+        init: function() {
+            if (this.requested) {
+                return;
+            }
+            this.requested = true;
+            var self = this;
+            require(['editor_tiny/editor'], function(TinyEditor) {
+                self.editor = TinyEditor;
+            }, function() {
+                // The editor_tiny plugin is not installed or enabled on this site; ignore.
+            });
+        },
+        instanceFor: function(textarea) {
+            return this.editor ? this.editor.getInstanceForElementId(textarea.id) : null;
         }
-        tinyEditorRequested = true;
-        require(['editor_tiny/editor'], function(TinyEditor) {
-            tinyEditor = TinyEditor;
-        }, function() {
-            // The editor_tiny plugin is not installed or enabled on this site; ignore.
-        });
     };
 
-    // TinyMCE only copies its content into the backing textarea on blur, not on
-    // every keystroke, so when a live Tiny instance is attached we ask it for
-    // its content directly. Every other editor (Atto, plain textarea) keeps
-    // the textarea's own value continuously in sync as the user types, so
-    // reading it directly is always correct there.
     var getCurrentValue = function(textarea) {
-        var instance = tinyEditor ? tinyEditor.getInstanceForElementId(textarea.id) : null;
+        var instance = TinyAdapter.instanceFor(textarea);
         return instance ? instance.getContent() : textarea.value;
     };
 
@@ -167,7 +187,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             // fresh edit and fire a spurious autosave a few seconds after
             // reopening, even though nothing was typed since.
             lastSeenValue = getCurrentValue(textarea);
-            var instance = tinyEditor ? tinyEditor.getInstanceForElementId(textarea.id) : null;
+            var instance = TinyAdapter.instanceFor(textarea);
             if (instance) {
                 instance.focus();
             } else {
@@ -337,7 +357,7 @@ define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notificati
             if (document.getElementById('insightjournal-minchars-note')) {
                 textarea.setAttribute('aria-describedby', 'insightjournal-minchars-note');
             }
-            requestTinyEditor();
+            TinyAdapter.init();
             lastSeenValue = getCurrentValue(textarea);
             if (maxChars > 0) {
                 updateCounter(lastSeenValue);
