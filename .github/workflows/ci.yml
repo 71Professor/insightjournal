@@ -130,7 +130,9 @@ jobs:
         # branch only (not the full matrix), per R2-07 - it needs its own
         # composer install, and the plugin's own code doesn't vary by
         # Moodle branch in a way that would change its analysis result.
-        # Baseline (phpstan-baseline.neon) is never regenerated in CI.
+        # No phpstan-baseline.neon exists (R4-07 removed it - every finding
+        # is resolved at its source instead), so this step has nothing to
+        # regenerate; a real finding here fails the build.
         # Version pinned exactly (R3-11): an unpinned require would silently
         # pick up whatever release is newest on the day CI happens to run,
         # so a breaking change upstream could turn this step red with no

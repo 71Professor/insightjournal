@@ -30,6 +30,15 @@ namespace mod_insightjournal\local;
  * export-selection logic once, so the on-screen page and the CSV export
  * both call exactly the same core instead of duplicating the same
  * participant x activity loop with two different output shapes.
+ *
+ * Participant contract (R5-06, deliberate scope decision, not an
+ * oversight): total_participants()/participants() evaluate
+ * mod/insightjournal:submit once at course context ($this->coursecontext),
+ * not per activity. A module-level override of that capability on one
+ * specific insightjournal instance changes whether that activity's own
+ * cell is writable (see rows_for()'s per-cell visibility), but never
+ * whether a participant appears as a row at all or how pagination/count
+ * behave - those are governed by the course-level capability only.
  */
 final class coursereport_provider {
     /** @var \stdClass The course. */

@@ -30,30 +30,25 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ### Changed
 
-- **`insightjournal_current_user_groups()` and
-  `insightjournal_current_user_group_userids()` now require an activity
-  (`$cm`)**, addressing the R4-02 review finding. Both functions
-  previously accepted an optional `$cm = null`, falling back to a
-  course-wide legacy view (every group in the course, ignoring grouping
-  and participation flags) that no production caller has needed since
-  R3-01/R3-02 scoped every real call site to a specific activity. Removing
-  the unused optional path closes a latent leak surface in an
-  authorization-relevant primitive rather than leaving it available for a
-  future caller to invoke by accident.
 - **Group-based authorization (activity report, course report, summary)
   no longer materialises every allowed group's full member list**,
-  addressing the R4-03 review finding. `insightjournal_current_user_groups()`
-  and `insightjournal_current_user_group_userids()` fetched every member of
+  addressing the R4-02 and R4-03 review findings. The two functions this
+  used to go through, `insightjournal_current_user_groups()` and
+  `insightjournal_current_user_group_userids()`, fetched every member of
   every group a viewer could see, regardless of how much of that data any
   single request actually needed - a course report page rendering 20 rows
   still resolved membership for every group member in the course, once per
-  activity, before pagination even started. Authorization now flows
-  through group ids: the activity report filters via a `groups_members`
-  existence subquery, summary checks a single target user via one
-  existence query, and the course report resolves membership only for the
-  userids on the current page or CSV chunk (with the allowed-group-ids
-  lookup itself cached per grouping). No change to who sees what - this is
-  a memory/query-scaling fix, not a behavior change.
+  activity, before pagination even started; they also accepted an unused
+  optional `$cm = null` course-wide legacy fallback that no production
+  caller had needed since R3-01/R3-02. Both functions are gone entirely
+  now, replaced by group-id-based checks: the activity report filters via
+  a `groups_members` existence subquery, summary checks a single target
+  user via one existence query, and the course report resolves membership
+  only for the userids on the current page or CSV chunk (with the
+  allowed-group-ids lookup itself cached per grouping) - see also the
+  R5-01 fix below, which closed a group-visibility gap in these same
+  queries. No change to who sees what beyond that fix - this was a
+  memory/query-scaling change, not a feature change.
 - **The course-wide report's authorization, paging, progress-counting, and
   export-row-selection logic now lives in one place**, addressing the
   R4-04 review finding. `coursereport.php` previously ran the same

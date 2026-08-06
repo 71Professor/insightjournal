@@ -51,6 +51,31 @@ Es sind **keine offenen P0-Blocker** vorhanden. Eine weitere kleine Beta ist ohn
 - Zwei Ebenen von Selbstkorrektur waren nötig, bevor der Fix stand: einmal die eigene Einschätzung „vielleicht gar nicht real" (widerlegt durch den Restore-Pfad), einmal der erste Fix-Versuch selbst (der `viewhiddengroups`-Bypass fehlte). Beide Male hat eine unabhängige, aus dem Nichts gestartete Review-Subagent-Instanz den jeweiligen blinden Fleck gefunden, den die eigene fortlaufende Analyse nicht mehr gesehen hätte.
 - `report_table.php`s Inline-Query ist bewusst *nicht* auf die beiden `locallib.php`-Helper umgestellt worden (obwohl sie dieselbe Logik bräuchten) – sie hat bereits eigenen Zugriff auf `u` (die äußere `{user}`-Tabelle der Haupt-Query) und bräuchte für einen Helper-Aufruf einen zusätzlichen, unnötigen Join.
 
+**Nachtrag – R5-03/R5-04 aus demselben externen Re-Review (`fix2.md`), im selben Aufwasch miterledigt:**
+
+- **R5-03** (untracked `tests/report_template_test.php`): geprüft, Datei existiert nicht (weder getrackt noch untracked, `git status` sauber) – deckt sich mit R4-05s eigener, unabhängiger Untersuchung. Kein Handlungsbedarf.
+- **R5-04** (Doku/Release-Paket-Sync): README-PHPStan-Baseline-Verweis war schon in dieser Session (bei den README/CHANGELOG-Updates, siehe oben) korrigiert worden; zusätzlich jetzt: `ci.yml`s veralteter Kommentar „Baseline (phpstan-baseline.neon) is never regenerated in CI" korrigiert (die Datei existiert seit R4-07 gar nicht mehr); CHANGELOG-Eintrag zu den in R4-02/R4-03 entfernten `insightjournal_current_user_groups()`/`insightjournal_current_user_group_userids()`-Funktionen zu einem konsistenten Endzustand konsolidiert (vorher: ein Eintrag beschrieb einen Zwischenschritt – „jetzt mit Pflicht-`$cm`" – zu Funktionen, die ein späterer Eintrag dann als vollständig entfernt beschreibt); `Fix.md`+`fix2.md` per neuem `.gitattributes`-`export-ignore`-Eintrag aus dem Release-Archiv ausgeschlossen (mit `git archive --worktree-attributes` verifiziert – wirkt für `git archive HEAD`/GitHub-Release-ZIPs erst, sobald `.gitattributes` selbst committet ist, da Attribute vom archivierten Commit gelesen werden, nicht vom Arbeitsbaum).
+
+---
+
+## R5-05 · Zeichensemantik als Produktentscheidung festziehen  `[Re-Review]` — ✅ Erledigt (06.08.2026, nur Dokumentation)
+
+`minchars` zählt aktuell die rohe DOM-Textlänge; nur eine **vollständig** unsichtbare Antwort (nur Whitespace/NBSP/Zero-Width-Zeichen) zählt als leer. Ein sichtbares Zeichen plus beliebig viel unsichtbares Füllmaterial erfüllt das Minimum weiterhin voll. Dieser Scope wurde bereits in R4-01 explizit per Rückfrage mit dem Nutzer bestätigt (siehe `Fix.md`s R4-01-Abschnitt); das Re-Review brachte ein neues Argument (pädagogische Umgehbarkeit von minchars) und bot zwei Alternativen: Vertrag ehrlich benennen, oder Zero-Width-Zeichen überall (nicht nur im Empty-Check) entfernen.
+
+**Per Rückfrage entschieden:** aktuelles Verhalten beibehalten, nur explizit dokumentieren (keine Code-Änderung – die zweite Alternative wäre ein R4-01-großer Aufwand mit neuen PHP/JS-Fixtures und Completion-/maxchars-Retest gewesen).
+
+**Umsetzung:** Neuer Punkt in README.md/deutscher Doku „Bekannte Einschränkungen (Beta)". Die technische Begründung stand bereits vollständig im Docblock von `insightjournal_visible_char_count()` in `locallib.php` (aus R4-01) – keine Code-Doku-Lücke, nur eine fehlende nutzerseitige Erwähnung.
+**Verifiziert:** Reine Markdown-Änderung, kein PHP/JS betroffen.
+
+## R5-06 · Teilnehmervertrag des Kursreports definieren  `[Re-Review]` — ✅ Erledigt (06.08.2026, nur Dokumentation)
+
+`coursereport_provider::total_participants()`/`participants()` prüfen `mod/insightjournal:submit` einmal im Kurskontext, nicht je Aktivität. Eine modulbezogene Capability-Override (z. B. `submit` für eine einzelne Aktivität eingeschränkt) ändert dadurch nur die Zell-Sichtbarkeit dieser einen Aktivität (per-Zelle-Logik in `rows_for()`, unverändert korrekt), nicht die Teilnehmendenliste/Pagination/Anzahl des Kursberichts selbst.
+
+**Per Rückfrage entschieden:** aktuelles Verhalten beibehalten, nur explizit dokumentieren (keine Code-Änderung – die Alternative, Teilnehmende als Union über alle sichtbaren Aktivitäten aufzulösen, hätte eine echte Architektur-Änderung bedeutet: pro-Aktivität-Capability-Auflösung statt einer einzigen Kurskontext-Prüfung, mit Folgefragen für Pagination/`total_participants()` gegen eine je nach Aktivität unterschiedliche Menge).
+
+**Umsetzung:** Neuer Absatz im README.md-Abschnitt „Capabilities" (direkt bei den beiden bestehenden „Core-Capability betrifft dieses Plugin"-Hinweisen) sowie neuer Punkt in „Bekannte Einschränkungen (Beta)"; dieselben zwei Stellen in der deutschen Doku (Abschnitt 9, kein eigener Capabilities-Abschnitt dort vorhanden). Zusätzlich Klassen-Docblock von `coursereport_provider` in `classes/local/coursereport_provider.php` um denselben Vertrag ergänzt (entwicklerseitige Dokumentation direkt am Code, nicht nur nutzerseitig).
+**Verifiziert:** phpcs sauber; ansonsten reine Markdown-Änderung, kein Verhalten betroffen.
+
 ---
 
 ## Priorisierungslegende

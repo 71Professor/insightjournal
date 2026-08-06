@@ -130,6 +130,12 @@ the site admin has removed `email` from **Show user identity**, a
 viewer's reports show no participant email address — see
 [Reports](#reports).
 
+The course-wide report (`coursereport.php`) evaluates `mod/insightjournal:submit`
+once at course context to decide who appears as a participant row at all;
+overriding it at a specific activity's own module context changes whether
+that one activity's cell is writable, but not the participant list itself
+— see [Known Limitations](#known-limitations-beta).
+
 ---
 
 ## Reports
@@ -294,6 +300,22 @@ and is easy to omit locally without noticing).
   visibility override (2026-07-09); no functional impact. Planned: give the
   course-wide link a distinct label (e.g. "Course insight report", matching
   its own page heading).
+- **`minchars` counts a response's DOM text length**, not "meaningful"
+  characters: a response containing a single visible character alongside
+  a large amount of invisible padding (zero-width characters, non-breaking
+  spaces, etc.) reaches the configured minimum, since only a response that
+  is *entirely* invisible content counts as empty. This is a deliberate,
+  narrowly-scoped design decision (see the `insightjournal_visible_char_count()`
+  docblock in `locallib.php`), not an oversight — a trainer who wants to
+  fully rule out this edge case has no built-in setting for it today.
+- **The course report's participant list evaluates `mod/insightjournal:submit`
+  once at course level**, not per activity. If a trainer overrides that
+  capability at a specific Insight Journal instance's own module context
+  (e.g. to restrict who can write to one particular activity), the course
+  report's row selection and pagination don't reflect that override — only
+  that activity's own cell visibility does. A deliberate scope decision,
+  not an oversight; module-level `submit` overrides are an uncommon
+  customization.
 
 ---
 
