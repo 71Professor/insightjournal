@@ -62,7 +62,7 @@ Versions map to the `$plugin->release` value in `version.php`.
 - **Every `get_string()`/`addHelpButton()` call now uses the full
   `mod_insightjournal` frankenstyle component name**, addressing the CR-03
   review finding. The codebase previously mixed the short `insightjournal`
-  form (33 call sites) with the full `mod_insightjournal` form (already
+  form (39 call sites) with the full `mod_insightjournal` form (already
   used elsewhere, e.g. throughout `amd/src/autosave.js`); Moodle accepts
   both interchangeably for a module's own strings, so this is purely a
   consistency cleanup, not a behavior change. Unrelated uses of the bare
