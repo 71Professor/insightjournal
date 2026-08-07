@@ -112,13 +112,18 @@ jobs:
       - name: Moodle Code Checker
         if: ${{ !cancelled() && matrix.php >= '8.2' }}
         # Squiz.Functions.MultiLineFunctionDeclaration.SpaceAfterFunction demands a
-        # space after `function` in AMD JS, which directly contradicts ESLint's
+        # space after `function`, which directly contradicts ESLint's
         # space-before-function-paren rule (enforced by the Grunt step below with
-        # --max-lint-warnings 0), which forbids that same space. Previously excluded
-        # here repo-wide via --exclude (which only accepts 3-part Standard.Category.Sniff
-        # codes, disabling the whole sniff everywhere); now scoped to just the two AMD
-        # files that actually need it via inline `// phpcs:disable`/`// phpcs:enable`
-        # comments, so this sniff still protects every other file in the plugin.
+        # --max-lint-warnings 0), which forbids that same space. It fires on every
+        # multi-line function expression, not just an AMD define() wrapper - R5-10's
+        # migration of autosave.js/summary.js to native ESM (no more define()) did
+        # not remove the conflict, since both files still contain ordinary multi-line
+        # function expressions. Previously excluded here repo-wide via --exclude
+        # (which only accepts 3-part Standard.Category.Sniff codes, disabling the
+        # whole sniff everywhere); scoped instead to just the three AMD files that
+        # actually need it (autosave.js, summary.js, promptcolor.js) via inline
+        # `// phpcs:disable`/`// phpcs:enable` comments, so this sniff still protects
+        # every other file in the plugin.
         run: moodle-plugin-ci phpcs --max-warnings 0
 
       - name: Moodle PHPDoc Checker

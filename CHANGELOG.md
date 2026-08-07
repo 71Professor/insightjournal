@@ -8,6 +8,34 @@ Versions map to the `$plugin->release` value in `version.php`.
 
 ## [Unreleased]
 
+### Changed
+
+- **`amd/src/autosave.js` and `amd/src/summary.js` are now native ESM modules**
+  (`import`/`export`) instead of AMD `define()`/`return`, addressing the R5-10
+  review finding. Moodle still fully supports AMD, but recommends ESM for new
+  community code; both files' internal logic is unchanged, only the module
+  wrapper. `core/ajax` and `core/notification` (still AMD-authored in this
+  Moodle version) are imported via a default import, `core/str`'s `get_string`
+  via a named import, matching the pattern Moodle core itself uses for mixed
+  AMD/ESM dependencies. The `TinyAdapter`'s lazy, optional load of
+  `editor_tiny/editor` now uses a dynamic `import()` instead of an inline
+  `require()`. Both modules export their public functions as named exports
+  (`init`, and `visibleCharCount`/`wordCount` for autosave.js) rather than a
+  single default-exported object - `$PAGE->requires->js_call_amd()` generates
+  `amd.{function}(...)` calls straight off the required module, and the Behat
+  step helper (`tests/behat/behat_mod_insightjournal.php`) reads
+  `autosave.visibleCharCount`/`.wordCount` the same way, so a default-only
+  export would have left both silently broken at runtime. The local
+  `Squiz.Functions.MultiLineFunctionDeclaration` phpcs exception stays on both
+  files: it turned out to fire on every multi-line function expression, not
+  just the AMD `define()` wrapper, so removing the wrapper did not remove the
+  underlying phpcs/ESLint contradiction as the review anticipated.
+  `promptcolor.js` (a third AMD file with the same exception, added after this
+  review) was deliberately left on AMD/`define()` - out of R5-10's scope.
+  No intended behavior change - confirmed by the full Behat suite (24/24
+  scenarios, 365/365 steps) passing unchanged across Tiny, Atto, and the
+  plain textarea editor.
+
 ## [0.9.0-beta] - 2026-08-06
 
 ### Security

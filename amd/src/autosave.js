@@ -21,492 +21,495 @@
  * @author     Michael Kohl
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+import Ajax from 'core/ajax';
+import Notification from 'core/notification';
+import {get_string} from 'core/str';
+
 // The Squiz.Functions.MultiLineFunctionDeclaration sniff demands a space
 // after `function`, which directly contradicts ESLint's
 // space-before-function-paren rule (enforced by the Grunt CI step) that
 // forbids that same space - a permanent contradiction for this file's
-// style, not staleness. Disabled for this file only, so the sniff still
-// protects every other file in the plugin.
+// style, not staleness, and not specific to the AMD define() wrapper: it
+// fires on every multi-line function expression in the file. Disabled for
+// this file only, so the sniff still protects every other file in the
+// plugin.
 // phpcs:disable Squiz.Functions.MultiLineFunctionDeclaration
-define(['core/ajax', 'core/notification', 'core/str'], function(Ajax, Notification, Str) {
-    // The PHP entry_form renders the response field via Moodle's standard
-    // 'editor' mform element, whose fixed core template
-    // (core_form/editor_textarea) only ever emits id/name/rows/cols/onblur/
-    // onchange onto the actual <textarea> - not arbitrary attributes - so it
-    // is located by its standard Moodle-generated id rather than a data
-    // attribute like the other controls below.
-    var RESPONSE_ID = 'id_response';
-    // How long to wait after the last detected change before autosaving.
-    var AUTOSAVE_DEBOUNCE_MS = 3000;
-    // How often to poll the editor for changes - see the setInterval() call
-    // in init() for why polling is used instead of a live editor event.
-    var POLL_INTERVAL_MS = 1000;
-    var timer = null;
-    var pollTimerId = null;
-    var maxChars = 0;
-    var lastSeenValue = null;
-    var currentRevision = 0;
-    var saving = false;
-    var pendingSave = null;
-    var conflicted = false;
 
-    // Editor contract this module relies on: whatever editor is active on
-    // RESPONSE_ID, its current content must be obtainable as this textarea's
-    // own .value - either because the editor keeps it continuously in sync
-    // (true of Atto and the plain textarea editor, and the assumed default
-    // for any editor this module has no specific knowledge of; proven by a
-    // Behat scenario per editor, not just asserted here), or, for the one
-    // known exception, via a small dedicated adapter below. An editor this
-    // module doesn't recognise therefore still autosaves/saves correctly by
-    // falling through to the textarea's own value - it just can't benefit
-    // from an editor-specific flush like the one TinyAdapter provides.
-    //
-    // TinyAdapter isolates the one known exception: TinyMCE only copies its
-    // content into the backing textarea on blur, not on every keystroke, so
-    // its live content has to be read from the editor instance directly
-    // in between. All editor_tiny-specific knowledge (the module name, its
-    // getInstanceForElementId API, and tolerating the plugin being absent
-    // entirely) is contained here; the rest of this file only ever calls
-    // TinyAdapter.instanceFor() and never touches editor_tiny itself.
-    var TinyAdapter = {
-        editor: null,
-        requested: false,
-        // The editor_tiny plugin is optional, not a guaranteed dependency: a
-        // site may run Atto or the plain textarea editor instead, in which
-        // case this module must not fail to load along with it. Requested
-        // lazily and tolerates failure; instanceFor() below falls back to
-        // null (and callers fall back to the textarea's own value) when no
-        // live Tiny instance is found.
-        init: function() {
-            if (this.requested) {
-                return;
-            }
-            this.requested = true;
-            var self = this;
-            require(['editor_tiny/editor'], function(TinyEditor) {
-                self.editor = TinyEditor;
-            }, function() {
-                // The editor_tiny plugin is not installed or enabled on this site; ignore.
-            });
-        },
-        instanceFor: function(textarea) {
-            return this.editor ? this.editor.getInstanceForElementId(textarea.id) : null;
-        }
-    };
+// The PHP entry_form renders the response field via Moodle's standard
+// 'editor' mform element, whose fixed core template
+// (core_form/editor_textarea) only ever emits id/name/rows/cols/onblur/
+// onchange onto the actual <textarea> - not arbitrary attributes - so it
+// is located by its standard Moodle-generated id rather than a data
+// attribute like the other controls below.
+var RESPONSE_ID = 'id_response';
+// How long to wait after the last detected change before autosaving.
+var AUTOSAVE_DEBOUNCE_MS = 3000;
+// How often to poll the editor for changes - see the setInterval() call
+// in init() for why polling is used instead of a live editor event.
+var POLL_INTERVAL_MS = 1000;
+var timer = null;
+var pollTimerId = null;
+var maxChars = 0;
+var lastSeenValue = null;
+var currentRevision = 0;
+var saving = false;
+var pendingSave = null;
+var conflicted = false;
 
-    var getCurrentValue = function(textarea) {
-        var instance = TinyAdapter.instanceFor(textarea);
-        return instance ? instance.getContent() : textarea.value;
-    };
-
-    var setStatus = function(text, cssclass) {
-        var status = document.querySelector('[data-insightjournal-status]');
-        if (!status) {
+// Editor contract this module relies on: whatever editor is active on
+// RESPONSE_ID, its current content must be obtainable as this textarea's
+// own .value - either because the editor keeps it continuously in sync
+// (true of Atto and the plain textarea editor, and the assumed default
+// for any editor this module has no specific knowledge of; proven by a
+// Behat scenario per editor, not just asserted here), or, for the one
+// known exception, via a small dedicated adapter below. An editor this
+// module doesn't recognise therefore still autosaves/saves correctly by
+// falling through to the textarea's own value - it just can't benefit
+// from an editor-specific flush like the one TinyAdapter provides.
+//
+// TinyAdapter isolates the one known exception: TinyMCE only copies its
+// content into the backing textarea on blur, not on every keystroke, so
+// its live content has to be read from the editor instance directly
+// in between. All editor_tiny-specific knowledge (the module name, its
+// getInstanceForElementId API, and tolerating the plugin being absent
+// entirely) is contained here; the rest of this file only ever calls
+// TinyAdapter.instanceFor() and never touches editor_tiny itself.
+var TinyAdapter = {
+    editor: null,
+    requested: false,
+    // The editor_tiny plugin is optional, not a guaranteed dependency: a
+    // site may run Atto or the plain textarea editor instead, in which
+    // case this module must not fail to load along with it. Requested
+    // lazily and tolerates failure; instanceFor() below falls back to
+    // null (and callers fall back to the textarea's own value) when no
+    // live Tiny instance is found.
+    init: function() {
+        if (this.requested) {
             return;
         }
-        status.textContent = text;
-        status.className = cssclass || '';
-    };
-
-    var setViewStatus = function(text) {
-        var status = document.querySelector('[data-insightjournal-view-status]');
-        if (status) {
-            status.textContent = text;
-        }
-    };
-
-    var stripHtml = function(html) {
-        var doc = new DOMParser().parseFromString(html, 'text/html');
-        return doc.body.textContent || '';
-    };
-
-    var charCount = function(str) {
-        return [...str].length;
-    };
-
-    // Zero-width space/joiners and the word joiner - native String.trim()
-    // already strips NBSP (\u00A0), the BOM/ZWNBSP (\uFEFF), and every other
-    // Unicode space separator/line terminator (e.g. em space U+2003,
-    // ideographic space U+3000, U+2028) per the ECMAScript WhiteSpace and
-    // LineTerminator productions, so only these four need stripping here.
-    // insightjournal_is_visually_empty() in locallib.php mirrors this full
-    // set explicitly, since PHP's trim() strips none of it.
-    // Order matters here beyond readability: ESLint's no-misleading-character-class
-    // rule flags \u200D (zero-width joiner) sitting strictly between two other
-    // class members as a likely-accidental "joined character sequence", even
-    // though character-class member order has no effect on what the regex
-    // matches. Keeping \u200D last avoids that false positive.
-    var INVISIBLE_CHARS_PATTERN = /[\u200B\u200C\u2060\u200D]/g;
-
-    // Mirrors insightjournal_is_visually_empty() in locallib.php: nothing
-    // but ASCII whitespace, NBSP, or a zero-width character remains after
-    // stripping. Only decides the ALL-invisible boundary case - interior
-    // whitespace/NBSP/zero-width characters next to real content still
-    // count normally in visibleCharCount() below.
-    var isVisuallyEmpty = function(str) {
-        return str.replace(INVISIBLE_CHARS_PATTERN, '').trim() === '';
-    };
-
-    // Same "visible character" definition insightjournal_visible_char_count()
-    // uses server-side (see locallib.php, R4-01): 0 for input that is
-    // visually empty, otherwise the raw DOM-textContent length including any
-    // surrounding whitespace/NBSP.
-    var visibleCharCount = function(html) {
-        var text = stripHtml(html);
-        if (isVisuallyEmpty(text)) {
-            return 0;
-        }
-        return charCount(text);
-    };
-
-    // Deliberately NOT reusing stripHtml() here: DOMParser's textContent
-    // inserts no separator at a block/line boundary at all (confirmed by
-    // this project's own tests/fixtures/visible_char_fixtures.json, e.g.
-    // "<p>Hello</p><p>World</p>" -> "HelloWorld"), which visibleCharCount()
-    // above deliberately accepts as a documented, tested trade-off for
-    // PHP/JS character-count parity - losing one character at a boundary is
-    // negligible. A word count has no such parity requirement (there is no
-    // PHP equivalent to match) and merging adjacent words across every
-    // <br>/paragraph boundary would be a routine, everyday miscount: a
-    // learner pressing Shift+Enter mid-reflection would silently lose a
-    // word from the count on both sides of the break. Replacing every tag
-    // with a space before parsing turns each such boundary into real
-    // whitespace instead. Entities (e.g. a literal "<" a learner typed,
-    // stored as "&lt;") are untouched by this regex - it only matches real
-    // "<...>" tag syntax - and are still correctly decoded by the
-    // subsequent DOMParser pass.
-    var htmlToSpacedText = function(html) {
-        var doc = new DOMParser().parseFromString(html.replace(/<[^>]+>/g, ' '), 'text/html');
-        return doc.body.textContent || '';
-    };
-
-    // Purely informational alternative to the character counter - no
-    // completion/validation semantics of its own (no minwords/maxwords),
-    // just a live count next to it. Counts whitespace-delimited tokens,
-    // treating a visually-empty response (see isVisuallyEmpty() above) as
-    // zero words rather than counting stray whitespace as a "word".
-    var wordCount = function(html) {
-        var text = htmlToSpacedText(html);
-        if (isVisuallyEmpty(text)) {
-            return 0;
-        }
-        var words = text.trim().split(/\s+/).filter(function(word) {
-            return word !== '';
+        this.requested = true;
+        var self = this;
+        import('editor_tiny/editor').then(function(TinyEditor) {
+            self.editor = TinyEditor;
+            return TinyEditor;
+        }).catch(function() {
+            // The editor_tiny plugin is not installed or enabled on this site; ignore.
+            return null;
         });
-        return words.length;
-    };
+    },
+    instanceFor: function(textarea) {
+        return this.editor ? this.editor.getInstanceForElementId(textarea.id) : null;
+    }
+};
 
-    var wordsLabel = '';
+var getCurrentValue = function(textarea) {
+    var instance = TinyAdapter.instanceFor(textarea);
+    return instance ? instance.getContent() : textarea.value;
+};
 
-    var updateWordCounter = function(value) {
-        var counter = document.querySelector('[data-insightjournal-wordcounter]');
-        if (!counter) {
-            return;
+var setStatus = function(text, cssclass) {
+    var status = document.querySelector('[data-insightjournal-status]');
+    if (!status) {
+        return;
+    }
+    status.textContent = text;
+    status.className = cssclass || '';
+};
+
+var setViewStatus = function(text) {
+    var status = document.querySelector('[data-insightjournal-view-status]');
+    if (status) {
+        status.textContent = text;
+    }
+};
+
+var stripHtml = function(html) {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+};
+
+var charCount = function(str) {
+    return [...str].length;
+};
+
+// Zero-width space/joiners and the word joiner - native String.trim()
+// already strips NBSP (\u00A0), the BOM/ZWNBSP (\uFEFF), and every other
+// Unicode space separator/line terminator (e.g. em space U+2003,
+// ideographic space U+3000, U+2028) per the ECMAScript WhiteSpace and
+// LineTerminator productions, so only these four need stripping here.
+// insightjournal_is_visually_empty() in locallib.php mirrors this full
+// set explicitly, since PHP's trim() strips none of it.
+// Order matters here beyond readability: ESLint's no-misleading-character-class
+// rule flags \u200D (zero-width joiner) sitting strictly between two other
+// class members as a likely-accidental "joined character sequence", even
+// though character-class member order has no effect on what the regex
+// matches. Keeping \u200D last avoids that false positive.
+var INVISIBLE_CHARS_PATTERN = /[\u200B\u200C\u2060\u200D]/g;
+
+// Mirrors insightjournal_is_visually_empty() in locallib.php: nothing
+// but ASCII whitespace, NBSP, or a zero-width character remains after
+// stripping. Only decides the ALL-invisible boundary case - interior
+// whitespace/NBSP/zero-width characters next to real content still
+// count normally in visibleCharCount() below.
+var isVisuallyEmpty = function(str) {
+    return str.replace(INVISIBLE_CHARS_PATTERN, '').trim() === '';
+};
+
+// Same "visible character" definition insightjournal_visible_char_count()
+// uses server-side (see locallib.php, R4-01): 0 for input that is
+// visually empty, otherwise the raw DOM-textContent length including any
+// surrounding whitespace/NBSP.
+export const visibleCharCount = function(html) {
+    var text = stripHtml(html);
+    if (isVisuallyEmpty(text)) {
+        return 0;
+    }
+    return charCount(text);
+};
+
+// Deliberately NOT reusing stripHtml() here: DOMParser's textContent
+// inserts no separator at a block/line boundary at all (confirmed by
+// this project's own tests/fixtures/visible_char_fixtures.json, e.g.
+// "<p>Hello</p><p>World</p>" -> "HelloWorld"), which visibleCharCount()
+// above deliberately accepts as a documented, tested trade-off for
+// PHP/JS character-count parity - losing one character at a boundary is
+// negligible. A word count has no such parity requirement (there is no
+// PHP equivalent to match) and merging adjacent words across every
+// <br>/paragraph boundary would be a routine, everyday miscount: a
+// learner pressing Shift+Enter mid-reflection would silently lose a
+// word from the count on both sides of the break. Replacing every tag
+// with a space before parsing turns each such boundary into real
+// whitespace instead. Entities (e.g. a literal "<" a learner typed,
+// stored as "&lt;") are untouched by this regex - it only matches real
+// "<...>" tag syntax - and are still correctly decoded by the
+// subsequent DOMParser pass.
+var htmlToSpacedText = function(html) {
+    var doc = new DOMParser().parseFromString(html.replace(/<[^>]+>/g, ' '), 'text/html');
+    return doc.body.textContent || '';
+};
+
+// Purely informational alternative to the character counter - no
+// completion/validation semantics of its own (no minwords/maxwords),
+// just a live count next to it. Counts whitespace-delimited tokens,
+// treating a visually-empty response (see isVisuallyEmpty() above) as
+// zero words rather than counting stray whitespace as a "word".
+export const wordCount = function(html) {
+    var text = htmlToSpacedText(html);
+    if (isVisuallyEmpty(text)) {
+        return 0;
+    }
+    var words = text.trim().split(/\s+/).filter(function(word) {
+        return word !== '';
+    });
+    return words.length;
+};
+
+var wordsLabel = '';
+
+var updateWordCounter = function(value) {
+    var counter = document.querySelector('[data-insightjournal-wordcounter]');
+    if (!counter) {
+        return;
+    }
+    counter.textContent = wordCount(value) + ' ' + wordsLabel;
+};
+
+// Fetched once here rather than per update: this label never changes for
+// the lifetime of the page, and updateWordCounter() runs on every poll
+// tick, so resolving it via a fresh get_string() call each time would
+// mean an unnecessary repeated async round trip for unchanging text. The
+// display is refreshed once the label arrives so the very first render
+// (which may happen before this resolves) doesn't stay stuck without it.
+get_string('words', 'mod_insightjournal').then(function(text) {
+    wordsLabel = text;
+    updateWordCounter(lastSeenValue);
+    return text;
+}).catch(function() {
+    // Leave wordsLabel as '' - the count itself still displays, just
+    // without a trailing label.
+    return null;
+});
+
+var updateCounter = function(value) {
+    var counter = document.querySelector('[data-insightjournal-charcounter]');
+    var button = document.querySelector('[data-insightjournal-save]');
+    if (!counter) {
+        return;
+    }
+    var current = visibleCharCount(value);
+    var over = current > maxChars;
+    counter.textContent = current + ' / ' + maxChars;
+    counter.className = 'small ' + (over ? 'text-danger fw-bold' : 'text-muted');
+    if (button) {
+        button.disabled = over || conflicted;
+    }
+};
+
+var showEditPanel = function() {
+    var view = document.querySelector('[data-insightjournal-view]');
+    var panel = document.querySelector('[data-insightjournal-edit-panel]');
+    var textarea = document.getElementById(RESPONSE_ID);
+    if (view) {
+        view.classList.add('d-none');
+    }
+    if (panel) {
+        panel.classList.remove('d-none');
+    }
+    if (textarea) {
+        // Resync the poll's change-detection baseline to whatever the
+        // editor actually holds right now. Without this, lastSeenValue
+        // can be stale here (e.g. the user clicked Save less than a
+        // second after typing, before the poll had a chance to catch
+        // up), which would make the next poll tick misread the gap as a
+        // fresh edit and fire a spurious autosave a few seconds after
+        // reopening, even though nothing was typed since.
+        lastSeenValue = getCurrentValue(textarea);
+        var instance = TinyAdapter.instanceFor(textarea);
+        if (instance) {
+            instance.focus();
+        } else {
+            textarea.focus();
         }
-        counter.textContent = wordCount(value) + ' ' + wordsLabel;
-    };
+    }
+};
 
-    // Fetched once here rather than per update: this label never changes for
-    // the lifetime of the page, and updateWordCounter() runs on every poll
-    // tick, so resolving it via a fresh Str.get_string() call each time would
-    // mean an unnecessary repeated async round trip for unchanging text. The
-    // display is refreshed once the label arrives so the very first render
-    // (which may happen before this resolves) doesn't stay stuck without it.
-    Str.get_string('words', 'mod_insightjournal').then(function(text) {
-        wordsLabel = text;
-        updateWordCounter(lastSeenValue);
-        return text;
+var showViewPanel = function(responsehtml, timestr) {
+    var view = document.querySelector('[data-insightjournal-view]');
+    var panel = document.querySelector('[data-insightjournal-edit-panel]');
+    var display = document.querySelector('[data-insightjournal-response-display]');
+    var editbutton = document.querySelector('[data-insightjournal-edit]');
+    if (display) {
+        display.innerHTML = responsehtml;
+    }
+    setViewStatus(timestr);
+    if (panel) {
+        panel.classList.add('d-none');
+    }
+    if (view) {
+        view.classList.remove('d-none');
+    }
+    if (editbutton) {
+        editbutton.focus();
+    }
+};
+
+// Shown on a save conflict instead of silently retrying: displays the
+// server's actual current content (already returned by save_entry on a
+// conflict) so the learner can compare it against their own local draft,
+// which is deliberately left untouched in the textarea beside it.
+var showConflictBanner = function(result, message) {
+    var banner = document.querySelector('[data-insightjournal-conflict-banner]');
+    var messageEl = document.querySelector('[data-insightjournal-conflict-message]');
+    var content = document.querySelector('[data-insightjournal-conflict-content]');
+    if (messageEl) {
+        messageEl.textContent = message;
+    }
+    if (content) {
+        content.innerHTML = result.responsehtml;
+    }
+    if (banner) {
+        banner.classList.remove('d-none');
+    }
+};
+
+// Runs once whichever branch of save()'s promise chain settles, so a
+// queued save (see the "saving" guard below) always gets its turn. Kept
+// as its own function, and called from each branch, so the promise chain
+// can still end in a genuine .catch() as required by eslint's
+// promise/catch-or-return rule.
+var finishSave = function() {
+    saving = false;
+    if (pendingSave) {
+        var next = pendingSave;
+        pendingSave = null;
+        save(next.cmid, next.manual);
+    }
+};
+
+var save = function(cmid, manual) {
+    clearTimeout(timer);
+    if (conflicted) {
+        return;
+    }
+    // Only one save may be in flight at a time: an overlapping request (e.g.
+    // the autosave debounce firing again before a slow save has returned)
+    // would otherwise let responses arrive out of order and let a stale one
+    // overwrite newer stored text. Queue it instead; when it eventually
+    // runs it reads the textarea live, so only the latest dirty state is
+    // ever actually sent.
+    if (saving) {
+        pendingSave = {cmid: cmid, manual: manual || Boolean(pendingSave && pendingSave.manual)};
+        return;
+    }
+    var textarea = document.getElementById(RESPONSE_ID);
+    var button = document.querySelector('[data-insightjournal-save]');
+    var privatecheckbox = document.querySelector('[data-insightjournal-private]');
+    if (!textarea) {
+        return;
+    }
+    var value = getCurrentValue(textarea);
+    if (maxChars > 0 && visibleCharCount(value) > maxChars) {
+        return;
+    }
+    if (button) {
+        button.disabled = true;
+    }
+    saving = true;
+    get_string('saving', 'mod_insightjournal').then(function(text) {
+        setStatus(text, 'text-info');
+        return Ajax.call([{
+            methodname: 'mod_insightjournal_save_entry',
+            args: {
+                cmid: cmid,
+                response: value,
+                expectedrevision: currentRevision,
+                'private': Boolean(privatecheckbox && privatecheckbox.checked)
+            }
+        }])[0];
+    }).then(async function(result) {
+        if (result.conflict) {
+            conflicted = true;
+            pendingSave = null;
+            saving = false;
+            clearTimeout(timer);
+            // Nothing left for the poll below to usefully do once
+            // conflicted: every tick would just re-check the conflicted
+            // guard and return immediately until the page is reloaded
+            // via the conflict banner's link. Stop it instead of
+            // leaving it ticking for however long the learner leaves
+            // the tab open.
+            clearInterval(pollTimerId);
+            if (button) {
+                button.disabled = true;
+            }
+            if (privatecheckbox) {
+                privatecheckbox.disabled = true;
+            }
+            var conflicttext = await get_string('saveconflict', 'mod_insightjournal');
+            setStatus(conflicttext, 'text-danger');
+            showConflictBanner(result, conflicttext);
+            return conflicttext;
+        }
+        var current = getCurrentValue(textarea);
+        if (button) {
+            button.disabled = maxChars > 0 && visibleCharCount(current) > maxChars;
+        }
+        currentRevision = result.revision;
+        if (privatecheckbox) {
+            privatecheckbox.checked = result.private;
+        }
+        var savedtext = await get_string('savedat', 'mod_insightjournal', result.timestr);
+        setStatus(savedtext, 'text-success');
+        if (manual) {
+            showViewPanel(result.responsehtml, savedtext);
+        }
+        finishSave();
+        return savedtext;
+    }).catch(async function(error) {
+        var current = getCurrentValue(textarea);
+        if (button) {
+            button.disabled = maxChars > 0 && visibleCharCount(current) > maxChars;
+        }
+        Notification.exception(error);
+        var errortext = await get_string('saveerror', 'mod_insightjournal');
+        setStatus(errortext, 'text-danger');
+        finishSave();
+        return errortext;
     }).catch(function() {
-        // Leave wordsLabel as '' - the count itself still displays, just
-        // without a trailing label.
+        finishSave();
         return null;
     });
+};
 
-    var updateCounter = function(value) {
-        var counter = document.querySelector('[data-insightjournal-charcounter]');
-        var button = document.querySelector('[data-insightjournal-save]');
-        if (!counter) {
-            return;
-        }
-        var current = visibleCharCount(value);
-        var over = current > maxChars;
-        counter.textContent = current + ' / ' + maxChars;
-        counter.className = 'small ' + (over ? 'text-danger fw-bold' : 'text-muted');
-        if (button) {
-            button.disabled = over || conflicted;
-        }
-    };
-
-    var showEditPanel = function() {
-        var view = document.querySelector('[data-insightjournal-view]');
+export const init = function(cmid, autosave, maxchars, initialrevision) {
+    maxChars = maxchars || 0;
+    currentRevision = initialrevision || 0;
+    var textarea = document.getElementById(RESPONSE_ID);
+    var button = document.querySelector('[data-insightjournal-save]');
+    var editbutton = document.querySelector('[data-insightjournal-edit]');
+    var privatecheckbox = document.querySelector('[data-insightjournal-private]');
+    if (!textarea) {
+        return;
+    }
+    // The minchars hint below the editor is only linked here, not via
+    // a static aria-describedby in the markup: the mform-rendered
+    // textarea's id is only known once entry_form has actually
+    // rendered, and its fixed core template does not accept an
+    // aria-describedby option to set this itself.
+    if (document.getElementById('insightjournal-minchars-note')) {
+        textarea.setAttribute('aria-describedby', 'insightjournal-minchars-note');
+    }
+    TinyAdapter.init();
+    lastSeenValue = getCurrentValue(textarea);
+    updateWordCounter(lastSeenValue);
+    if (maxChars > 0) {
+        updateCounter(lastSeenValue);
+    }
+    if (button) {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            save(cmid, true);
+        });
+    }
+    if (editbutton) {
+        editbutton.addEventListener('click', function(e) {
+            e.preventDefault();
+            showEditPanel();
+        });
+    }
+    if (privatecheckbox) {
+        // Saved immediately so a visibility choice is never lost if the
+        // learner navigates away before typing anything else, but as a
+        // non-manual save: manual=true would switch to the read-only
+        // view panel via showViewPanel(), which would yank the learner
+        // out of the editor just for toggling a checkbox.
+        privatecheckbox.addEventListener('change', function() {
+            save(cmid, false);
+        });
+    }
+    var conflictreload = document.querySelector('[data-insightjournal-conflict-reload]');
+    if (conflictreload) {
+        // Navigates via the link's own href rather than
+        // window.location.reload(): the no-JS conflict path (see
+        // view.php) renders this same control on a POST response, and
+        // reload() would resubmit that POST (triggering a browser
+        // "confirm form resubmission" prompt) instead of loading a
+        // fresh GET. Using href re-derives every bit of client state
+        // (currentRevision, lastSeenValue, the response itself) from
+        // the server's actual current record via a normal page load,
+        // rather than trying to reconcile it in place.
+        conflictreload.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = conflictreload.href;
+        });
+    }
+    // Poll rather than bind to a live editor event: Tiny attaches
+    // asynchronously (there is no synchronous "ready" signal available
+    // to this module), and once attached it only syncs its backing
+    // textarea on blur, not per keystroke. One second is frequent
+    // enough for a responsive character counter/autosave trigger
+    // without meaningfully loading the page.
+    pollTimerId = setInterval(function() {
         var panel = document.querySelector('[data-insightjournal-edit-panel]');
-        var textarea = document.getElementById(RESPONSE_ID);
-        if (view) {
-            view.classList.add('d-none');
-        }
-        if (panel) {
-            panel.classList.remove('d-none');
-        }
-        if (textarea) {
-            // Resync the poll's change-detection baseline to whatever the
-            // editor actually holds right now. Without this, lastSeenValue
-            // can be stale here (e.g. the user clicked Save less than a
-            // second after typing, before the poll had a chance to catch
-            // up), which would make the next poll tick misread the gap as a
-            // fresh edit and fire a spurious autosave a few seconds after
-            // reopening, even though nothing was typed since.
-            lastSeenValue = getCurrentValue(textarea);
-            var instance = TinyAdapter.instanceFor(textarea);
-            if (instance) {
-                instance.focus();
-            } else {
-                textarea.focus();
-            }
-        }
-    };
-
-    var showViewPanel = function(responsehtml, timestr) {
-        var view = document.querySelector('[data-insightjournal-view]');
-        var panel = document.querySelector('[data-insightjournal-edit-panel]');
-        var display = document.querySelector('[data-insightjournal-response-display]');
-        var editbutton = document.querySelector('[data-insightjournal-edit]');
-        if (display) {
-            display.innerHTML = responsehtml;
-        }
-        setViewStatus(timestr);
-        if (panel) {
-            panel.classList.add('d-none');
-        }
-        if (view) {
-            view.classList.remove('d-none');
-        }
-        if (editbutton) {
-            editbutton.focus();
-        }
-    };
-
-    // Shown on a save conflict instead of silently retrying: displays the
-    // server's actual current content (already returned by save_entry on a
-    // conflict) so the learner can compare it against their own local draft,
-    // which is deliberately left untouched in the textarea beside it.
-    var showConflictBanner = function(result, message) {
-        var banner = document.querySelector('[data-insightjournal-conflict-banner]');
-        var messageEl = document.querySelector('[data-insightjournal-conflict-message]');
-        var content = document.querySelector('[data-insightjournal-conflict-content]');
-        if (messageEl) {
-            messageEl.textContent = message;
-        }
-        if (content) {
-            content.innerHTML = result.responsehtml;
-        }
-        if (banner) {
-            banner.classList.remove('d-none');
-        }
-    };
-
-    // Runs once whichever branch of save()'s promise chain settles, so a
-    // queued save (see the "saving" guard below) always gets its turn. Kept
-    // as its own function, and called from each branch, so the promise chain
-    // can still end in a genuine .catch() as required by eslint's
-    // promise/catch-or-return rule.
-    var finishSave = function() {
-        saving = false;
-        if (pendingSave) {
-            var next = pendingSave;
-            pendingSave = null;
-            save(next.cmid, next.manual);
-        }
-    };
-
-    var save = function(cmid, manual) {
-        clearTimeout(timer);
-        if (conflicted) {
-            return;
-        }
-        // Only one save may be in flight at a time: an overlapping request (e.g.
-        // the autosave debounce firing again before a slow save has returned)
-        // would otherwise let responses arrive out of order and let a stale one
-        // overwrite newer stored text. Queue it instead; when it eventually
-        // runs it reads the textarea live, so only the latest dirty state is
-        // ever actually sent.
-        if (saving) {
-            pendingSave = {cmid: cmid, manual: manual || Boolean(pendingSave && pendingSave.manual)};
-            return;
-        }
-        var textarea = document.getElementById(RESPONSE_ID);
-        var button = document.querySelector('[data-insightjournal-save]');
-        var privatecheckbox = document.querySelector('[data-insightjournal-private]');
-        if (!textarea) {
+        if (!panel || panel.classList.contains('d-none') || conflicted) {
             return;
         }
         var value = getCurrentValue(textarea);
-        if (maxChars > 0 && visibleCharCount(value) > maxChars) {
+        if (value === lastSeenValue) {
             return;
         }
-        if (button) {
-            button.disabled = true;
+        lastSeenValue = value;
+        updateWordCounter(value);
+        if (maxChars > 0) {
+            updateCounter(value);
         }
-        saving = true;
-        Str.get_string('saving', 'mod_insightjournal').then(function(text) {
-            setStatus(text, 'text-info');
-            return Ajax.call([{
-                methodname: 'mod_insightjournal_save_entry',
-                args: {
-                    cmid: cmid,
-                    response: value,
-                    expectedrevision: currentRevision,
-                    'private': Boolean(privatecheckbox && privatecheckbox.checked)
-                }
-            }])[0];
-        }).then(async function(result) {
-            if (result.conflict) {
-                conflicted = true;
-                pendingSave = null;
-                saving = false;
-                clearTimeout(timer);
-                // Nothing left for the poll below to usefully do once
-                // conflicted: every tick would just re-check the conflicted
-                // guard and return immediately until the page is reloaded
-                // via the conflict banner's link. Stop it instead of
-                // leaving it ticking for however long the learner leaves
-                // the tab open.
-                clearInterval(pollTimerId);
-                if (button) {
-                    button.disabled = true;
-                }
-                if (privatecheckbox) {
-                    privatecheckbox.disabled = true;
-                }
-                var conflicttext = await Str.get_string('saveconflict', 'mod_insightjournal');
-                setStatus(conflicttext, 'text-danger');
-                showConflictBanner(result, conflicttext);
-                return conflicttext;
-            }
-            var current = getCurrentValue(textarea);
-            if (button) {
-                button.disabled = maxChars > 0 && visibleCharCount(current) > maxChars;
-            }
-            currentRevision = result.revision;
-            if (privatecheckbox) {
-                privatecheckbox.checked = result.private;
-            }
-            var savedtext = await Str.get_string('savedat', 'mod_insightjournal', result.timestr);
-            setStatus(savedtext, 'text-success');
-            if (manual) {
-                showViewPanel(result.responsehtml, savedtext);
-            }
-            finishSave();
-            return savedtext;
-        }).catch(async function(error) {
-            var current = getCurrentValue(textarea);
-            if (button) {
-                button.disabled = maxChars > 0 && visibleCharCount(current) > maxChars;
-            }
-            Notification.exception(error);
-            var errortext = await Str.get_string('saveerror', 'mod_insightjournal');
-            setStatus(errortext, 'text-danger');
-            finishSave();
-            return errortext;
-        }).catch(function() {
-            finishSave();
-            return null;
-        });
-    };
-
-    return {
-        visibleCharCount: visibleCharCount,
-        wordCount: wordCount,
-        init: function(cmid, autosave, maxchars, initialrevision) {
-            maxChars = maxchars || 0;
-            currentRevision = initialrevision || 0;
-            var textarea = document.getElementById(RESPONSE_ID);
-            var button = document.querySelector('[data-insightjournal-save]');
-            var editbutton = document.querySelector('[data-insightjournal-edit]');
-            var privatecheckbox = document.querySelector('[data-insightjournal-private]');
-            if (!textarea) {
-                return;
-            }
-            // The minchars hint below the editor is only linked here, not via
-            // a static aria-describedby in the markup: the mform-rendered
-            // textarea's id is only known once entry_form has actually
-            // rendered, and its fixed core template does not accept an
-            // aria-describedby option to set this itself.
-            if (document.getElementById('insightjournal-minchars-note')) {
-                textarea.setAttribute('aria-describedby', 'insightjournal-minchars-note');
-            }
-            TinyAdapter.init();
-            lastSeenValue = getCurrentValue(textarea);
-            updateWordCounter(lastSeenValue);
-            if (maxChars > 0) {
-                updateCounter(lastSeenValue);
-            }
-            if (button) {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    save(cmid, true);
-                });
-            }
-            if (editbutton) {
-                editbutton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showEditPanel();
-                });
-            }
-            if (privatecheckbox) {
-                // Saved immediately so a visibility choice is never lost if the
-                // learner navigates away before typing anything else, but as a
-                // non-manual save: manual=true would switch to the read-only
-                // view panel via showViewPanel(), which would yank the learner
-                // out of the editor just for toggling a checkbox.
-                privatecheckbox.addEventListener('change', function() {
-                    save(cmid, false);
-                });
-            }
-            var conflictreload = document.querySelector('[data-insightjournal-conflict-reload]');
-            if (conflictreload) {
-                // Navigates via the link's own href rather than
-                // window.location.reload(): the no-JS conflict path (see
-                // view.php) renders this same control on a POST response, and
-                // reload() would resubmit that POST (triggering a browser
-                // "confirm form resubmission" prompt) instead of loading a
-                // fresh GET. Using href re-derives every bit of client state
-                // (currentRevision, lastSeenValue, the response itself) from
-                // the server's actual current record via a normal page load,
-                // rather than trying to reconcile it in place.
-                conflictreload.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    window.location.href = conflictreload.href;
-                });
-            }
-            // Poll rather than bind to a live editor event: Tiny attaches
-            // asynchronously (there is no synchronous "ready" signal available
-            // to this module), and once attached it only syncs its backing
-            // textarea on blur, not per keystroke. One second is frequent
-            // enough for a responsive character counter/autosave trigger
-            // without meaningfully loading the page.
-            pollTimerId = setInterval(function() {
-                var panel = document.querySelector('[data-insightjournal-edit-panel]');
-                if (!panel || panel.classList.contains('d-none') || conflicted) {
-                    return;
-                }
-                var value = getCurrentValue(textarea);
-                if (value === lastSeenValue) {
-                    return;
-                }
-                lastSeenValue = value;
-                updateWordCounter(value);
-                if (maxChars > 0) {
-                    updateCounter(value);
-                }
-                if (autosave) {
-                    clearTimeout(timer);
-                    timer = setTimeout(function() {
-                        save(cmid, false);
-                    }, AUTOSAVE_DEBOUNCE_MS);
-                }
-            }, POLL_INTERVAL_MS);
+        if (autosave) {
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+                save(cmid, false);
+            }, AUTOSAVE_DEBOUNCE_MS);
         }
-    };
-});
-// Closes the disable block opened above define().
+    }, POLL_INTERVAL_MS);
+};
 // phpcs:enable Squiz.Functions.MultiLineFunctionDeclaration

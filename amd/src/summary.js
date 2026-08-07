@@ -21,25 +21,23 @@
  * @author     Michael Kohl
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 // The Squiz.Functions.MultiLineFunctionDeclaration sniff demands a space
 // after `function`, which directly contradicts ESLint's
 // space-before-function-paren rule (enforced by the Grunt CI step) that
 // forbids that same space - a permanent contradiction for this file's
-// style, not staleness. Disabled for this file only, so the sniff still
-// protects every other file in the plugin.
+// style, not staleness, and not specific to the AMD define() wrapper: it
+// fires on every multi-line function expression in the file. Disabled for
+// this file only, so the sniff still protects every other file in the
+// plugin.
 // phpcs:disable Squiz.Functions.MultiLineFunctionDeclaration
-define([], function() {
-    return {
-        init: function() {
-            var button = document.querySelector('[data-insightjournal-print]');
-            if (!button) {
-                return;
-            }
-            button.addEventListener('click', function() {
-                window.print();
-            });
-        }
-    };
-});
-// Closes the disable block opened above define().
+export const init = function() {
+    var button = document.querySelector('[data-insightjournal-print]');
+    if (!button) {
+        return;
+    }
+    button.addEventListener('click', function() {
+        window.print();
+    });
+};
 // phpcs:enable Squiz.Functions.MultiLineFunctionDeclaration
