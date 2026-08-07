@@ -24,7 +24,7 @@
 
 import Ajax from 'core/ajax';
 import Notification from 'core/notification';
-import {get_string} from 'core/str';
+import {get_string as getString} from 'core/str';
 
 // The Squiz.Functions.MultiLineFunctionDeclaration sniff demands a space
 // after `function`, which directly contradicts ESLint's
@@ -217,11 +217,11 @@ var updateWordCounter = function(value) {
 
 // Fetched once here rather than per update: this label never changes for
 // the lifetime of the page, and updateWordCounter() runs on every poll
-// tick, so resolving it via a fresh get_string() call each time would
+// tick, so resolving it via a fresh getString() call each time would
 // mean an unnecessary repeated async round trip for unchanging text. The
 // display is refreshed once the label arrives so the very first render
 // (which may happen before this resolves) doesn't stay stuck without it.
-get_string('words', 'mod_insightjournal').then(function(text) {
+getString('words', 'mod_insightjournal').then(function(text) {
     wordsLabel = text;
     updateWordCounter(lastSeenValue);
     return text;
@@ -356,7 +356,7 @@ var save = function(cmid, manual) {
         button.disabled = true;
     }
     saving = true;
-    get_string('saving', 'mod_insightjournal').then(function(text) {
+    getString('saving', 'mod_insightjournal').then(function(text) {
         setStatus(text, 'text-info');
         return Ajax.call([{
             methodname: 'mod_insightjournal_save_entry',
@@ -386,7 +386,7 @@ var save = function(cmid, manual) {
             if (privatecheckbox) {
                 privatecheckbox.disabled = true;
             }
-            var conflicttext = await get_string('saveconflict', 'mod_insightjournal');
+            var conflicttext = await getString('saveconflict', 'mod_insightjournal');
             setStatus(conflicttext, 'text-danger');
             showConflictBanner(result, conflicttext);
             return conflicttext;
@@ -399,7 +399,7 @@ var save = function(cmid, manual) {
         if (privatecheckbox) {
             privatecheckbox.checked = result.private;
         }
-        var savedtext = await get_string('savedat', 'mod_insightjournal', result.timestr);
+        var savedtext = await getString('savedat', 'mod_insightjournal', result.timestr);
         setStatus(savedtext, 'text-success');
         if (manual) {
             showViewPanel(result.responsehtml, savedtext);
@@ -412,7 +412,7 @@ var save = function(cmid, manual) {
             button.disabled = maxChars > 0 && visibleCharCount(current) > maxChars;
         }
         Notification.exception(error);
-        var errortext = await get_string('saveerror', 'mod_insightjournal');
+        var errortext = await getString('saveerror', 'mod_insightjournal');
         setStatus(errortext, 'text-danger');
         finishSave();
         return errortext;
@@ -512,4 +512,5 @@ export const init = function(cmid, autosave, maxchars, initialrevision) {
         }
     }, POLL_INTERVAL_MS);
 };
+// Closes the disable block opened above.
 // phpcs:enable Squiz.Functions.MultiLineFunctionDeclaration

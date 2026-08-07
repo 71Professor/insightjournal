@@ -40,4 +40,5 @@ export const init = function() {
         window.print();
     });
 };
+// Closes the disable block opened above.
 // phpcs:enable Squiz.Functions.MultiLineFunctionDeclaration
