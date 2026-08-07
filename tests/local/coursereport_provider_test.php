@@ -197,6 +197,185 @@ final class coursereport_provider_test extends advanced_testcase {
     }
 
     /**
+     * R5-01b regression coverage (see coursereport_provider's class
+     * docblock, "On R5-01b"): a fellow member of a GROUPS_VISIBILITY_OWN
+     * group must not inflate total_participants() or occupy a
+     * participants() slot just because their groupid is one of the
+     * viewer's own allowed groups. total_participants()/participants()
+     * pass $restrictgroupids straight to Moodle's
+     * count_enrolled_users()/get_enrolled_users(), which - verified against
+     * the actual core source for every Moodle version this plugin
+     * supports (4.5 through main) - already apply
+     * core_group\visibility::sql_member_visibility_where() internally via
+     * groups_get_members_join(), so no extra filtering is needed here. This
+     * test exists to keep it that way: if a future core change or a
+     * "simplify this SQL" edit here ever drops that guarantee, this must
+     * start failing.
+     */
+    public function test_total_participants_excludes_hidden_own_visibility_member(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $diary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $cm->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+        $this->setUser($teacher);
+
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+
+        $this->assertEquals(0, $provider->total_participants());
+        $this->assertSame([], $provider->participants(0, 20));
+    }
+
+    /**
+     * R5-01b regression coverage, counterpart to the OWN-visibility case
+     * above: GROUPS_VISIBILITY_MEMBERS is a weaker restriction than OWN - a
+     * fellow member stays visible in count and page as long as the viewer
+     * is also a member of the same group, even without viewhiddengroups.
+     */
+    public function test_total_participants_includes_members_visibility_peer(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $diary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $cm->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_MEMBERS,
+        ]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+        $this->setUser($teacher);
+
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+
+        $this->assertEquals(1, $provider->total_participants());
+        $this->assertArrayHasKey((int) $student->id, $provider->participants(0, 20));
+    }
+
+    /**
+     * R5-01b regression coverage: a viewhiddengroups holder still sees an
+     * OWN-visibility member in count and page, same as any other member -
+     * mirrors test_viewhiddengroups_teacher_sees_cell_despite_own_visibility()
+     * but for total_participants()/participants() instead of rows_for().
+     */
+    public function test_total_participants_includes_own_visibility_member_for_viewhiddengroups_holder(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $student = $generator->create_and_enrol($this->course, 'student');
+        $diary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $cm->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $group = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $group->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $teacher->id]);
+        $generator->create_group_member(['groupid' => $group->id, 'userid' => $student->id]);
+        $this->setUser($teacher);
+
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+
+        $this->assertEquals(1, $provider->total_participants());
+        $this->assertArrayHasKey((int) $student->id, $provider->participants(0, 20));
+    }
+
+    /**
+     * R5-01b regression coverage: mixing a genuinely visible cohort with
+     * one hidden GROUPS_VISIBILITY_OWN member must not distort
+     * total_participants() or push a visible participant onto the wrong
+     * page - the multi-page equivalent of the single-member cases above,
+     * covering the exact "hidden member occupies a page slot" scenario
+     * fix3.md worried get_enrolled_users()/count_enrolled_users() were
+     * vulnerable to.
+     */
+    public function test_paging_is_unaffected_by_a_hidden_own_visibility_member(): void {
+        global $DB;
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_and_enrol($this->course, 'teacher');
+        $teacherroleid = $DB->get_field('role', 'id', ['shortname' => 'teacher'], MUST_EXIST);
+        assign_capability(
+            'moodle/course:viewhiddengroups',
+            CAP_PREVENT,
+            $teacherroleid,
+            \context_course::instance($this->course->id),
+            true
+        );
+
+        $groupa = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_ALL,
+        ]);
+        $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $teacher->id]);
+        $visible = [];
+        for ($i = 0; $i < 4; $i++) {
+            $student = $generator->create_and_enrol($this->course, 'student');
+            $generator->create_group_member(['groupid' => $groupa->id, 'userid' => $student->id]);
+            $visible[] = (int) $student->id;
+        }
+
+        $groupb = $generator->create_group([
+            'courseid' => $this->course->id,
+            'visibility' => GROUPS_VISIBILITY_OWN,
+        ]);
+        $DB->set_field('groups', 'participation', 1, ['id' => $groupb->id]);
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $teacher->id]);
+        $hidden = $generator->create_and_enrol($this->course, 'student');
+        $generator->create_group_member(['groupid' => $groupb->id, 'userid' => $hidden->id]);
+
+        $diary = $generator->create_module('insightjournal', ['course' => $this->course->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $cm->id]);
+        $cm = get_coursemodule_from_id('insightjournal', $diary->cmid, 0, false, MUST_EXIST);
+        $this->setUser($teacher);
+
+        $provider = new coursereport_provider($this->course, [$diary->id => $cm]);
+
+        $this->assertEquals(4, $provider->total_participants());
+        $first = $provider->participants(0, 3);
+        $second = $provider->participants(3, 3);
+        $this->assertCount(3, $first);
+        $this->assertCount(1, $second);
+        $seen = array_map('intval', array_keys($first + $second));
+        sort($seen);
+        $expected = $visible;
+        sort($expected);
+        $this->assertSame($expected, $seen);
+        $this->assertNotContains((int) $hidden->id, $seen);
+    }
+
+    /**
      * Mixed group modes: one restricted activity, one unrestricted, in the
      * same course. The SQL-level prefilter must stay open (an unrestricted
      * activity alone means every enrolled participant gets a potentially

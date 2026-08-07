@@ -39,6 +39,27 @@ namespace mod_insightjournal\local;
  * cell is writable (see rows_for()'s per-cell visibility), but never
  * whether a participant appears as a row at all or how pagination/count
  * behave - those are governed by the course-level capability only.
+ *
+ * On R5-01b (investigated, not a bug): a security review (fix3.md)
+ * flagged total_participants()/participants() for passing
+ * $restrictgroupids straight to Moodle's
+ * count_enrolled_users()/get_enrolled_users() $groupid parameter, on the
+ * assumption that this filters by raw group membership only and ignores
+ * Moodle's own group visibility (OWN/MEMBERS/NONE). That assumption does
+ * not hold: verified against the actual core source for every Moodle
+ * version this plugin supports (4.5 through main),
+ * get_enrolled_with_capabilities_join() (lib/enrollib.php) routes a
+ * non-empty $groupid through groups_get_members_join() (lib/grouplib.php),
+ * which already applies core_group\visibility::sql_member_visibility_where()
+ * internally whenever the viewer lacks moodle/course:viewhiddengroups -
+ * the exact same predicate rows_for() applies explicitly via
+ * insightjournal_groupids_members_among() (R5-01). Hand-rolling the same
+ * check here again would only duplicate core's own logic without changing
+ * behavior. See the four coursereport_provider_test.php cases whose names
+ * start with test_total_participants_ (plus
+ * test_paging_is_unaffected_by_a_hidden_own_visibility_member) for
+ * regression coverage of this guarantee, in case a future core change (or
+ * a future "simplify this" edit here) ever drops it.
  */
 final class coursereport_provider {
     /** @var \stdClass The course. */
